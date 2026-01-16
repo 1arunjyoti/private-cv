@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useResumeStore } from '@/store/useResumeStore';
+import type { Resume } from '@/db';
 
 describe('Resume Store', () => {
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('Resume Store', () => {
   });
 
   it('should update currentResume when updateCurrentResume is called', () => {
-    const mockResume = {
+    const mockResume: Resume = {
       id: 'test-id',
       meta: {
         title: 'Test Resume',
@@ -46,6 +47,39 @@ describe('Resume Store', () => {
           sectionMargin: 12,
           bulletMargin: 4,
           useBullets: true,
+          columnCount: 1,
+          headerPosition: 'top',
+          leftColumnWidth: 30,
+          marginHorizontal: 15,
+          marginVertical: 15,
+          sectionOrder: [], 
+          sectionHeadingStyle: 4,
+          sectionHeadingCapitalization: 'uppercase',
+          sectionHeadingSize: 'M',
+          sectionHeadingIcons: 'none',
+          entryLayoutStyle: 1,
+          entryColumnWidth: 'auto',
+          entryTitleSize: 'M',
+          entrySubtitleStyle: 'italic',
+          entrySubtitlePlacement: 'nextLine',
+          entryIndentBody: false,
+          entryListStyle: 'bullet',
+          personalDetailsAlign: 'center',
+          personalDetailsArrangement: 1,
+          personalDetailsContactStyle: 'icon',
+          personalDetailsIconStyle: 1,
+          nameSize: 'M',
+          nameBold: true,
+          nameFont: 'body',
+          skillsDisplayStyle: 'grid',
+          skillsLevelStyle: 3,
+          languagesDisplayStyle: 'level',
+          languagesLevelStyle: 'dots',
+          interestsDisplayStyle: 'compact',
+          interestsSeparator: 'pipe',
+          interestsSubinfoStyle: 'dash',
+          certificatesDisplayStyle: 'grid',
+          certificatesLevelStyle: 3,
         },
       },
       basics: {
@@ -62,6 +96,13 @@ describe('Resume Store', () => {
       education: [],
       skills: [],
       projects: [],
+      certificates: [],
+      languages: [],
+      interests: [],
+      publications: [],
+      awards: [],
+      references: [],
+      custom: [],
     };
 
     useResumeStore.setState({ currentResume: mockResume });
