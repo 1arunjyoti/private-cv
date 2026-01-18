@@ -87,7 +87,7 @@ export function PWAInstallPrompt() {
             <Smartphone className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm">Install SecureCV</h3>
+            <h3 className="font-semibold text-sm">Install PrivateCV</h3>
             <p className="text-xs text-muted-foreground mt-1">
               Add to your home screen for offline access and a better
               experience.

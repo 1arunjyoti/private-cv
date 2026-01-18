@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SecureCV.app - Privacy-First Resume Creator",
+  title: "PrivateCV - Privacy-First Resume Creator",
   description:
     "Build professional resumes offline with complete privacy. No data leaves your device.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SecureCV.app",
+    title: "PrivateCV",
   },
 };
 

@@ -36,7 +36,7 @@ const createStyles = (
     bulletMargin: number;
     marginHorizontal?: number;
     marginVertical?: number;
-  }
+  },
 ) =>
   StyleSheet.create({
     page: {
@@ -294,7 +294,9 @@ export function ATSTemplate({ resume }: ATSTemplateProps) {
                   </Text>
                 </View>
                 {edu.score && (
-                  <Text style={styles.entrySummary}>GPA: {edu.score}</Text>
+                  <Text style={styles.entrySummary}>
+                    {edu.score.includes(":") ? edu.score : `GPA: ${edu.score}`}
+                  </Text>
                 )}
                 {edu.summary && (
                   <MarkdownText

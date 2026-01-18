@@ -1,4 +1,4 @@
-# SecureCV.app
+# PrivateCV
 
 A professional, open-source resume builder that runs entirely in your browser. Built with privacy as the core feature—your data never leaves your device.
 

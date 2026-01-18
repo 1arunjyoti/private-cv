@@ -44,7 +44,7 @@ const createStyles = (
     lineHeight: number;
     sectionMargin: number;
     bulletMargin: number;
-  }
+  },
 ) =>
   StyleSheet.create({
     page: {
@@ -320,7 +320,9 @@ export function ElegantTemplate({ resume }: ElegantTemplateProps) {
                   </View>
                   {edu.score && (
                     <Text style={[styles.summary, { fontSize: 9 }]}>
-                      Grade: {edu.score}
+                      {edu.score.includes(":")
+                        ? edu.score
+                        : `Grade: ${edu.score}`}
                     </Text>
                   )}
                 </View>

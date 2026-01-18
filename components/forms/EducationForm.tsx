@@ -8,11 +8,33 @@ import type { Education } from "@/db";
 import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EducationFormProps {
   data: Education[];
   onChange: (data: Education[]) => void;
 }
+
+const getScoreType = (score: string) => {
+  if (score.startsWith("GPA: ")) return "GPA";
+  if (score.startsWith("CGPA: ")) return "CGPA";
+  if (score.startsWith("Percentage: ")) return "Percentage";
+  if (score.startsWith("Score: ")) return "Score";
+  return "Score"; // Default
+};
+
+const getScoreValue = (score: string) => {
+  if (score.includes(": ")) {
+    return score.split(": ")[1] || "";
+  }
+  return score;
+};
 
 export function EducationForm({ data, onChange }: EducationFormProps) {
   const addEducation = () => {
@@ -38,18 +60,18 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
   const updateEducation = (
     id: string,
     field: keyof Education,
-    value: string | string[]
+    value: string | string[],
   ) => {
     onChange(
-      data.map((edu) => (edu.id === id ? { ...edu, [field]: value } : edu))
+      data.map((edu) => (edu.id === id ? { ...edu, [field]: value } : edu)),
     );
   };
 
   const addCourse = (id: string) => {
     onChange(
       data.map((edu) =>
-        edu.id === id ? { ...edu, courses: [...edu.courses, ""] } : edu
-      )
+        edu.id === id ? { ...edu, courses: [...edu.courses, ""] } : edu,
+      ),
     );
   };
 
@@ -62,7 +84,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
           return { ...edu, courses: newCourses };
         }
         return edu;
-      })
+      }),
     );
   };
 
@@ -76,7 +98,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
           };
         }
         return edu;
-      })
+      }),
     );
   };
 
@@ -93,7 +115,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
           size="sm"
           onClick={addEducation}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4" />
           Add Education
         </Button>
       </div>
@@ -205,13 +227,40 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>GPA / Score</Label>
+                <Select
+                  value={getScoreType(edu.score)}
+                  onValueChange={(value) => {
+                    const currentVal = getScoreValue(edu.score);
+                    updateEducation(
+                      edu.id,
+                      "score",
+                      currentVal ? `${value}: ${currentVal}` : "",
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-fit border-none p-0 focus:ring-0 text-sm font-medium">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GPA">GPA</SelectItem>
+                    <SelectItem value="CGPA">CGPA</SelectItem>
+                    <SelectItem value="Percentage">Percentage</SelectItem>
+                    <SelectItem value="Score">Score</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Input
-                  placeholder="3.8/4.0"
-                  value={edu.score}
-                  onChange={(e) =>
-                    updateEducation(edu.id, "score", e.target.value)
-                  }
+                  placeholder="e.g. 3.8/4.0 or 90%"
+                  value={getScoreValue(edu.score)}
+                  onChange={(e) => {
+                    const type = getScoreType(edu.score);
+                    const val = e.target.value;
+                    updateEducation(
+                      edu.id,
+                      "score",
+                      val ? `${type}: ${val}` : "",
+                    );
+                  }}
+                  className="mt-0"
                 />
               </div>
             </div>
@@ -235,7 +284,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                   size="sm"
                   onClick={() => addCourse(edu.id)}
                 >
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4" />
                   Add
                 </Button>
               </div>

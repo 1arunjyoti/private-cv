@@ -48,6 +48,7 @@ import {
   Palette,
   PenLine,
   FileUp,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -58,8 +59,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ResetConfirmDialog } from "@/components/ResetConfirmDialog";
+import { ATSScore } from "@/components/editor/ATSScore";
 
 function EditorContent() {
   const searchParams = useSearchParams();
@@ -288,13 +298,13 @@ function EditorContent() {
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center gap-2">
-              <ThemeToggle />
+              <ATSScore resume={currentResume} />
               {process.env.NODE_ENV === "development" && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleFillSampleData}
-                  className="text-primary border-primary/50 hover:bg-primary/10"
+                  className="text-primary border-primary/30 hover:bg-primary/10"
                 >
                   <Wand2 className="h-4 w-4" />
                   Fill Sample
@@ -304,7 +314,7 @@ function EditorContent() {
                 variant="outline"
                 size="sm"
                 onClick={handleImportJSON}
-                className="text-primary border-primary/50 hover:bg-primary/10"
+                className="text-primary border-primary/30 hover:bg-primary/10"
               >
                 <FileUp className="h-4 w-4" />
                 Import JSON
@@ -313,12 +323,17 @@ function EditorContent() {
                 variant="outline"
                 size="sm"
                 onClick={handleExportJSON}
-                className="text-primary border-primary/50 hover:bg-primary/10"
+                className="text-primary border-primary/30 hover:bg-primary/10"
               >
                 <FileDown className="h-4 w-4" />
                 Export JSON
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -327,6 +342,61 @@ function EditorContent() {
                 Save
               </Button>
               <ResetConfirmDialog onConfirm={handleReset} />
+              <ThemeToggle />
+
+              {/* Disclaimer */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/30 hover:bg-primary/10"
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Disclaimer</DialogTitle>
+                    <DialogDescription asChild>
+                      <div className="text-muted-foreground text-sm">
+                        <div className="mt-4">
+                          <h2 className="font-semibold text-lg text-foreground">
+                            How to save your resume data:
+                          </h2>
+                          <p className="mt-2">
+                            1. Click on the <b>Save</b> button to save your
+                            resume data to your browser&apos;s local storage.
+                            <b>(Not recommended to use this method)</b>
+                          </p>
+                          <p className="mt-1">
+                            2. <b>(Better)</b> Alternately, you can also export
+                            your resume data as a JSON file.
+                          </p>
+                          <p className="mt-1">
+                            3. Then import your resume data from the downloaded{" "}
+                            <b>JSON</b> file.
+                          </p>
+                        </div>
+
+                        <div className="mt-6 mb-2">
+                          <h2 className="font-semibold text-lg text-foreground">
+                            How to use the resume builder:
+                          </h2>
+                          <p className="mt-2">
+                            1. Click on the <b>Content</b> button to edit your
+                            resume content.
+                          </p>
+                          <p className="mt-1">
+                            2. Click on the <b>Customize</b> button to customize
+                            your resume.
+                          </p>
+                        </div>
+                      </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              </Dialog>
             </div>
 
             {/* Mobile Actions */}

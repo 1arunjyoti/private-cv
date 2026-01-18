@@ -22,7 +22,7 @@ export default function PrivacyPage() {
                 <FileText className="h-5 w-5" />
               </div>
               <span className="font-bold text-xl tracking-tight">
-                SecureCV.app
+                PrivateCV
               </span>
             </Link>
           </div>
@@ -143,8 +143,7 @@ export default function PrivacyPage() {
       <footer className="border-t py-6 bg-background">
         <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-sm text-muted-foreground text-center md:text-left">
-            © {new Date().getFullYear()} SecureCV.app. Open Source &
-            Privacy-First.
+            © {new Date().getFullYear()} PrivateCV. Open Source & Privacy-First.
           </div>
           <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <Link

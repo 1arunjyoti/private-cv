@@ -159,7 +159,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <User className="h-5 w-5" />
@@ -197,7 +197,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
               size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="h-4 w-4" />
               Upload Photo
             </Button>
             {displayImageUrl && (
@@ -208,7 +208,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
                 className="text-destructive hover:text-destructive ml-2"
                 onClick={handleRemoveImage}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4" />
                 Remove
               </Button>
             )}

@@ -735,7 +735,9 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                   },
                 ]}
               >
-                GPA/Score: {edu.score}
+                {edu.score.includes(":")
+                  ? edu.score
+                  : `GPA/Score: ${edu.score}`}
               </Text>
             )}
             {edu.courses && edu.courses.length > 0 && (
