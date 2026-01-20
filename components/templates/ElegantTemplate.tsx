@@ -4,7 +4,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
   Link,
   Image,
@@ -12,29 +11,9 @@ import {
 import type { Resume, LayoutSettings } from "@/db";
 import { PDFRichText } from "./PDFRichText";
 import { getTemplateDefaults } from "@/lib/template-defaults";
-
-// Register fonts
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: "semibold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-italic.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
+import { formatDate, PROFILE_IMAGE_SIZES } from "@/lib/template-utils";
+import "@/lib/fonts";
+import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 interface ElegantTemplateProps {
   resume: Resume;
@@ -104,69 +83,7 @@ const createStyles = (
     section: {
       marginBottom: settings.sectionMargin,
     },
-    sectionTitleWrapper: {
-      flexDirection: "row",
-      marginBottom: 10,
-      justifyContent:
-        settings.sectionHeadingAlign === "center"
-          ? "center"
-          : settings.sectionHeadingAlign === "right"
-            ? "flex-end"
-            : "flex-start",
-      // Minimalist default: just a bottom border
-      borderBottomWidth: 1,
-      borderBottomColor: "#e5e7eb", // Slate 200
-      paddingBottom: 4,
-      // Overrides for user settings
-      ...(settings.sectionHeadingStyle === 1 && {
-        borderBottomWidth: 2,
-        borderBottomColor: themeColor,
-        paddingBottom: 6,
-      }),
-      ...(settings.sectionHeadingStyle === 2 && {
-        borderBottomWidth: 0,
-        paddingBottom: 0,
-      }),
-      ...(settings.sectionHeadingStyle === 3 && {
-        borderBottomWidth: 1,
-        borderBottomColor: "#000000",
-        paddingBottom: 6,
-      }),
-      ...(settings.sectionHeadingStyle === 4 && {
-        // Background
-        backgroundColor: "#f3f4f6",
-        paddingVertical: 2,
-        paddingHorizontal: 6,
-        borderBottomWidth: 0,
-        borderRadius: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 5 && {
-        // Border Left
-        borderLeftWidth: 3,
-        borderLeftColor: themeColor,
-        paddingLeft: 8,
-        borderBottomWidth: 0,
-      }),
-      ...(settings.sectionHeadingStyle === 6 && {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderTopColor: themeColor,
-        borderBottomColor: themeColor,
-        paddingVertical: 4,
-      }),
-      ...(settings.sectionHeadingStyle === 7 && {
-        borderBottomWidth: 1.5,
-        borderBottomColor: "#e5e7eb",
-        borderStyle: "dashed",
-        paddingBottom: 6,
-      }),
-      ...(settings.sectionHeadingStyle === 8 && {
-        borderBottomWidth: 1.5,
-        borderBottomColor: "#e5e7eb",
-        borderStyle: "dotted",
-        paddingBottom: 6,
-      }),
-    },
+    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, themeColor),
     sectionTitle: {
       fontSize:
         settings.sectionHeadingSize === "XL"
@@ -283,19 +200,9 @@ export function ElegantTemplate({ resume }: ElegantTemplateProps) {
 
   const styles = createStyles(themeColor, settings);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Present";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const renderProfileImage = () => {
     if (!basics.image || !settings.showProfileImage) return null;
-    const sizeMap = { S: 50, M: 80, L: 120 };
-    const size = sizeMap[settings.profileImageSize || "M"];
+    const size = PROFILE_IMAGE_SIZES[settings.profileImageSize || "M"];
     return (
       // eslint-disable-next-line jsx-a11y/alt-text
       <Image

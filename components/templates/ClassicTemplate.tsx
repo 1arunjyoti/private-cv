@@ -7,87 +7,13 @@ import {
   pdf,
   Image,
   Link,
-  Font,
 } from "@react-pdf/renderer";
 import type { Resume } from "@/db";
 import { PDFRichText } from "./PDFRichText";
 import { getTemplateDefaults } from "@/lib/template-defaults";
-
-// Helper to convert mm to pt (approximate)
-const mmToPt = (mm: number) => mm * 2.835;
-
-// Register Fonts
-Font.register({
-  family: "Roboto",
-  fonts: [
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-italic-webfont.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-italic.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Lato",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/lato@4.5.8/files/lato-latin-400-normal.woff",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/lato@4.5.8/files/lato-latin-700-normal.woff",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/lato@4.5.8/files/lato-latin-400-italic.woff",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Montserrat",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@4.5.13/files/montserrat-latin-400-normal.woff",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@4.5.13/files/montserrat-latin-700-normal.woff",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@4.5.13/files/montserrat-latin-400-italic.woff",
-      fontStyle: "italic",
-    },
-  ],
-});
+import { mmToPt, formatDate, getLevelScore, PROFILE_IMAGE_SIZES } from "@/lib/template-utils";
+import "@/lib/fonts"; // Auto-registers all fonts
+import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 interface ClassicTemplateProps {
   resume: Resume;
@@ -160,10 +86,10 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     header: {
       marginBottom: settings.headerBottomMargin,
       textAlign: headerAlign,
-      borderBottomWidth: settings.sectionHeadingStyle === 1 ? 3 : 0, // Example variant
+      borderBottomWidth: settings.sectionHeadingStyle === 1 ? 2 : 0,
       borderBottomColor: getColor("decorations"),
       borderBottomStyle: "solid",
-      paddingBottom: 15,
+      paddingBottom: 8,
       width: "100%",
     },
     name: {
@@ -178,15 +104,15 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
         settings.nameBold || settings.nameFont === "creative"
           ? "bold"
           : "normal",
-      marginBottom: 8,
+      marginBottom: 4,
       lineHeight: settings.nameLineHeight,
       textTransform: "uppercase",
-      letterSpacing: 1.5,
+      letterSpacing: 1,
       color: getColor("name"),
     },
     label: {
       fontSize: settings.titleFontSize,
-      marginBottom: 6,
+      marginBottom: 3,
       fontWeight: settings.titleBold ? "bold" : "normal",
       fontStyle: settings.titleItalic ? "italic" : "normal",
       fontFamily: settings.titleBold
@@ -205,16 +131,16 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
             ? "flex-end"
             : "center",
       flexWrap: "wrap",
-      rowGap: 4,
+      rowGap: 2,
       columnGap: 0,
       fontSize: settings.contactFontSize,
-      marginTop: 4,
+      marginTop: 2,
     },
 
     // Columns
     columnsContainer: {
       flexDirection: "row",
-      gap: 20, // Gap between columns
+      gap: 12, // Gap between columns
     },
     leftColumn: {
       width: `${leftColumnWidthPercent}%`,
@@ -227,100 +153,20 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     section: {
       marginBottom: sectionMargin,
     },
-    sectionTitleWrapper: {
-      marginBottom: 8,
-      // Alignment
-      flexDirection: "row",
-      justifyContent:
-        settings.sectionHeadingAlign === "center"
-          ? "center"
-          : settings.sectionHeadingAlign === "right"
-            ? "flex-end"
-            : "flex-start",
-      alignItems: "center",
-
-      // Style 1: Solid Underline (Default)
-      ...(settings.sectionHeadingStyle === 1 && {
-        borderBottomWidth: 1,
-        borderBottomColor: getColor("decorations"),
-        paddingBottom: 5,
-      }),
-      // Style 2: No Decoration (Text only) - No extra styles needed
-
-      // Style 3: Double Underline
-      ...(settings.sectionHeadingStyle === 3 && {
-        borderBottomWidth: 1,
-        borderBottomColor: getColor("decorations"),
-        borderStyle: "solid", // Double border simulation not natively supported in react-pdf this way, using thick solid for now or need nested view?
-        // Actually, react-pdf supports 'dashed', 'dotted', 'solid'. 'double' is not standard here.
-        // We will simulate double by maybe just a thick line or top/bottom?
-        // Let's stick to standard borders for now. To do real double, we might need a nested view.
-        // Simplified: Thick bottom border? Or maybe just keep it simple.
-        // Let's use 2px solid for now as "Bold Underline" effectively.
-        // WAIT: The prompt asked for "Double Underline".
-        // To do true double, we'd need to render two lines. Complex in just styles object.
-        // Let's implement it as a thick border to start.
-        paddingBottom: 5,
-      }),
-
-      // Style 4: Background Highlight
-      ...(settings.sectionHeadingStyle === 4 && {
-        backgroundColor: getColor("decorations") + "20", // 20% opacity using hex if possible?
-        // Hex alpha might not work in all PDF readers.
-        // Better to use a lighter shade if we could calculate it.
-        // For safe implementation, let's use a very light gray or primary/10
-        // React-PDF supports rgba().
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 4,
-      }),
-
-      // Style 5: Left Accent
-      ...(settings.sectionHeadingStyle === 5 && {
-        borderLeftWidth: 2,
-        borderLeftColor: getColor("decorations"),
-        paddingLeft: 8,
-      }),
-
-      // Style 6: Top & Bottom Border
-      ...(settings.sectionHeadingStyle === 6 && {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderTopColor: getColor("decorations"),
-        borderBottomColor: getColor("decorations"),
-        paddingVertical: 4,
-      }),
-
-      // Style 7: Dashed Underline
-      ...(settings.sectionHeadingStyle === 7 && {
-        borderBottomWidth: 1,
-        borderBottomColor: getColor("decorations"),
-        borderStyle: "dashed",
-        paddingBottom: 5,
-      }),
-
-      // Style 8: Dotted Underline
-      ...(settings.sectionHeadingStyle === 8 && {
-        borderBottomWidth: 1,
-        borderBottomColor: getColor("decorations"),
-        borderStyle: "dotted",
-        paddingBottom: 5,
-      }),
-    },
+    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, getColor),
     sectionTitle: {
       fontSize:
-        settings.sectionHeadingSize === "L" ? fontSize + 6 : fontSize + 4,
+        settings.sectionHeadingSize === "L" ? fontSize + 4 : fontSize + 2,
       fontFamily: settings.sectionHeadingBold ? boldFont : baseFont,
       fontWeight: settings.sectionHeadingBold ? "bold" : "normal",
       textTransform: settings.sectionHeadingCapitalization,
-      letterSpacing: 1,
+      letterSpacing: 0.8,
       color: getColor("headings"),
-      // backgroundColor: "#fff", // Removed this as it might interfere with Style 4
     },
 
     // Entries
     entryBlock: {
-      marginBottom: 10,
+      marginBottom: 6,
     },
     entryHeader: {
       flexDirection: "row",
@@ -342,7 +188,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
       minWidth: 60,
     },
     entrySubtitle: {
-      fontSize: fontSize + 0.5,
+      fontSize: fontSize,
       fontFamily:
         settings.entrySubtitleStyle === "bold"
           ? boldFont
@@ -351,27 +197,27 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
             : baseFont,
       fontWeight: settings.entrySubtitleStyle === "bold" ? "bold" : "normal",
       fontStyle: settings.entrySubtitleStyle === "italic" ? "italic" : "normal",
-      marginBottom: 3,
+      marginBottom: 2,
     },
     entrySummary: {
       fontSize: fontSize,
-      marginTop: 2,
-      marginBottom: 4,
+      marginTop: 1,
+      marginBottom: 2,
       textAlign: settings.entryIndentBody ? "left" : "justify",
-      marginLeft: settings.entryIndentBody ? 10 : 0,
+      marginLeft: settings.entryIndentBody ? 8 : 0,
     },
 
     // Lists/Bullets
     bulletList: {
-      marginLeft: 15,
-      marginTop: 2,
+      marginLeft: 10,
+      marginTop: 1,
     },
     bulletItem: {
       flexDirection: "row",
       marginBottom: bulletMargin,
     },
     bullet: {
-      width: 10,
+      width: 8,
       fontSize: fontSize,
     },
     bulletText: {
@@ -383,23 +229,9 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     gridContainer: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: 4,
     },
   });
-
-  // --- Helpers ---
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Present";
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return dateStr;
-    }
-  };
 
   // --- Renderers ---
 
@@ -414,8 +246,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
   const ProfileImage = () => {
     if (!basics.image || !settings.showProfileImage) return null;
 
-    const sizeMap = { S: 50, M: 80, L: 120 };
-    const size = sizeMap[settings.profileImageSize];
+    const size = PROFILE_IMAGE_SIZES[settings.profileImageSize];
 
     return (
       // @react-pdf/renderer Image does not support alt prop
@@ -903,10 +734,10 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               <Link
                 src={edu.url}
                 style={{
-                  fontSize: fontSize,
+                  fontSize: fontSize - 1,
                   color: getColor("links"),
                   textDecoration: "none",
-                  marginBottom: 2,
+                  marginBottom: 1,
                   fontFamily: italicFont,
                   fontStyle: "italic",
                 }}
@@ -918,12 +749,12 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               style={{
                 flexDirection: "row",
                 flexWrap: "wrap",
-                marginBottom: 3,
+                marginBottom: 1,
               }}
             >
               <Text
                 style={{
-                  fontSize: fontSize + 0.5,
+                  fontSize: fontSize,
                   fontFamily: settings.educationDegreeBold
                     ? boldFont
                     : baseFont,
@@ -938,7 +769,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               {edu.area && (
                 <Text
                   style={{
-                    fontSize: fontSize + 0.5,
+                    fontSize: fontSize,
                     fontFamily: settings.educationAreaBold
                       ? boldFont
                       : baseFont,
@@ -1006,17 +837,6 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     );
   };
 
-  const getLevelScore = (level: string) => {
-    const l = (level || "").toLowerCase();
-    if (["beginner", "novice", "basic"].some((k) => l.includes(k))) return 1;
-    if (["intermediate", "competent"].some((k) => l.includes(k))) return 3;
-    if (
-      ["advanced", "expert", "master", "proficient"].some((k) => l.includes(k))
-    )
-      return 5;
-    return 3; // Default
-  };
-
   const renderLanguages = () => {
     if (!languages || languages.length === 0) return null;
 
@@ -1038,15 +858,15 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginRight: settings.languagesListStyle === "none" ? 4 : 10,
-                marginBottom: 4,
+                marginRight: settings.languagesListStyle === "none" ? 3 : 8,
+                marginBottom: 2,
               }}
             >
               {settings.languagesListStyle === "bullet" && (
-                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 3, fontSize: fontSize }}>•</Text>
               )}
               {settings.languagesListStyle === "number" && (
-                <Text style={{ marginRight: 4, fontSize: fontSize }}>
+                <Text style={{ marginRight: 3, fontSize: fontSize }}>
                   {index + 1}.
                 </Text>
               )}
@@ -1073,7 +893,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                     fontStyle: settings.languagesFluencyItalic
                       ? "italic"
                       : "normal",
-                    marginLeft: 4,
+                    marginLeft: 2,
                   }}
                 >
                   ({lang.fluency})
@@ -1198,14 +1018,14 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
             <View
               key={skill.id}
               style={{
-                marginBottom: 4,
+                marginBottom: 2,
                 flexDirection: "row",
-                marginLeft: listStyle === "blank" ? 0 : 15, // Indent unless blank
+                marginLeft: listStyle === "blank" ? 0 : 10, // Indent unless blank
                 alignItems: "center",
               }}
             >
               {listStyle !== "blank" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>
                   {listStyle === "bullet" ? "•" : "-"}
                 </Text>
               )}
@@ -1301,7 +1121,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                   fontFamily: italicFont,
                   fontStyle: "italic",
                   color: "#444",
-                  marginBottom: 2,
+                  marginBottom: 1,
                 }}
               >
                 {proj.url}
@@ -1396,15 +1216,15 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                   settings.certificatesDisplayStyle === "grid" ? "48%" : "100%",
                 marginRight:
                   settings.certificatesDisplayStyle === "grid" ? "2%" : 0,
-                marginBottom: 10,
+                marginBottom: 6,
                 flexDirection: "row",
               }}
             >
               {settings.certificatesListStyle === "bullet" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
               )}
               {settings.certificatesListStyle === "number" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>
                   {index + 1}.
                 </Text>
               )}
@@ -1469,10 +1289,10 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                   <Link
                     src={cert.url}
                     style={{
-                      fontSize: fontSize,
+                      fontSize: fontSize - 1,
                       color: getColor("links"),
                       textDecoration: "none",
-                      marginBottom: 2,
+                      marginBottom: 1,
                       fontFamily: settings.certificatesUrlBold
                         ? boldFont
                         : baseFont,
@@ -1520,12 +1340,12 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
         )}
         {awards.map((award, index) => (
           <View key={award.id} style={styles.entryBlock}>
-            <View style={{ flexDirection: "row", marginBottom: 2 }}>
+            <View style={{ flexDirection: "row", marginBottom: 1 }}>
               {settings.awardsListStyle === "bullet" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
               )}
               {settings.awardsListStyle === "number" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>
                   {index + 1}.
                 </Text>
               )}
@@ -1617,12 +1437,12 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
         )}
         {publications.map((pub, index) => (
           <View key={pub.id} style={styles.entryBlock}>
-            <View style={{ flexDirection: "row", marginBottom: 2 }}>
+            <View style={{ flexDirection: "row", marginBottom: 1 }}>
               {settings.publicationsListStyle === "bullet" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
               )}
               {settings.publicationsListStyle === "number" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>
                   {index + 1}.
                 </Text>
               )}
@@ -1687,10 +1507,10 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                   <Link
                     src={pub.url}
                     style={{
-                      fontSize: fontSize,
+                      fontSize: fontSize - 1,
                       color: getColor("links"),
                       textDecoration: "none",
-                      marginBottom: 2,
+                      marginBottom: 1,
                       fontFamily: settings.publicationsUrlBold
                         ? boldFont
                         : baseFont,
@@ -1743,15 +1563,15 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               style={{
                 width: "48%",
                 marginRight: "2%",
-                marginBottom: 10,
+                marginBottom: 6,
                 flexDirection: "row",
               }}
             >
               {settings.referencesListStyle === "bullet" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
               )}
               {settings.referencesListStyle === "number" && (
-                <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                <Text style={{ marginRight: 4, fontSize: fontSize }}>
                   {index + 1}.
                 </Text>
               )}
@@ -1819,12 +1639,12 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginRight: settings.interestsListStyle === "none" ? 4 : 10,
-                marginBottom: 4,
+                marginRight: settings.interestsListStyle === "none" ? 3 : 8,
+                marginBottom: 2,
               }}
             >
               {settings.interestsListStyle === "bullet" && (
-                <Text style={{ marginRight: 4, fontSize: fontSize }}>•</Text>
+                <Text style={{ marginRight: 3, fontSize: fontSize }}>•</Text>
               )}
               {settings.interestsListStyle === "number" && (
                 <Text style={{ marginRight: 4, fontSize: fontSize }}>
@@ -1887,14 +1707,14 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
             )}
             {sec.items.map((item, index) => (
               <View key={item.id} style={styles.entryBlock}>
-                <View style={{ flexDirection: "row", marginBottom: 2 }}>
+                <View style={{ flexDirection: "row", marginBottom: 1 }}>
                   {settings.customSectionListStyle === "bullet" && (
-                    <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                    <Text style={{ marginRight: 4, fontSize: fontSize }}>
                       •
                     </Text>
                   )}
                   {settings.customSectionListStyle === "number" && (
-                    <Text style={{ marginRight: 5, fontSize: fontSize }}>
+                    <Text style={{ marginRight: 4, fontSize: fontSize }}>
                       {index + 1}.
                     </Text>
                   )}
@@ -1959,10 +1779,10 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
                       <Link
                         src={item.url}
                         style={{
-                          fontSize: fontSize,
+                          fontSize: fontSize - 1,
                           color: getColor("links"),
                           textDecoration: "none",
-                          marginBottom: 2,
+                          marginBottom: 1,
                           fontFamily: settings.customSectionUrlBold
                             ? boldFont
                             : baseFont,

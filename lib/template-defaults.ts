@@ -8,12 +8,12 @@ import { SECTIONS } from "./constants";
 
 const baseDefaults = {
   fontSize: 8.5,
-  lineHeight: 1.2,
-  marginHorizontal: 15,
-  marginVertical: 15,
-  sectionMargin: 8,
+  lineHeight: 1.15,
+  marginHorizontal: 12,
+  marginVertical: 10,
+  sectionMargin: 6,
   
-  bulletMargin: 2,
+  bulletMargin: 1,
   useBullets: true,
   themeColorTarget: ["headings", "links", "icons", "decorations"],
   
@@ -35,19 +35,19 @@ const baseDefaults = {
 };
 
 export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
-  // Classic Template - Traditional serif with structured layout
+  // Classic Template - Traditional serif with structured layout, optimized for content density
   classic: {
     ...baseDefaults,
     fontFamily: "Times-Roman",
     columnCount: 1,
     headerPosition: "top",
     leftColumnWidth: 30,
-    headerBottomMargin: 2,
+    headerBottomMargin: 4,
     sectionOrder: [
       "summary",
+      "work",
       "education",
       "skills",
-      "work",
       "projects",
       "certificates",
       "publications",
@@ -58,7 +58,7 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
       "custom",
     ],
     
-    // Section Headings - Solid underline, uppercase
+    // Section Headings - Solid underline, uppercase, compact
     sectionHeadingStyle: 3,
     sectionHeadingAlign: "left",
     sectionHeadingBold: true,
@@ -66,7 +66,7 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
     sectionHeadingSize: "M",
     sectionHeadingIcons: "none",
     
-    // Entry Layout - Traditional style
+    // Entry Layout - Traditional style, compact
     entryLayoutStyle: 1,
     entryColumnWidth: "auto",
     entryTitleSize: "M",
@@ -75,22 +75,22 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
     entryIndentBody: false,
     entryListStyle: "bullet",
     
-    // Header/Personal Details - Centered, formal
+    // Header/Personal Details - Centered, formal, compact
     personalDetailsAlign: "center",
     personalDetailsArrangement: 1,
     personalDetailsContactStyle: "icon",
     personalDetailsIconStyle: 1,
     nameSize: "M",
 
-    nameFontSize: 28,
-    nameLineHeight: 0.8,
+    nameFontSize: 22,
+    nameLineHeight: 1,
     nameBold: true,
     nameFont: "body",
-    titleFontSize: 14,
-    titleLineHeight: 0.8,
+    titleFontSize: 11,
+    titleLineHeight: 1,
     titleBold: false,
     titleItalic: true,
-    contactFontSize: 10,
+    contactFontSize: 9,
     contactBold: false,
     contactItalic: false,
     contactSeparator: "pipe",

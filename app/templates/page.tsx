@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ export default function TemplatesPage() {
         "A timeless design with structured sections and serif typography. Excellent for academic and traditional industries.",
       category: "Professional",
       gradient: "bg-linear-to-br from-amber-50 to-orange-50",
+      image: "/images/classic_resume.jpg",
       features: [
         "Structured Layout",
         "Times New Roman",
@@ -196,34 +198,53 @@ export default function TemplatesPage() {
                     : "hover:border-primary/50"
                 }`}
               >
-                {/* Visual Preview Stub */}
                 <div
-                  className={`h-56 ${template.gradient} border-b relative p-6 flex flex-col items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-500`}
+                  className={`h-56 border-b relative overflow-hidden rounded-t-xl ${
+                    template.image ? "bg-muted/5" : template.gradient
+                  } group-hover:scale-105 transition-transform duration-500`}
                 >
-                  {/* Badge */}
+                  {template.image ? (
+                    <div className="relative h-full flex items-center justify-center">
+                      <div className="relative h-full w-full max-w-[280px] p-4">
+                        <Image
+                          src={template.image}
+                          alt={`${template.name} preview`}
+                          width={300}
+                          height={380}
+                          className="object-contain"
+                          quality={80}
+                          priority={false}
+                          sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 300px"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative p-6 flex flex-col items-center justify-center gap-2 h-full">
+                      <div className="h-40 w-28 bg-white shadow-xl rounded border flex flex-col p-3 gap-2 group-hover:-translate-y-1 transition-transform">
+                        <div className="h-2.5 w-12 bg-gray-200 rounded" />
+                        <div className="space-y-1.5 pt-1">
+                          <div className="h-1.5 w-full bg-gray-100 rounded" />
+                          <div className="h-1.5 w-full bg-gray-100 rounded" />
+                          <div className="h-1.5 w-16 bg-gray-100 rounded" />
+                        </div>
+                        <div className="space-y-1.5 pt-2">
+                          <div className="flex gap-1">
+                            <div className="h-12 w-1 bg-primary/10 rounded" />
+                            <div className="flex-1 space-y-1">
+                              <div className="h-1.5 w-full bg-gray-50 rounded" />
+                              <div className="h-1.5 w-full bg-gray-50 rounded" />
+                              <div className="h-1.5 w-3/4 bg-gray-50 rounded" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-lg bg-white/50 dark:bg-black/30 backdrop-blur text-xs font-semibold text-foreground/80 shadow-xs">
                     {template.category}
                     <br />
                     {template.release}
-                  </div>
-
-                  <div className="h-40 w-28 bg-white shadow-xl rounded border flex flex-col p-3 gap-2 group-hover:-translate-y-1 transition-transform">
-                    <div className="h-2.5 w-12 bg-gray-200 rounded" />
-                    <div className="space-y-1.5 pt-1">
-                      <div className="h-1.5 w-full bg-gray-100 rounded" />
-                      <div className="h-1.5 w-full bg-gray-100 rounded" />
-                      <div className="h-1.5 w-16 bg-gray-100 rounded" />
-                    </div>
-                    <div className="space-y-1.5 pt-2">
-                      <div className="flex gap-1">
-                        <div className="h-12 w-1 bg-primary/10 rounded" />
-                        <div className="flex-1 space-y-1">
-                          <div className="h-1.5 w-full bg-gray-50 rounded" />
-                          <div className="h-1.5 w-full bg-gray-50 rounded" />
-                          <div className="h-1.5 w-3/4 bg-gray-50 rounded" />
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 

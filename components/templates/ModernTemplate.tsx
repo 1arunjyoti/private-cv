@@ -4,7 +4,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
   Link,
   Image,
@@ -12,83 +11,9 @@ import {
 import type { Resume, LayoutSettings } from "@/db";
 import { PDFRichText } from "./PDFRichText";
 import { getTemplateDefaults } from "@/lib/template-defaults";
-
-// Register fonts
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: "semibold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-italic.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Roboto",
-  fonts: [
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-italic-webfont.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Lato",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/lato/v17/S6uyw4BMUTPHjx4wXg.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/lato/v17/S6u9w4BMUTPHh6UVSwiPHA.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/lato/v17/S6u8w4BMUTPHjxsAXC-v.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
-
-Font.register({
-  family: "Montserrat",
-  fonts: [
-    {
-      src: "https://fonts.gstatic.com/s/montserrat/v15/JTUSjIg1_i6t8kCHKm459Wlhyw.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/montserrat/v15/IQHow_FEYlDC4Gzy_m8fcoWmDoQ.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://fonts.gstatic.com/s/montserrat/v15/JTUQjIg1_i6t8kCHKm459WxRyS7m.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
+import { formatDate, PROFILE_IMAGE_SIZES } from "@/lib/template-utils";
+import "@/lib/fonts";
+import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 interface ModernTemplateProps {
   resume: Resume;
@@ -147,57 +72,7 @@ const createStyles = (
     section: {
       marginBottom: settings.sectionMargin,
     },
-    sectionTitleWrapper: {
-      marginBottom: 8,
-      flexDirection: "row",
-      justifyContent:
-        settings.sectionHeadingAlign === "center"
-          ? "center"
-          : settings.sectionHeadingAlign === "right"
-            ? "flex-end"
-            : "flex-start",
-      // Styles
-      ...(settings.sectionHeadingStyle === 1 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 3 && {
-        borderBottomWidth: 2, // simulated double
-        borderBottomColor: themeColor,
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 4 && {
-        backgroundColor: "#f3f4f6", // Light gray default
-        paddingVertical: 2,
-        paddingHorizontal: 8,
-        borderRadius: 4,
-      }),
-      ...(settings.sectionHeadingStyle === 5 && {
-        borderLeftWidth: 4,
-        borderLeftColor: themeColor,
-        paddingLeft: 8,
-      }),
-      ...(settings.sectionHeadingStyle === 6 && {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderTopColor: themeColor,
-        borderBottomColor: themeColor,
-        paddingVertical: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 7 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        borderStyle: "dashed",
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 8 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        borderStyle: "dotted",
-        paddingBottom: 2,
-      }),
-    },
+    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, themeColor),
     sectionTitle: {
       fontSize:
         settings.sectionHeadingSize === "L"
@@ -300,20 +175,10 @@ export function ModernTemplate({ resume }: ModernTemplateProps) {
   const styles = createStyles(themeColor, settings);
   const fontFamily = settings.fontFamily || "Open Sans";
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Present";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const renderProfileImage = () => {
     if (!basics.image || !settings.showProfileImage) return null;
 
-    const sizeMap = { S: 50, M: 80, L: 120 };
-    const size = sizeMap[settings.profileImageSize || "M"];
+    const size = PROFILE_IMAGE_SIZES[settings.profileImageSize || "M"];
 
     return (
       // eslint-disable-next-line jsx-a11y/alt-text

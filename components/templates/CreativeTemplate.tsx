@@ -4,7 +4,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
   Link,
   Image,
@@ -12,25 +11,9 @@ import {
 import type { Resume, LayoutSettings } from "@/db";
 import { PDFRichText } from "./PDFRichText";
 import { getTemplateDefaults } from "@/lib/template-defaults";
-
-// Register fonts
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: "normal",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
-      fontWeight: "bold",
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-italic.ttf",
-      fontStyle: "italic",
-    },
-  ],
-});
+import { formatDate, PROFILE_IMAGE_SIZES } from "@/lib/template-utils";
+import "@/lib/fonts";
+import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 interface CreativeTemplateProps {
   resume: Resume;
@@ -193,56 +176,7 @@ const createStyles = (
     section: {
       marginBottom: settings.sectionMargin,
     },
-    sectionTitleWrapper: {
-      flexDirection: "row",
-      marginBottom: 8,
-      justifyContent:
-        settings.sectionHeadingAlign === "center"
-          ? "center"
-          : settings.sectionHeadingAlign === "right"
-            ? "flex-end"
-            : "flex-start",
-      ...(settings.sectionHeadingStyle === 1 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 3 && {
-        borderBottomWidth: 2,
-        borderBottomColor: themeColor,
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 4 && {
-        backgroundColor: "#f0f9ff", // Light blue tint
-        paddingVertical: 2,
-        paddingHorizontal: 8,
-        borderRadius: 4,
-      }),
-      ...(settings.sectionHeadingStyle === 5 && {
-        borderLeftWidth: 4,
-        borderLeftColor: themeColor,
-        paddingLeft: 8,
-      }),
-      ...(settings.sectionHeadingStyle === 6 && {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderTopColor: themeColor,
-        borderBottomColor: themeColor,
-        paddingVertical: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 7 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        borderStyle: "dashed",
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 8 && {
-        borderBottomWidth: 1,
-        borderBottomColor: themeColor,
-        borderStyle: "dotted",
-        paddingBottom: 2,
-      }),
-    },
+    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, themeColor),
     sectionTitle: {
       fontSize:
         settings.sectionHeadingSize === "L"
@@ -319,15 +253,6 @@ export function CreativeTemplate({ resume }: CreativeTemplateProps) {
 
   const styles = createStyles(themeColor, settings);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Present";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const getSkillLevel = (level: string): number => {
     const levels: Record<string, number> = {
       beginner: 25,
@@ -341,8 +266,7 @@ export function CreativeTemplate({ resume }: CreativeTemplateProps) {
   const renderProfileImage = () => {
     if (!basics.image || !settings.showProfileImage) return null;
 
-    const sizeMap = { S: 50, M: 80, L: 120 };
-    const size = sizeMap[settings.profileImageSize || "M"];
+    const size = PROFILE_IMAGE_SIZES[settings.profileImageSize || "M"];
 
     return (
       // eslint-disable-next-line jsx-a11y/alt-text

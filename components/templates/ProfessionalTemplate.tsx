@@ -10,9 +10,9 @@ import {
 import type { Resume, LayoutSettings } from "@/db";
 import { PDFRichText } from "./PDFRichText";
 import { getTemplateDefaults } from "@/lib/template-defaults";
-
-// Using standard serif font (Times-Roman) which doesn't need external registration
-// or we can register a specific one if needed. Reference: https://react-pdf.org/fonts
+import { formatDate, PROFILE_IMAGE_SIZES } from "@/lib/template-utils";
+import "@/lib/fonts";
+import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 const createStyles = (
   themeColor: string,
@@ -59,56 +59,7 @@ const createStyles = (
     section: {
       marginBottom: settings.sectionMargin,
     },
-    sectionTitleWrapper: {
-      flexDirection: "row",
-      marginBottom: 8,
-      justifyContent:
-        settings.sectionHeadingAlign === "center"
-          ? "center"
-          : settings.sectionHeadingAlign === "right"
-            ? "flex-end"
-            : "flex-start",
-      ...(settings.sectionHeadingStyle === 1 && {
-        borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 3 && {
-        borderBottomWidth: 1,
-        borderBottomColor: "#000000",
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 4 && {
-        backgroundColor: "#f3f4f6",
-        paddingVertical: 2,
-        paddingHorizontal: 8,
-        borderRadius: 4,
-      }),
-      ...(settings.sectionHeadingStyle === 5 && {
-        borderLeftWidth: 4,
-        borderLeftColor: "#ccc",
-        paddingLeft: 8,
-      }),
-      ...(settings.sectionHeadingStyle === 6 && {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderTopColor: "#ccc",
-        borderBottomColor: "#ccc",
-        paddingVertical: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 7 && {
-        borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
-        borderStyle: "dashed",
-        paddingBottom: 2,
-      }),
-      ...(settings.sectionHeadingStyle === 8 && {
-        borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
-        borderStyle: "dotted",
-        paddingBottom: 2,
-      }),
-    },
+    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, themeColor),
     sectionTitle: {
       fontSize:
         settings.sectionHeadingSize === "L"
@@ -180,20 +131,10 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
 
   const styles = createStyles("#000", settings);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "Present";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const renderProfileImage = () => {
     if (!basics.image || !settings.showProfileImage) return null;
 
-    const sizeMap = { S: 50, M: 80, L: 120 };
-    const size = sizeMap[settings.profileImageSize || "M"];
+    const size = PROFILE_IMAGE_SIZES[settings.profileImageSize || "M"];
 
     return (
       // eslint-disable-next-line jsx-a11y/alt-text
