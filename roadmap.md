@@ -20,3 +20,4 @@
    - Custom section ✅
 
 2. Profile Image does not apply to the templates
+3. Complete the Design of the remaining templates

@@ -181,6 +181,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                 e.stopPropagation();
                 removeProject(proj.id);
               }}
+              aria-label="Remove project"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -258,6 +259,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       type="button"
                       onClick={() => removeKeyword(proj.id, kIndex)}
                       className="hover:text-destructive"
+                      aria-label={`Remove keyword ${keyword}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -312,6 +314,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                         updateHighlight(proj.id, hIndex, e.target.value)
                       }
                       className="flex-1"
+                      aria-label={`Highlight ${hIndex + 1}`}
                     />
                     <Button
                       type="button"
@@ -319,6 +322,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       size="icon"
                       className="text-destructive hover:text-destructive shrink-0"
                       onClick={() => removeHighlight(proj.id, hIndex)}
+                      aria-label="Remove highlight"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

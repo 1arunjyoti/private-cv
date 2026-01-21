@@ -102,6 +102,7 @@ export function LanguagesForm({ data, onChange }: LanguagesFormProps) {
                 size="icon"
                 className="text-destructive hover:text-destructive shrink-0 mb-0.5"
                 onClick={() => removeLanguage(lang.id)}
+                aria-label="Remove language"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

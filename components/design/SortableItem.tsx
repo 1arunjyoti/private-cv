@@ -39,6 +39,8 @@ export function SortableItem({
         <div
           {...attributes}
           {...listeners}
+          role="button"
+          aria-label="Drag to reorder"
           className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-muted rounded-md transition-colors"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -52,6 +54,7 @@ export function SortableItem({
           className="h-7 w-7"
           disabled={isFirst}
           onClick={onMoveUp}
+          aria-label="Move section up"
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </Button>
@@ -61,6 +64,7 @@ export function SortableItem({
           className="h-7 w-7"
           disabled={isLast}
           onClick={onMoveDown}
+          aria-label="Move section down"
         >
           <ArrowDown className="h-3.5 w-3.5" />
         </Button>

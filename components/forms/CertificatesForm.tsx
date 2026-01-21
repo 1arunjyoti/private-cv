@@ -93,6 +93,7 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
                 e.stopPropagation();
                 removeCertificate(cert.id);
               }}
+              aria-label="Remove certificate"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

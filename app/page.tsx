@@ -356,7 +356,10 @@ function FeatureCard({
 }) {
   return (
     <div className="group flex flex-col items-center text-center p-8 bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-      <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+      <div
+        className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors"
+        aria-hidden="true"
+      >
         {icon}
       </div>
       <h3 className="text-xl font-bold mb-3">{title}</h3>

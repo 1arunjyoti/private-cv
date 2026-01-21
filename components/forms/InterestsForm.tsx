@@ -120,6 +120,7 @@ export function InterestsForm({ data, onChange }: InterestsFormProps) {
                 e.stopPropagation();
                 removeInterest(item.id);
               }}
+              aria-label="Remove interest"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -148,6 +149,7 @@ export function InterestsForm({ data, onChange }: InterestsFormProps) {
                       type="button"
                       onClick={() => removeKeyword(item.id, kIndex)}
                       className="hover:text-destructive"
+                      aria-label={`Remove keyword ${keyword}`}
                     >
                       <X className="h-3 w-3" />
                     </button>

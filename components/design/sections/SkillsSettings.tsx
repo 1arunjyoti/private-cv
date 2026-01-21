@@ -36,6 +36,7 @@ export function SkillsSettings({
                 { value: "blank", label: "Blank" },
                 { value: "bullet", label: "•" },
                 { value: "dash", label: "-" },
+                { value: "number", label: "Number" },
                 { value: "inline", label: "Inline" },
               ] as const
             ).map((style) => (

@@ -125,6 +125,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
                   }
                   placeholder="Skill Category (e.g. Languages)"
                   className="h-8"
+                  aria-label="Skill Category"
                 />
               </div>
             }
@@ -139,6 +140,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
                   e.stopPropagation();
                   removeSkill(skill.id);
                 }}
+                aria-label="Remove skill"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -169,6 +171,7 @@ export function SkillsForm({ data, onChange }: SkillsFormProps) {
                         type="button"
                         onClick={() => removeKeyword(skill.id, kIndex)}
                         className="hover:text-destructive"
+                        aria-label={`Remove keyword ${keyword}`}
                       >
                         <X className="h-3 w-3" />
                       </button>

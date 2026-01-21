@@ -165,6 +165,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                 e.stopPropagation();
                 removeEducation(edu.id);
               }}
+              aria-label="Remove education"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -311,6 +312,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                         updateCourse(edu.id, cIndex, e.target.value)
                       }
                       className="flex-1"
+                      aria-label={`Course ${cIndex + 1}`}
                     />
                     <Button
                       type="button"
@@ -318,6 +320,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                       size="icon"
                       className="text-destructive hover:text-destructive shrink-0"
                       onClick={() => removeCourse(edu.id, cIndex)}
+                      aria-label="Remove course"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

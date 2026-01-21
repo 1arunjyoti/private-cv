@@ -141,6 +141,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                 e.stopPropagation();
                 removeExperience(exp.id);
               }}
+              aria-label="Remove experience"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -239,6 +240,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                         updateHighlight(exp.id, hIndex, e.target.value)
                       }
                       className="flex-1"
+                      aria-label={`Achievement ${hIndex + 1}`}
                     />
                     <Button
                       type="button"
@@ -246,6 +248,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       size="icon"
                       className="text-destructive hover:text-destructive shrink-0"
                       onClick={() => removeHighlight(exp.id, hIndex)}
+                      aria-label="Remove achievement"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

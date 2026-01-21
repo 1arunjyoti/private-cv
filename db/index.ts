@@ -192,7 +192,7 @@ export interface LayoutSettings {
   // Skills
   skillsDisplayStyle: 'grid' | 'level' | 'compact' | 'bubble';
   skillsLevelStyle: 0 | 1 | 2 | 3 | 4;
-  skillsListStyle: 'bullet' | 'dash' | 'inline' | 'blank';
+  skillsListStyle: 'bullet' | 'dash' | 'inline' | 'blank' | 'number';
   // Languages
   // Languages
   languagesListStyle: 'bullet' | 'number' | 'none';

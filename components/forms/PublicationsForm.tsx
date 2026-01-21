@@ -83,6 +83,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                 e.stopPropagation();
                 removePublication(pub.id);
               }}
+              aria-label="Remove publication"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

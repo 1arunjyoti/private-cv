@@ -79,6 +79,7 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
                 e.stopPropagation();
                 removeAward(item.id);
               }}
+              aria-label="Remove award"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

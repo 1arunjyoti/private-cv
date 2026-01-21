@@ -83,6 +83,7 @@ export function ReferencesForm({ data, onChange }: ReferencesFormProps) {
                 e.stopPropagation();
                 removeReference(item.id);
               }}
+              aria-label="Remove reference"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

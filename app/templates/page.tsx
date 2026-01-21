@@ -12,25 +12,21 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
-type Category =
-  | "All"
-  | "ATS-Friendly"
-  | "Creative"
-  | "Modern"
-  | "Professional"
-  | "Elegant";
+const CATEGORIES = [
+  "All",
+  "Simple",
+  "Creative",
+  "Modern",
+  "Professional",
+  "Elegant",
+] as const;
+
+type Category = (typeof CATEGORIES)[number];
 
 export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
 
-  const categories: Category[] = [
-    "All",
-    "ATS-Friendly",
-    "Creative",
-    "Modern",
-    "Professional",
-    "Elegant",
-  ];
+  const categories = CATEGORIES;
 
   const templates = [
     {
@@ -38,7 +34,7 @@ export default function TemplatesPage() {
       name: "Classic",
       description:
         "A timeless design with structured sections and serif typography. Excellent for academic and traditional industries.",
-      category: "Professional",
+      category: ["Simple", "Professional"],
       gradient: "bg-linear-to-br from-amber-50 to-orange-50",
       image: "/images/classic_resume.jpg",
       features: [
@@ -49,13 +45,13 @@ export default function TemplatesPage() {
       ],
     },
     {
-      release: "Work in Progress",
       id: "professional",
       name: "Professional",
       description:
         "Modern two-column layout, high density. Ideal for experienced professionals needing to fit extensive history.",
-      category: "Professional",
+      category: ["Simple", "Professional"],
       gradient: "bg-linear-to-br from-slate-50 to-gray-100",
+      image: "/images/professional_template.jpg",
       features: [
         "Two Column Layout",
         "High Content Density",
@@ -70,7 +66,7 @@ export default function TemplatesPage() {
       name: "ATS Scanner",
       description:
         "A clean, single-column layout optimized for Applicant Tracking Systems. Essential for online applications.",
-      category: "ATS-Friendly",
+      category: "Simple",
       gradient: "bg-linear-to-br from-gray-50 to-gray-100",
       features: [
         "Single Column Layout",
@@ -131,7 +127,12 @@ export default function TemplatesPage() {
   const filteredTemplates =
     selectedCategory === "All"
       ? templates
-      : templates.filter((t) => t.category === selectedCategory);
+      : templates.filter((t) => {
+          if (Array.isArray(t.category)) {
+            return t.category.includes(selectedCategory);
+          }
+          return t.category === selectedCategory;
+        });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -242,10 +243,23 @@ export default function TemplatesPage() {
                     </div>
                   )}
 
-                  <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-lg bg-white/50 dark:bg-black/30 backdrop-blur text-xs font-semibold text-foreground/80 shadow-xs">
-                    {template.category}
-                    <br />
-                    {template.release}
+                  <div className="absolute top-4 right-4 px-2.5 py-0.5 rounded-lg bg-white/50 dark:bg-black/30 backdrop-blur text-xs font-semibold text-foreground/80 shadow-xs text-right">
+                    {Array.isArray(template.category)
+                      ? template.category.map((cat, i) => (
+                          <span key={cat}>
+                            {cat}
+                            {i < template.category.length - 1 && <br />}
+                          </span>
+                        ))
+                      : template.category}
+                    {template.release && (
+                      <>
+                        <br />
+                        <span className="opacity-75 font-normal text-[10px] uppercase tracking-wide">
+                          {template.release}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 

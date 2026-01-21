@@ -119,7 +119,7 @@ export function getSectionHeadingWrapperStyles(
 /**
  * Generate common entry styles (for job/education entries)
  */
-export function getEntryStyles(fontSize: number, bulletMargin: number) {
+export function getEntryStyles(fontSize: number) {
   return {
     entryBlock: {
       marginBottom: 6,
