@@ -1,5 +1,7 @@
 # PrivateCV
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Visit_Site-2ea44f?style=for-the-badge&logo=vercel)](https://privatecv.vercel.app)
+
 A professional, open-source resume builder that runs entirely in your browser. Built with privacy as the core feature—your data never leaves your device.
 
 ![License](https://img.shields.io/badge/license-GPL3.0-blue.svg)

@@ -19,6 +19,7 @@ const CATEGORIES = [
   "Modern",
   "Professional",
   "Elegant",
+  "Sophisticated",
 ] as const;
 
 type Category = (typeof CATEGORIES)[number];
@@ -61,6 +62,52 @@ export default function TemplatesPage() {
       disabled: false,
     },
     {
+      id: "classic-slate",
+      name: "Classic Slate",
+      description:
+        "Elegant two-column layout with sophisticated bordered sections and clean typography. Perfect for professionals seeking a modern yet professional appearance.",
+      category: ["Sophisticated", "Professional"],
+      gradient: "bg-linear-to-br from-slate-100 to-slate-200",
+      image: "/images/classicSlate_template.jpg",
+      features: [
+        "Two Column Layout",
+        "Bordered Sections",
+        "Clean Typography",
+        "Professional Look",
+      ],
+    },
+    {
+      id: "creative",
+      name: "Creative Sidebar",
+      description:
+        "A modern two-column design with a colored sidebar. Perfect for showing off skills and personality.",
+      category: "Creative",
+      gradient: "bg-linear-to-br from-blue-50 to-indigo-50",
+      image: "/images/creative_template.jpg",
+      features: [
+        "Two Column Layout",
+        "Skill Bars",
+        "Colored Sidebar",
+        "Space Efficient",
+      ],
+    },
+    {
+      release: "Work in Progress",
+      id: "glow",
+      name: "Glow",
+      description:
+        "High contrast dark mode style with vibrant accents. Perfect for creative professionals and tech-savvy industries.",
+      category: ["Modern", "Creative"],
+      gradient: "bg-linear-to-br from-slate-900 to-slate-800",
+      image: "/images/glow_resume.jpg",
+      features: [
+        "Dark Mode",
+        "High Contrast",
+        "Vibrant Accents",
+        "Modern Look",
+      ],
+    },
+    {
       release: "coming soon",
       id: "ats",
       name: "ATS Scanner",
@@ -75,21 +122,7 @@ export default function TemplatesPage() {
         "Keyword Optimized",
       ],
     },
-    {
-      release: "coming soon",
-      id: "creative",
-      name: "Creative Sidebar",
-      description:
-        "A modern two-column design with a colored sidebar. Perfect for showing off skills and personality.",
-      category: "Creative",
-      gradient: "bg-linear-to-br from-blue-50 to-indigo-50",
-      features: [
-        "Two Column Layout",
-        "Skill Bars",
-        "Colored Sidebar",
-        "Space Efficient",
-      ],
-    },
+
     {
       release: "coming soon",
       id: "modern",
@@ -210,7 +243,7 @@ export default function TemplatesPage() {
                 >
                   {template.image ? (
                     <div className="relative h-full flex items-center justify-center">
-                      <div className="relative h-full w-full max-w-[280px] p-4">
+                      <div className="relative h-full w-full max-w-70 p-4">
                         <Image
                           src={template.image}
                           alt={`${template.name} preview`}

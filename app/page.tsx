@@ -24,7 +24,7 @@ import {
 export default function Home() {
   const navLinks = [
     { href: "#features", label: "Features" },
-    { href: "#templates", label: "Templates" },
+    { href: "/templates", label: "Templates" },
     { href: "/how-to-use", label: "How to Use" },
   ];
 
@@ -81,7 +81,7 @@ export default function Home() {
                 </SheetTrigger>
                 <SheetContent
                   side="right"
-                  className="w-[300px] sm:w-[400px] pr-6 border-l flex flex-col"
+                  className="w-75 sm:w-100 pr-6 border-l flex flex-col"
                 >
                   <SheetHeader className="text-left px-2 mb-4">
                     <SheetTitle className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export default function Home() {
                   Without sharing your data
                 </span>
               </h1>
-              <p className="mx-auto max-w-[700px] text-muted-foreground text-lg md:text-xl leading-relaxed">
+              <p className="mx-auto max-w-175 text-muted-foreground text-lg md:text-xl leading-relaxed">
                 A privacy-first resume builder that runs entirely in your
                 browser. No servers, no data storing, no tracking, just you and
                 your data. Offline capable.

@@ -1,4 +1,4 @@
-export type TemplateType = "ats" | "creative" | "modern" | "professional" | "elegant" | "classic";
+export type TemplateType = "ats" | "creative" | "modern" | "professional" | "elegant" | "classic" | "glow" | "classic-slate";
 
 export const TEMPLATES: { id: TemplateType; name: string; description: string }[] = [
   {
@@ -7,20 +7,32 @@ export const TEMPLATES: { id: TemplateType; name: string; description: string }[
     description: "Timeless, structured, serif layout",
   },
   {
+    id: "professional",
+    name: "Professional",
+    description: "Modern two-column layout, high density",
+  },
+  {
+    id: "classic-slate",
+    name: "Classic Slate",
+    description: "Elegant two-column layout with bordered sections",
+  },
+  { id: "creative", 
+    name: "Creative", 
+    description: "Two-column with sidebar" },
+  {
+    id: "glow",
+    name: "Glow",
+    description: "High contrast dark mode style",
+  },
+  {
     id: "ats",
     name: "ATS Scanner",
     description: "Clean, single-column, ATS-friendly",
   },
-  { id: "creative", name: "Creative", description: "Two-column with sidebar" },
   {
     id: "modern",
     name: "Modern",
     description: "Minimalist, typography-focused",
-  },
-  {
-    id: "professional",
-    name: "Professional",
-    description: "Modern two-column layout, high density",
   },
   {
     id: "elegant",

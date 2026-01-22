@@ -454,7 +454,7 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
     
     // Skills - Grid with level bars
     skillsDisplayStyle: "grid",
-    skillsLevelStyle: 3,
+    skillsLevelStyle: 0,
     skillsListStyle: "blank",
     
     // Languages
@@ -562,6 +562,68 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
     customSectionDateItalic: false,
     customSectionUrlBold: false,
     customSectionUrlItalic: false,
+  },
+
+  "classic-slate": {
+    ...baseDefaults,
+    fontFamily: "Helvetica",
+    columnCount: 2,
+    headerPosition: "top",
+    leftColumnWidth: 65,
+    headerBottomMargin: 10,
+    sectionOrder: [
+      "summary",
+      "work",
+      "skills",
+      "education",
+      "projects",
+      "certificates",
+      "publications",
+      "awards",
+      "languages",
+      "interests",
+      "references",
+      "custom",
+    ],
+
+    // Section Headings - Center, Lines Above/Below
+    sectionHeadingStyle: 6,
+    sectionHeadingAlign: "center",
+    sectionHeadingBold: true,
+    sectionHeadingCapitalization: "capitalize",
+    sectionHeadingSize: "M",
+    sectionHeadingIcons: "none",
+
+    // Entry Layout
+    entryLayoutStyle: 1,
+    entryColumnWidth: "auto",
+    entryTitleSize: "M",
+    entrySubtitleStyle: "normal",
+    entrySubtitlePlacement: "sameLine",
+    entryIndentBody: false,
+    entryListStyle: "bullet",
+
+    // Header/Personal Details
+    personalDetailsAlign: "center",
+    personalDetailsArrangement: 1,
+    personalDetailsContactStyle: "bullet",
+    personalDetailsIconStyle: 1,
+    nameSize: "L",
+
+    nameFontSize: 24,
+    nameLineHeight: 1.2,
+    nameBold: true,
+    nameFont: "body",
+    titleFontSize: 12,
+    titleLineHeight: 1.2,
+    titleBold: false,
+    titleItalic: false,
+    contactFontSize: 9,
+    contactBold: false,
+    contactItalic: false,
+    contactSeparator: "pipe",
+
+    showProfileImage: false,
   },
 
   // Modern Template - Minimalist, clean typography
@@ -1088,6 +1150,53 @@ export const TEMPLATE_DEFAULTS: Record<string, Partial<LayoutSettings>> = {
     customSectionUrlBold: false,
     customSectionUrlItalic: false,
   },
+  glow: {
+    ...baseDefaults,
+    fontFamily: "Roboto",
+    columnCount: 1,
+    headerPosition: "left",
+    leftColumnWidth: 30,
+    headerBottomMargin: 10,
+    sectionOrder: [
+      "summary",
+      "work",
+      "education",
+      "skills",
+      "projects",
+      "certificates",
+      "publications",
+      "awards",
+      "languages",
+      "interests",
+      "references",
+      "custom",
+    ],
+
+    // Section Headings - Uppercase, Bold, Large
+    sectionHeadingStyle: 8, // No underline, we use border-left
+    sectionHeadingAlign: "left",
+    sectionHeadingBold: true,
+    sectionHeadingCapitalization: "uppercase",
+    sectionHeadingSize: "L",
+    sectionHeadingIcons: "none",
+
+    // Header
+    nameFontSize: 28,
+    nameBold: true,
+    nameFont: "body",
+    titleFontSize: 12,
+    titleBold: false,
+    titleItalic: false,
+    contactFontSize: 9,
+    
+    // Entry
+    entryTitleSize: "M",
+    entrySubtitleStyle: "normal",
+    
+    // Skills
+    skillsDisplayStyle: "grid",
+    skillsListStyle: "bullet",
+  },
 };
 
 /**
@@ -1112,6 +1221,7 @@ export function getTemplateThemeColor(templateId: string = 'ats'): string {
     modern: '#64748b',       // Slate - minimalist
     professional: '#1e293b', // Dark slate - executive
     elegant: '#8b5cf6',      // Purple - sophisticated
+    glow: '#F4D03F',         // Gold - high contrast
   };
   
   return themeColors[templateId] || '#000000';

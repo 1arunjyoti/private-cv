@@ -20,11 +20,11 @@ import { ClassicLanguages } from "./classic/ClassicLanguages";
 import { ClassicInterests } from "./classic/ClassicInterests";
 import { ClassicCustom } from "./classic/ClassicCustom";
 
-interface ClassicTemplateProps {
+interface ClassicSlateTemplateProps {
   resume: Resume;
 }
 
-export function ClassicTemplate({ resume }: ClassicTemplateProps) {
+export function ClassicSlateTemplate({ resume }: ClassicSlateTemplateProps) {
   const {
     basics,
     work,
@@ -40,9 +40,9 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     custom,
   } = resume;
 
-  // Merge template defaults with resume settings to ensure all values are defined
+  // Merge template defaults with resume settings
   const templateDefaults = getTemplateDefaults(
-    resume.meta.templateId || "classic",
+    resume.meta.templateId || "classic-slate",
   );
   const settings = { ...templateDefaults, ...resume.meta.layoutSettings };
 
@@ -91,10 +91,14 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     header: {
       marginBottom: settings.headerBottomMargin,
       textAlign: headerAlign,
-      borderBottomWidth: settings.sectionHeadingStyle === 1 ? 2 : 0,
-      borderBottomColor: getColor("decorations"),
+      // Slate specific: Header usually has lines
+      borderBottomWidth: 2,
+      borderBottomColor: getColor("decorations", "#000000"),
       borderBottomStyle: "solid",
-      paddingBottom: 8,
+      borderTopWidth: 2,
+      borderTopColor: getColor("decorations", "#000000"),
+      borderTopStyle: "solid",
+      paddingVertical: 10,
       width: "100%",
     },
     name: {
@@ -111,8 +115,8 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
           : "normal",
       marginBottom: 4,
       lineHeight: settings.nameLineHeight,
-      textTransform: "uppercase",
-      letterSpacing: 1,
+      textTransform: "capitalize", // Slate usually Capitalize
+      letterSpacing: 0,
       color: getColor("name"),
     },
     label: {
@@ -158,7 +162,12 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     section: {
       marginBottom: sectionMargin,
     },
-    sectionTitleWrapper: getSectionHeadingWrapperStyles(settings, getColor),
+    // Slate specific section title wrapper override
+    sectionTitleWrapper: {
+      ...getSectionHeadingWrapperStyles(settings, getColor),
+      paddingVertical: 2,
+      marginBottom: 6,
+    },
     sectionTitle: {
       fontSize:
         settings.sectionHeadingSize === "L" ? fontSize + 4 : fontSize + 2,
@@ -167,6 +176,8 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
       textTransform: settings.sectionHeadingCapitalization,
       letterSpacing: 0.8,
       color: getColor("headings"),
+      // Remove underline derived from settings if style=2 (which implies lines above/below in our slate logic)
+      textDecoration: "none",
     },
 
     // Entries
@@ -247,7 +258,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
     baseFont,
     boldFont,
     italicFont,
-    lineHeight, // Passed although strict components define explicit props, but it's fine
+    lineHeight,
   };
 
   const SECTION_RENDERERS = {
@@ -298,24 +309,27 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
         ];
 
   // Logic to split sections if columnCount === 2
-  const LHS_SECTIONS = [
+  // For Classic Slate: Main (Left - 65%) vs Sidebar (Right - 35%)
+  // Intelligently distribute: Put content-heavy sections in main, compact sections in sidebar
+  const MAIN_SECTIONS = ["summary", "work", "projects", "references", "custom"];
+  const SIDEBAR_SECTIONS = [
     "skills",
-    "education",
     "languages",
     "interests",
-    "awards",
+    "education",
     "certificates",
-    "references",
+    "awards",
+    "publications",
   ];
-  const RHS_SECTIONS = ["summary", "work", "projects", "custom"];
 
-  const leftColumnContent = order.filter((id) => LHS_SECTIONS.includes(id));
-  const rightColumnContent = order.filter((id) => RHS_SECTIONS.includes(id));
-
-  // If a section is NOT in either list (e.g. unknown custom), put it in Right (Main).
-  const knownSections = [...LHS_SECTIONS, ...RHS_SECTIONS];
-  const orphans = order.filter((id) => !knownSections.includes(id));
-  rightColumnContent.push(...orphans);
+  const leftColumnContent = order.filter(
+    (id) =>
+      MAIN_SECTIONS.includes(id) ||
+      (!SIDEBAR_SECTIONS.includes(id) && !MAIN_SECTIONS.includes(id)),
+  );
+  const rightColumnContent = order.filter((id) =>
+    SIDEBAR_SECTIONS.includes(id),
+  );
 
   return (
     <Document>
@@ -334,7 +348,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
           </View>
         ) : (
           <View style={styles.columnsContainer}>
-            {/* Left Column (Sidebar) */}
+            {/* Left Column (Main) */}
             <View style={styles.leftColumn}>
               {leftColumnContent.map((sectionId) => {
                 const renderer =
@@ -347,7 +361,7 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
               })}
             </View>
 
-            {/* Right Column (Main) */}
+            {/* Right Column (Sidebar) */}
             <View style={styles.rightColumn}>
               {rightColumnContent.map((sectionId) => {
                 const renderer =
@@ -366,8 +380,8 @@ export function ClassicTemplate({ resume }: ClassicTemplateProps) {
   );
 }
 
-export async function generateClassicPDF(resume: Resume): Promise<Blob> {
-  const doc = <ClassicTemplate resume={resume} />;
+export async function generateClassicSlatePDF(resume: Resume): Promise<Blob> {
+  const doc = <ClassicSlateTemplate resume={resume} />;
   const blob = await pdf(doc).toBlob();
   return blob;
 }

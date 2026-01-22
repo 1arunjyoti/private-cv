@@ -43,6 +43,17 @@ const PDFImageViewer = dynamic(
 );
 
 // Dynamically import PDF generation to avoid SSR issues
+const templateRegistry = {
+  classic: () => import("@/components/templates/ClassicTemplate").then(m => m.generateClassicPDF),
+  professional: () => import("@/components/templates/ProfessionalTemplate").then(m => m.generateProfessionalPDF),
+  "classic-slate": () => import("@/components/templates/ClassicSlateTemplate").then(m => m.generateClassicSlatePDF),
+  creative: () => import("@/components/templates/CreativeTemplate").then(m => m.generateCreativePDF),
+  glow: () => import("@/components/templates/GlowTemplate").then(m => m.generateGlowPDF),
+  ats: () => import("@/components/templates/ATSTemplate").then(m => m.generatePDF),
+  modern: () => import("@/components/templates/ModernTemplate").then(m => m.generateModernPDF),
+  elegant: () => import("@/components/templates/ElegantTemplate").then(m => m.generateElegantPDF),
+} as const;
+
 const generatePDFAsync = async (
   resume: Resume,
   template: TemplateType,
@@ -63,33 +74,9 @@ const generatePDFAsync = async (
   }
 
   try {
-    if (template === "creative") {
-      const { generateCreativePDF } =
-        await import("@/components/templates/CreativeTemplate");
-      return await generateCreativePDF(processedResume);
-    }
-    if (template === "modern") {
-      const { generateModernPDF } =
-        await import("@/components/templates/ModernTemplate");
-      return await generateModernPDF(processedResume);
-    }
-    if (template === "professional") {
-      const { generateProfessionalPDF } =
-        await import("@/components/templates/ProfessionalTemplate");
-      return await generateProfessionalPDF(processedResume);
-    }
-    if (template === "elegant") {
-      const { generateElegantPDF } =
-        await import("@/components/templates/ElegantTemplate");
-      return await generateElegantPDF(processedResume);
-    }
-    if (template === "classic") {
-      const { generateClassicPDF } =
-        await import("@/components/templates/ClassicTemplate");
-      return await generateClassicPDF(processedResume);
-    }
-    const { generatePDF } = await import("@/components/templates/ATSTemplate");
-    return await generatePDF(processedResume);
+    const loader = templateRegistry[template as keyof typeof templateRegistry] || templateRegistry.ats;
+    const generateFn = await loader();
+    return await generateFn(processedResume);
   } finally {
     if (imageUrl) {
       URL.revokeObjectURL(imageUrl);
