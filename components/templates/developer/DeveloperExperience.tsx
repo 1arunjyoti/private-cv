@@ -46,23 +46,23 @@ export const DeveloperExperience = ({
             <Text style={styles.bracket}>{"{"}</Text>
             <View style={{ marginLeft: 15 }}>
               <Text style={styles.comment}>
-                // {job.startDate} - {job.endDate || "Present"}
+                {job.startDate} - {job.endDate || "Present"}
               </Text>
               <Text style={styles.comment}>
-                // {job.name}, {job.location}
+                {job.name}, {job.location}
               </Text>
 
               <View style={{ marginTop: 2 }}>
                 <Text style={styles.property}>role</Text>
                 <Text style={styles.keyword}>: </Text>
-                <Text style={styles.string}>"{job.position}"</Text>
+                <Text style={styles.string}>&quot;{job.position}&quot;</Text>
                 <Text style={styles.bracket}>,</Text>
               </View>
 
               <View style={{ marginTop: 2 }}>
                 <Text style={styles.property}>description</Text>
                 <Text style={styles.keyword}>: </Text>
-                <Text style={styles.string}>"{job.summary}"</Text>
+                <Text style={styles.string}>&quot;{job.summary}&quot;</Text>
                 <Text style={styles.bracket}>,</Text>
               </View>
 
@@ -72,7 +72,7 @@ export const DeveloperExperience = ({
                 <Text style={styles.bracket}>[</Text>
                 {job.highlights.map((h, i) => (
                   <Text key={i} style={{ marginLeft: 10 }}>
-                    <Text style={styles.string}>"{h}"</Text>
+                    <Text style={styles.string}>&quot;{h}&quot;</Text>
                     {i < job.highlights.length - 1 && (
                       <Text style={styles.bracket}>,</Text>
                     )}

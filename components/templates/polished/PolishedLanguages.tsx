@@ -102,7 +102,7 @@ export function PolishedLanguages({
                 {dots.map((d) => (
                   <View
                     key={d}
-                    style={[styles.dot, d <= level && styles.dotActive]}
+                    style={[styles.dot, d <= level ? styles.dotActive : {}]}
                   />
                 ))}
               </View>

@@ -129,9 +129,7 @@ export function PolishedTemplate({ resume }: PolishedTemplateProps) {
     education: () => (
       <PolishedEducation education={education} {...commonProps} />
     ),
-    skills: () => (
-      <PolishedSkills skills={skills} {...commonProps} layout="list" />
-    ), // Sidebar usually
+    skills: () => <PolishedSkills skills={skills} {...commonProps} />, // Sidebar usually
     projects: () => <ClassicProjects projects={projects} {...commonProps} />, // Reuse for now
     certificates: () => (
       <ClassicCertificates certificates={certificates} {...commonProps} />
@@ -202,7 +200,7 @@ export function PolishedTemplate({ resume }: PolishedTemplateProps) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.mainColumn}>
-          <PolishedHeader basics={basics} {...commonProps} />
+          <PolishedHeader {...commonProps} />
           {mainContentIds.map((id) => {
             const Renderer =
               SECTION_RENDERERS[id as keyof typeof SECTION_RENDERERS];
@@ -215,7 +213,7 @@ export function PolishedTemplate({ resume }: PolishedTemplateProps) {
         </View>
 
         <View style={styles.sidebar}>
-          <PolishedSidebar basics={basics} {...commonProps}>
+          <PolishedSidebar {...commonProps}>
             {sidebarContentIds.map((id) => {
               const Renderer =
                 SECTION_RENDERERS[id as keyof typeof SECTION_RENDERERS];

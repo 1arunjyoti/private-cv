@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
-import { ResumeEducation } from "@/db";
+import { Education } from "@/db";
 
 interface TimelineEducationProps {
-  education: ResumeEducation[];
+  education: Education[];
   settings: any;
   getColor: (target: string, fallback?: string) => string;
   fontSize: number;

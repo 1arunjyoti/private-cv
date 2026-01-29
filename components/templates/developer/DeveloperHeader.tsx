@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import type { Resume } from "@/db";
 
@@ -9,7 +11,6 @@ interface DeveloperHeaderProps {
 
 export const DeveloperHeader = ({
   basics,
-  settings,
   themeColor,
 }: DeveloperHeaderProps) => {
   const styles = StyleSheet.create({
@@ -65,30 +66,30 @@ export const DeveloperHeader = ({
         </Text>
 
         <View style={styles.infoBlock}>
-          <Text style={styles.comment}>// {basics.label}</Text>
+          <Text style={styles.comment}>{basics.label}</Text>
           {basics.location && (
             <Text style={styles.comment}>
-              // Address: {basics.location.address}, {basics.location.city},{" "}
+              Address: {basics.location.address}, {basics.location.city},{" "}
               {basics.location.postalCode}
             </Text>
           )}
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {basics.phone && (
-              <Text style={styles.comment}>// Phone: {basics.phone}</Text>
+              <Text style={styles.comment}>Phone: {basics.phone}</Text>
             )}
             {basics.email && (
-              <Text style={styles.comment}>// Email: {basics.email}</Text>
+              <Text style={styles.comment}>Email: {basics.email}</Text>
             )}
           </View>
 
           {basics.url && (
-            <Text style={styles.comment}>// Website: {basics.url}</Text>
+            <Text style={styles.comment}>Website: {basics.url}</Text>
           )}
 
           {basics.profiles.map((profile, index) => (
             <Text key={index} style={styles.comment}>
-              // {profile.network}: {profile.url}
+              {profile.network}: {profile.url}
             </Text>
           ))}
         </View>

@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
-import { ResumeWork } from "@/db";
+import { WorkExperience } from "@/db";
 
 interface TimelineExperienceProps {
-  work: ResumeWork[];
+  work: WorkExperience[];
   settings: any;
   getColor: (target: string, fallback?: string) => string;
   fontSize: number;

@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
-import { ResumeSkills } from "@/db";
+import { Skill } from "@/db";
 
 interface TimelineSkillsProps {
-  skills: ResumeSkills[];
+  skills: Skill[];
   settings: any;
   getColor: (target: string, fallback?: string) => string;
   fontSize: number;
