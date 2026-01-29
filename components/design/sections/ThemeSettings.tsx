@@ -104,6 +104,49 @@ export function ThemeSettings({
             })}
           </div>
         </div>
+
+        {/* Link Display Options */}
+        <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Link Display
+          </Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="linkShowIcon"
+                checked={layoutSettings.linkShowIcon || false}
+                onChange={(e) =>
+                  updateSetting("linkShowIcon", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label
+                htmlFor="linkShowIcon"
+                className="text-xs text-foreground cursor-pointer select-none"
+              >
+                Show link icon (🔗)
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="linkShowFullUrl"
+                checked={layoutSettings.linkShowFullUrl || false}
+                onChange={(e) =>
+                  updateSetting("linkShowFullUrl", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label
+                htmlFor="linkShowFullUrl"
+                className="text-xs text-foreground cursor-pointer select-none"
+              >
+                Show full URL
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </SettingsSection>
   );

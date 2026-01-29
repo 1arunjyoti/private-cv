@@ -1,6 +1,6 @@
 /**
  * EntryHeader - Universal entry header component for work/education/project entries
- * 
+ *
  * Supports multiple layout styles:
  * 1. Title and date on same line, subtitle below
  * 2. Title, subtitle, date all on same line
@@ -50,6 +50,13 @@ export interface EntryHeaderProps {
   index?: number;
   /** Show URL inline */
   showUrl?: boolean;
+  /** Show link icon instead of arrow */
+  showLinkIcon?: boolean;
+  /** Show full URL instead of icon */
+  showFullUrl?: boolean;
+  /** URL styling */
+  urlBold?: boolean;
+  urlItalic?: boolean;
 }
 
 export const EntryHeader: React.FC<EntryHeaderProps> = ({
@@ -74,8 +81,12 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
   listStyle = "none",
   index = 0,
   showUrl = false,
+  showLinkIcon = false,
+  showFullUrl = false,
+  urlBold = false,
+  urlItalic = false,
 }) => {
-  const linkColor = getColor("links", "#3b82f6");
+  const linkColor = getColor("links", "#1a1a1a");
   const resolvedTitleColor = titleColor || "#1a1a1a";
   const resolvedSubtitleColor = subtitleColor || "#444444";
   const resolvedDateColor = dateColor || "#666666";
@@ -103,14 +114,22 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
     },
     title: {
       fontSize: fontSize + 1,
-      fontFamily: titleBold ? fonts.bold : titleItalic ? fonts.italic : fonts.base,
+      fontFamily: titleBold
+        ? fonts.bold
+        : titleItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: titleBold ? "bold" : "normal",
       fontStyle: titleItalic ? "italic" : "normal",
       color: resolvedTitleColor,
     },
     subtitle: {
       fontSize,
-      fontFamily: subtitleBold ? fonts.bold : subtitleItalic ? fonts.italic : fonts.base,
+      fontFamily: subtitleBold
+        ? fonts.bold
+        : subtitleItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: subtitleBold ? "bold" : "normal",
       fontStyle: subtitleItalic ? "italic" : "normal",
       color: resolvedSubtitleColor,
@@ -122,7 +141,11 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
     },
     date: {
       fontSize,
-      fontFamily: dateBold ? fonts.bold : dateItalic ? fonts.italic : fonts.base,
+      fontFamily: dateBold
+        ? fonts.bold
+        : dateItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: dateBold ? "bold" : "normal",
       fontStyle: dateItalic ? "italic" : "normal",
       color: resolvedDateColor,
@@ -132,6 +155,7 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
       fontSize: fontSize - 1,
       color: linkColor,
       marginLeft: 4,
+      textDecoration: "none",
     },
     separator: {
       fontSize,
@@ -148,6 +172,23 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
 
   const listPrefix = getListPrefix();
 
+  // Determine display text and style for URL
+  const urlDisplayText =
+    showFullUrl && url
+      ? url.replace(/^https?:\/\//, "").replace(/\/$/, "")
+      : showLinkIcon
+        ? "🔗"
+        : "↗";
+
+  const defaultUrlStyle = {
+    fontSize: fontSize - 1,
+    color: linkColor,
+    marginLeft: 4,
+    textDecoration: "none",
+    fontWeight: urlBold ? "bold" : "normal",
+    fontStyle: urlItalic ? "italic" : "normal",
+  } as const;
+
   // Layout Style 1: Title + Date on line 1, Subtitle on line 2
   if (layoutStyle === 1) {
     return (
@@ -157,8 +198,8 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
             {listPrefix && <Text style={styles.listPrefix}>{listPrefix}</Text>}
             <Text style={styles.title}>{title}</Text>
             {showUrl && url && (
-              <Link src={url} style={styles.url}>
-                <Text style={styles.url}>↗</Text>
+              <Link src={url} style={defaultUrlStyle}>
+                <Text style={defaultUrlStyle}>{urlDisplayText}</Text>
               </Link>
             )}
           </View>
@@ -197,8 +238,8 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
               </>
             )}
             {showUrl && url && (
-              <Link src={url} style={styles.url}>
-                <Text style={styles.url}>↗</Text>
+              <Link src={url} style={defaultUrlStyle}>
+                <Text style={defaultUrlStyle}>{urlDisplayText}</Text>
               </Link>
             )}
           </View>
@@ -217,7 +258,13 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
           <Text style={styles.title}>{title}</Text>
           {showUrl && url && (
             <Link src={url} style={styles.url}>
-              <Text style={styles.url}>↗</Text>
+              <Text style={styles.url}>
+                {showFullUrl
+                  ? `  ${url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
+                  : showLinkIcon
+                    ? " 🔗"
+                    : " ↗"}
+              </Text>
             </Link>
           )}
         </View>
@@ -245,9 +292,17 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
             </Link>
           )}
         </View>
-        {subtitle && <Text style={[styles.subtitle, { marginTop: 1 }]}>{subtitle}</Text>}
-        {location && <Text style={[styles.location, { marginTop: 1 }]}>{location}</Text>}
-        {dateRange && <Text style={[styles.date, { marginTop: 1, textAlign: "left" }]}>{dateRange}</Text>}
+        {subtitle && (
+          <Text style={[styles.subtitle, { marginTop: 1 }]}>{subtitle}</Text>
+        )}
+        {location && (
+          <Text style={[styles.location, { marginTop: 1 }]}>{location}</Text>
+        )}
+        {dateRange && (
+          <Text style={[styles.date, { marginTop: 1, textAlign: "left" }]}>
+            {dateRange}
+          </Text>
+        )}
       </View>
     );
   }
@@ -263,7 +318,11 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
             {subtitle && ` - ${subtitle}`}
             {location && ` (${location})`}
           </Text>
-          {dateRange && <Text style={[styles.date, { fontSize: fontSize - 1 }]}>{dateRange}</Text>}
+          {dateRange && (
+            <Text style={[styles.date, { fontSize: fontSize - 1 }]}>
+              {dateRange}
+            </Text>
+          )}
         </View>
       </View>
     );

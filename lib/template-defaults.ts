@@ -17,6 +17,9 @@ const baseDefaults = {
   useBullets: true,
   themeColorTarget: ["headings", "links", "icons", "decorations"],
   
+  // Link settings
+  linkShowFullUrl: true,
+
   //headerBottomMargin: 2,
   sectionOrder: SECTIONS.map((s) => s.id),
   // Section heading visibility defaults

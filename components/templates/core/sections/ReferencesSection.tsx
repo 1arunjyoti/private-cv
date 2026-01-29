@@ -6,7 +6,12 @@ import React from "react";
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { Reference, LayoutSettings } from "@/db";
 import { SectionHeading, RichText } from "../primitives";
-import type { FontConfig, GetColorFn, ListStyle, SectionHeadingStyle } from "../types";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface ReferencesSectionProps {
   references: Reference[];
@@ -53,14 +58,22 @@ export const ReferencesSection: React.FC<ReferencesSectionProps> = ({
     },
     name: {
       fontSize: fontSize + 1,
-      fontFamily: settings.referencesNameBold ? fonts.bold : settings.referencesNameItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.referencesNameBold
+        ? fonts.bold
+        : settings.referencesNameItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.referencesNameBold ? "bold" : "normal",
       fontStyle: settings.referencesNameItalic ? "italic" : "normal",
       color: "#1a1a1a",
     },
     position: {
       fontSize,
-      fontFamily: settings.referencesPositionBold ? fonts.bold : settings.referencesPositionItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.referencesPositionBold
+        ? fonts.bold
+        : settings.referencesPositionItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.referencesPositionBold ? "bold" : "normal",
       fontStyle: settings.referencesPositionItalic ? "italic" : "normal",
       color: "#555555",
@@ -93,28 +106,36 @@ export const ReferencesSection: React.FC<ReferencesSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
       {references.map((ref, index) => {
         const prefix = getListPrefix(index);
-        
+
         return (
           <View key={ref.id} style={styles.entryBlock}>
             <View style={styles.nameRow}>
               {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
               <Text style={styles.name}>{ref.name}</Text>
             </View>
-            
-            {ref.position && <Text style={styles.position}>{ref.position}</Text>}
-            
+
+            {ref.position && (
+              <Text style={styles.position}>{ref.position}</Text>
+            )}
+
             {ref.reference && (
               <RichText
                 text={`"${ref.reference}"`}
                 fontSize={fontSize}
                 fonts={fonts}
                 lineHeight={lineHeight}
+                linkColor={getColor("links", "#444444")}
+                showLinkIcon={settings.linkShowIcon}
+                showFullUrl={settings.linkShowFullUrl}
                 style={styles.reference}
               />
             )}

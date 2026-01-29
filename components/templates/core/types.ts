@@ -67,7 +67,7 @@ export interface SectionHeadingConfig {
 /**
  * List style configuration
  */
-export type ListStyle = "bullet" | "number" | "none" | "dash" | "inline";
+export type ListStyle = "bullet" | "number" | "blank" | "dash" | "inline" | "none";
 
 /**
  * Entry layout style options (1-5)

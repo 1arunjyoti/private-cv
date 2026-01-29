@@ -1,13 +1,13 @@
 /**
  * WorkSection - Universal work experience section component
- * 
+ *
  * A single, configurable component that replaces:
  * - ATSTemplate inline work rendering
  * - ClassicExperience
  * - CreativeExperience
  * - PolishedExperience
  * - And all other template-specific work sections
- * 
+ *
  * All styling is controlled via props, making it work with any template.
  */
 
@@ -15,8 +15,19 @@ import React from "react";
 import { View, StyleSheet } from "@react-pdf/renderer";
 import type { WorkExperience, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
-import { SectionHeading, BulletList, EntryHeader, RichText } from "../primitives";
-import type { FontConfig, GetColorFn, ListStyle, EntryLayoutStyle, SectionHeadingStyle } from "../types";
+import {
+  SectionHeading,
+  BulletList,
+  EntryHeader,
+  RichText,
+} from "../primitives";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  EntryLayoutStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface WorkSectionProps {
   work: WorkExperience[];
@@ -39,7 +50,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
   fonts,
   fontSize,
   getColor,
-  lineHeight = 1.3,
+  lineHeight = 1.2,
   sectionTitle = "Professional Experience",
   sectionMargin,
   containerStyle,
@@ -52,23 +63,25 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
       ...containerStyle,
     },
     entryBlock: {
-      marginBottom: 10,
+      marginBottom: 8,
     },
     summaryText: {
       fontSize,
       color: "#444444",
       marginTop: 2,
-      marginBottom: 4,
+      /* marginBottom: 2, */
       lineHeight,
     },
     highlightsWrapper: {
-      marginTop: 2,
+      /* marginTop: 2, */
     },
   });
 
   // Determine list styles from settings
-  const companyListStyle: ListStyle = settings.experienceCompanyListStyle || "none";
-  const achievementsListStyle: ListStyle = settings.experienceAchievementsListStyle || "bullet";
+  const companyListStyle: ListStyle =
+    settings.experienceCompanyListStyle || "none";
+  const achievementsListStyle: ListStyle =
+    settings.experienceAchievementsListStyle || "bullet";
 
   return (
     <View style={styles.container}>
@@ -84,7 +97,10 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
@@ -112,7 +128,16 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
               dateItalic={settings.experienceDateItalic}
               listStyle={companyListStyle}
               index={index}
-              showUrl={Boolean(exp.url && settings.experienceWebsiteBold !== undefined)}
+              showUrl={
+                (Boolean(exp.url) &&
+                  settings.experienceWebsiteBold !== undefined) ||
+                (Boolean(exp.url) &&
+                  (settings.linkShowIcon || settings.linkShowFullUrl))
+              }
+              showLinkIcon={settings.linkShowIcon}
+              showFullUrl={settings.linkShowFullUrl}
+              urlBold={settings.experienceWebsiteBold}
+              urlItalic={settings.experienceWebsiteItalic}
             />
 
             {/* Summary */}
@@ -122,27 +147,36 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                 fontSize={fontSize}
                 fonts={fonts}
                 lineHeight={lineHeight}
+                linkColor={getColor("links")}
+                showLinkIcon={settings.linkShowIcon}
+                showFullUrl={settings.linkShowFullUrl}
                 style={styles.summaryText}
               />
             )}
 
             {/* Highlights/Achievements */}
-            {exp.highlights && exp.highlights.length > 0 && settings.useBullets !== false && (
-              <View style={styles.highlightsWrapper}>
-                <BulletList
-                  items={exp.highlights}
-                  style={achievementsListStyle}
-                  fontSize={fontSize}
-                  fonts={fonts}
-                  lineHeight={lineHeight}
-                  bulletMargin={settings.bulletMargin}
-                  bulletColor={getColor("decorations", "#333")}
-                  textColor="#444444"
-                  bold={settings.experienceAchievementsBold}
-                  italic={settings.experienceAchievementsItalic}
-                />
-              </View>
-            )}
+            {exp.highlights &&
+              exp.highlights.length > 0 &&
+              settings.useBullets !== false && (
+                <View style={styles.highlightsWrapper}>
+                  <BulletList
+                    items={exp.highlights}
+                    style={achievementsListStyle}
+                    fontSize={fontSize}
+                    fonts={fonts}
+                    lineHeight={lineHeight}
+                    bulletMargin={settings.bulletMargin}
+                    bulletColor={getColor("decorations", "#333")}
+                    textColor="#444444"
+                    getColor={getColor}
+                    linkColor={getColor("links")}
+                    showLinkIcon={settings.linkShowIcon}
+                    showFullUrl={settings.linkShowFullUrl}
+                    bold={settings.experienceAchievementsBold}
+                    italic={settings.experienceAchievementsItalic}
+                  />
+                </View>
+              )}
           </View>
         );
       })}

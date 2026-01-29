@@ -184,6 +184,10 @@ export interface LayoutSettings {
   contactBold: boolean;
   contactItalic: boolean;
   contactSeparator: 'pipe' | 'dash' | 'comma';
+  contactLinkUnderline: boolean; // Whether to underline links in contact info
+  // Link Display Options
+  linkShowIcon: boolean;       // Show link icon (🔗) before links
+  linkShowFullUrl: boolean;    // Show full URL instead of link text
   // Profile Image
   showProfileImage: boolean;
   profileImageSize: 'S' | 'M' | 'L';

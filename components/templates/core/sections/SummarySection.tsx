@@ -62,7 +62,10 @@ export const SummarySection: React.FC<SummarySectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
@@ -72,6 +75,9 @@ export const SummarySection: React.FC<SummarySectionProps> = ({
           fontSize={fontSize}
           fonts={fonts}
           lineHeight={lineHeight}
+          linkColor={getColor("links")}
+          showLinkIcon={settings.linkShowIcon}
+          showFullUrl={settings.linkShowFullUrl}
           style={styles.summaryText}
         />
       ) : (

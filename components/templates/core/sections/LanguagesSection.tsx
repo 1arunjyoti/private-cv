@@ -7,7 +7,12 @@ import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { Language, LayoutSettings } from "@/db";
 import { SectionHeading } from "../primitives";
 import { getLevelScore } from "@/lib/template-utils";
-import type { FontConfig, GetColorFn, ListStyle, SectionHeadingStyle } from "../types";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface LanguagesSectionProps {
   languages: Language[];
@@ -38,7 +43,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
 }) => {
   if (!languages || languages.length === 0) return null;
 
-  const themeColor = getColor("decorations", "#3b82f6");
+  const themeColor = getColor("decorations", "#666666");
   const listStyle: ListStyle = settings.languagesListStyle || "none";
 
   const styles = StyleSheet.create({
@@ -48,7 +53,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
     },
     // List style
     listContainer: {
-      flexDirection: "column",
+      flexDirection: "row",
       gap: 4,
     },
     listItem: {
@@ -61,14 +66,22 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
     },
     languageName: {
       fontSize,
-      fontFamily: settings.languagesNameBold ? fonts.bold : settings.languagesNameItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.languagesNameBold
+        ? fonts.bold
+        : settings.languagesNameItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.languagesNameBold ? "bold" : "normal",
       fontStyle: settings.languagesNameItalic ? "italic" : "normal",
       color: "#333333",
     },
     fluency: {
       fontSize,
-      fontFamily: settings.languagesFluencyBold ? fonts.bold : settings.languagesFluencyItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.languagesFluencyBold
+        ? fonts.bold
+        : settings.languagesFluencyItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.languagesFluencyBold ? "bold" : "normal",
       fontStyle: settings.languagesFluencyItalic ? "italic" : "normal",
       color: "#666666",
@@ -204,7 +217,10 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 

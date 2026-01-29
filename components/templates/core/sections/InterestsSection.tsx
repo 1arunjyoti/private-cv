@@ -6,7 +6,12 @@ import React from "react";
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { Interest, LayoutSettings } from "@/db";
 import { SectionHeading } from "../primitives";
-import type { FontConfig, GetColorFn, ListStyle, SectionHeadingStyle } from "../types";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface InterestsSectionProps {
   interests: Interest[];
@@ -33,7 +38,7 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
 }) => {
   if (!interests || interests.length === 0) return null;
 
-  const themeColor = getColor("decorations", "#3b82f6");
+  const themeColor = getColor("decorations", "#666666");
   const listStyle: ListStyle = settings.interestsListStyle || "none";
 
   const styles = StyleSheet.create({
@@ -56,14 +61,22 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
     },
     interestName: {
       fontSize,
-      fontFamily: settings.interestsNameBold ? fonts.bold : settings.interestsNameItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.interestsNameBold
+        ? fonts.bold
+        : settings.interestsNameItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.interestsNameBold ? "bold" : "normal",
       fontStyle: settings.interestsNameItalic ? "italic" : "normal",
       color: "#333333",
     },
     keywords: {
       fontSize,
-      fontFamily: settings.interestsKeywordsBold ? fonts.bold : settings.interestsKeywordsItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.interestsKeywordsBold
+        ? fonts.bold
+        : settings.interestsKeywordsItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.interestsKeywordsBold ? "bold" : "normal",
       fontStyle: settings.interestsKeywordsItalic ? "italic" : "normal",
       color: "#666666",
@@ -105,14 +118,17 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
       <View style={styles.listContainer}>
         {interests.map((interest, index) => {
           const prefix = getListPrefix(index);
-          
+
           return (
             <View key={interest.id || index} style={styles.listItem}>
               {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}

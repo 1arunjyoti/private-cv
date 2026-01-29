@@ -1,6 +1,6 @@
 /**
  * BulletList - Universal bullet/list rendering component
- * 
+ *
  * Supports multiple list styles:
  * - bullet: Standard bullet points (•)
  * - number: Numbered list (1. 2. 3.)
@@ -10,7 +10,8 @@
 
 import React from "react";
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
-import type { ListStyle, FontConfig } from "../types";
+import type { ListStyle, FontConfig, GetColorFn } from "../types";
+import RichText from "./RichText";
 
 export interface BulletListProps {
   items: string[];
@@ -21,6 +22,8 @@ export interface BulletListProps {
   bulletMargin?: number;
   bulletColor?: string;
   textColor?: string;
+  linkColor?: string;
+  getColor?: GetColorFn;
   /** Width of the bullet/number column */
   bulletWidth?: number;
   /** Left margin for the entire list */
@@ -31,6 +34,10 @@ export interface BulletListProps {
   bold?: boolean;
   /** Italic text */
   italic?: boolean;
+  /** Show link icon */
+  showLinkIcon?: boolean;
+  /** Show full URL */
+  showFullUrl?: boolean;
 }
 
 const BULLET_CHARS: Record<ListStyle, string> = {
@@ -38,6 +45,7 @@ const BULLET_CHARS: Record<ListStyle, string> = {
   dash: "-",
   number: "", // Handled separately
   none: "",
+  blank: "",
   inline: "", // Handled separately
 };
 
@@ -50,11 +58,15 @@ export const BulletList: React.FC<BulletListProps> = ({
   bulletMargin = 2,
   bulletColor = "#333",
   textColor = "#444",
+  linkColor,
+  getColor,
   bulletWidth = 10,
   listMargin = 10,
   customBullet,
   bold = false,
   italic = false,
+  showLinkIcon,
+  showFullUrl,
 }) => {
   if (!items || items.length === 0) return null;
 
@@ -71,11 +83,7 @@ export const BulletList: React.FC<BulletListProps> = ({
       },
     });
 
-    return (
-      <Text style={styles.inlineText}>
-        {items.join(", ")}
-      </Text>
-    );
+    return <Text style={styles.inlineText}>{items.join(", ")}</Text>;
   }
 
   const styles = StyleSheet.create({
@@ -95,12 +103,6 @@ export const BulletList: React.FC<BulletListProps> = ({
     },
     text: {
       flex: 1,
-      fontSize,
-      fontFamily: bold ? fonts.bold : italic ? fonts.italic : fonts.base,
-      fontWeight: bold ? "bold" : "normal",
-      fontStyle: italic ? "italic" : "normal",
-      color: textColor,
-      lineHeight,
     },
   });
 
@@ -118,7 +120,24 @@ export const BulletList: React.FC<BulletListProps> = ({
           {style !== "none" && (
             <Text style={styles.bullet}>{getBulletText(index)}</Text>
           )}
-          <Text style={styles.text}>{item}</Text>
+          <View style={styles.text}>
+            <RichText
+              text={item}
+              fontSize={fontSize}
+              fonts={fonts}
+              lineHeight={lineHeight}
+              color={textColor}
+              linkColor={
+                linkColor || (getColor ? getColor("links") : undefined)
+              }
+              showLinkIcon={showLinkIcon}
+              showFullUrl={showFullUrl}
+              style={{
+                fontWeight: bold ? "bold" : "normal",
+                fontStyle: italic ? "italic" : "normal",
+              }}
+            />
+          </View>
         </View>
       ))}
     </View>
@@ -137,10 +156,14 @@ export interface BulletItemProps {
   lineHeight?: number;
   bulletColor?: string;
   textColor?: string;
+  linkColor?: string;
+  getColor?: GetColorFn;
   bulletWidth?: number;
   customBullet?: string;
   bold?: boolean;
   italic?: boolean;
+  showLinkIcon?: boolean;
+  showFullUrl?: boolean;
 }
 
 export const BulletItem: React.FC<BulletItemProps> = ({
@@ -152,10 +175,14 @@ export const BulletItem: React.FC<BulletItemProps> = ({
   lineHeight = 1.3,
   bulletColor = "#333",
   textColor = "#444",
+  linkColor,
+  getColor,
   bulletWidth = 10,
   customBullet,
   bold = false,
   italic = false,
+  showLinkIcon,
+  showFullUrl,
 }) => {
   const styles = StyleSheet.create({
     item: {
@@ -170,12 +197,6 @@ export const BulletItem: React.FC<BulletItemProps> = ({
     },
     text: {
       flex: 1,
-      fontSize,
-      fontFamily: bold ? fonts.bold : italic ? fonts.italic : fonts.base,
-      fontWeight: bold ? "bold" : "normal",
-      fontStyle: italic ? "italic" : "normal",
-      color: textColor,
-      lineHeight,
     },
   });
 
@@ -188,10 +209,23 @@ export const BulletItem: React.FC<BulletItemProps> = ({
 
   return (
     <View style={styles.item}>
-      {style !== "none" && (
-        <Text style={styles.bullet}>{getBulletText()}</Text>
-      )}
-      <Text style={styles.text}>{text}</Text>
+      {style !== "none" && <Text style={styles.bullet}>{getBulletText()}</Text>}
+      <View style={styles.text}>
+        <RichText
+          text={text}
+          fontSize={fontSize}
+          fonts={fonts}
+          lineHeight={lineHeight}
+          color={textColor}
+          linkColor={linkColor || (getColor ? getColor("links") : undefined)}
+          showLinkIcon={showLinkIcon}
+          showFullUrl={showFullUrl}
+          style={{
+            fontWeight: bold ? "bold" : "normal",
+            fontStyle: italic ? "italic" : "normal",
+          }}
+        />
+      </View>
     </View>
   );
 };

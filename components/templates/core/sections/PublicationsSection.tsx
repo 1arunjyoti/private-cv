@@ -7,7 +7,12 @@ import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
 import type { Publication, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
 import { SectionHeading, RichText } from "../primitives";
-import type { FontConfig, GetColorFn, ListStyle, SectionHeadingStyle } from "../types";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface PublicationsSectionProps {
   publications: Publication[];
@@ -34,7 +39,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
 }) => {
   if (!publications || publications.length === 0) return null;
 
-  const linkColor = getColor("links", "#3b82f6");
+  const linkColor = getColor("links", "#444444");
   const listStyle: ListStyle = settings.publicationsListStyle || "none";
 
   const styles = StyleSheet.create({
@@ -62,32 +67,43 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
     },
     name: {
       fontSize: fontSize + 1,
-      fontFamily: settings.publicationsNameBold ? fonts.bold : settings.publicationsNameItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.publicationsNameBold
+        ? fonts.bold
+        : settings.publicationsNameItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.publicationsNameBold ? "bold" : "normal",
       fontStyle: settings.publicationsNameItalic ? "italic" : "normal",
       color: "#1a1a1a",
     },
     date: {
       fontSize,
-      fontFamily: settings.publicationsDateBold ? fonts.bold : settings.publicationsDateItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.publicationsDateBold
+        ? fonts.bold
+        : settings.publicationsDateItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.publicationsDateBold ? "bold" : "normal",
       fontStyle: settings.publicationsDateItalic ? "italic" : "normal",
       color: "#666666",
     },
     publisher: {
       fontSize,
-      fontFamily: settings.publicationsPublisherBold ? fonts.bold : settings.publicationsPublisherItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.publicationsPublisherBold
+        ? fonts.bold
+        : settings.publicationsPublisherItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.publicationsPublisherBold ? "bold" : "normal",
       fontStyle: settings.publicationsPublisherItalic ? "italic" : "normal",
       color: "#555555",
     },
+
     url: {
       fontSize: fontSize - 1,
-      fontFamily: settings.publicationsUrlBold ? fonts.bold : settings.publicationsUrlItalic ? fonts.italic : fonts.base,
-      fontWeight: settings.publicationsUrlBold ? "bold" : "normal",
-      fontStyle: settings.publicationsUrlItalic ? "italic" : "normal",
       color: linkColor,
       marginTop: 2,
+      textDecoration: "none",
     },
     summary: {
       fontSize,
@@ -116,39 +132,73 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
       {publications.map((pub, index) => {
         const prefix = getListPrefix(index);
-        
+
         return (
           <View key={pub.id} style={styles.entryBlock}>
             <View style={styles.headerRow}>
               <View style={styles.nameRow}>
                 {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
                 <Text style={styles.name}>{pub.name}</Text>
+                {pub.url &&
+                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
+                    <Link src={pub.url} style={{ textDecoration: "none" }}>
+                      <Text
+                        style={{
+                          fontSize: fontSize - 1,
+                          color: linkColor,
+                          marginLeft: 4,
+                          fontWeight: settings.publicationsUrlBold
+                            ? "bold"
+                            : "normal",
+                          fontStyle: settings.publicationsUrlItalic
+                            ? "italic"
+                            : "normal",
+                        }}
+                      >
+                        {settings.linkShowFullUrl
+                          ? `  ${pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
+                          : settings.linkShowIcon
+                            ? " 🔗"
+                            : ""}
+                      </Text>
+                    </Link>
+                  )}
               </View>
-              {pub.releaseDate && <Text style={styles.date}>{formatDate(pub.releaseDate)}</Text>}
+              {pub.releaseDate && (
+                <Text style={styles.date}>{formatDate(pub.releaseDate)}</Text>
+              )}
             </View>
-            
-            {pub.publisher && <Text style={styles.publisher}>{pub.publisher}</Text>}
-            
-            {pub.url && (
+
+            {pub.publisher && (
+              <Text style={styles.publisher}>{pub.publisher}</Text>
+            )}
+
+            {pub.url && !settings.linkShowIcon && !settings.linkShowFullUrl && (
               <Link src={pub.url}>
                 <Text style={styles.url}>
                   {pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                 </Text>
               </Link>
             )}
-            
+
             {pub.summary && (
               <RichText
                 text={pub.summary}
                 fontSize={fontSize}
                 fonts={fonts}
                 lineHeight={lineHeight}
+                linkColor={linkColor}
+                showLinkIcon={settings.linkShowIcon}
+                showFullUrl={settings.linkShowFullUrl}
                 style={styles.summary}
               />
             )}

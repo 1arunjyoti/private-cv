@@ -1,6 +1,6 @@
 /**
  * SectionHeading - Universal section heading component
- * 
+ *
  * Supports 8 different visual styles consistently across all templates:
  * 1. Solid Underline
  * 2. No Decoration (Text only)
@@ -58,14 +58,19 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
 }) => {
   const decorationColor = getColor("decorations", "#000000");
   const headingColor = getColor("headings", "#1a1a1a");
-  
+
   const computedFontSize = fontSize + SIZE_MULTIPLIERS[size];
 
   // Base wrapper styles
   const baseWrapperStyles: object = {
     marginBottom: 3,
     flexDirection: "row",
-    justifyContent: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
+    justifyContent:
+      align === "center"
+        ? "center"
+        : align === "right"
+          ? "flex-end"
+          : "flex-start",
     alignItems: "center",
   };
 
@@ -82,7 +87,7 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
         return {};
       case 3: // Double/Bold Underline
         return {
-          borderBottomWidth: 2,
+          borderBottomWidth: 1,
           borderBottomColor: decorationColor,
           borderStyle: "solid",
           paddingBottom: 3,

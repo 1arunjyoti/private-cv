@@ -7,7 +7,12 @@ import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
 import type { Certificate, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
 import { SectionHeading, RichText } from "../primitives";
-import type { FontConfig, GetColorFn, ListStyle, SectionHeadingStyle } from "../types";
+import type {
+  FontConfig,
+  GetColorFn,
+  ListStyle,
+  SectionHeadingStyle,
+} from "../types";
 
 export interface CertificatesSectionProps {
   certificates: Certificate[];
@@ -34,7 +39,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
 }) => {
   if (!certificates || certificates.length === 0) return null;
 
-  const linkColor = getColor("links", "#3b82f6");
+  const linkColor = getColor("links", "#444444");
   const listStyle: ListStyle = settings.certificatesListStyle || "none";
 
   const styles = StyleSheet.create({
@@ -61,32 +66,43 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
     },
     name: {
       fontSize: fontSize + 1,
-      fontFamily: settings.certificatesNameBold ? fonts.bold : settings.certificatesNameItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.certificatesNameBold
+        ? fonts.bold
+        : settings.certificatesNameItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.certificatesNameBold ? "bold" : "normal",
       fontStyle: settings.certificatesNameItalic ? "italic" : "normal",
       color: "#1a1a1a",
     },
     date: {
       fontSize,
-      fontFamily: settings.certificatesDateBold ? fonts.bold : settings.certificatesDateItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.certificatesDateBold
+        ? fonts.bold
+        : settings.certificatesDateItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.certificatesDateBold ? "bold" : "normal",
       fontStyle: settings.certificatesDateItalic ? "italic" : "normal",
       color: "#666666",
     },
     issuer: {
       fontSize,
-      fontFamily: settings.certificatesIssuerBold ? fonts.bold : settings.certificatesIssuerItalic ? fonts.italic : fonts.base,
+      fontFamily: settings.certificatesIssuerBold
+        ? fonts.bold
+        : settings.certificatesIssuerItalic
+          ? fonts.italic
+          : fonts.base,
       fontWeight: settings.certificatesIssuerBold ? "bold" : "normal",
       fontStyle: settings.certificatesIssuerItalic ? "italic" : "normal",
       color: "#555555",
     },
+
     url: {
       fontSize: fontSize - 1,
-      fontFamily: settings.certificatesUrlBold ? fonts.bold : settings.certificatesUrlItalic ? fonts.italic : fonts.base,
-      fontWeight: settings.certificatesUrlBold ? "bold" : "normal",
-      fontStyle: settings.certificatesUrlItalic ? "italic" : "normal",
       color: linkColor,
       marginTop: 2,
+      textDecoration: "none",
     },
     summary: {
       fontSize,
@@ -115,39 +131,73 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
           fontSize={fontSize}
           fontFamily={fonts.base}
           getColor={getColor}
-          letterSpacing={(settings as unknown as Record<string, unknown>).sectionHeadingLetterSpacing as number}
+          letterSpacing={
+            (settings as unknown as Record<string, unknown>)
+              .sectionHeadingLetterSpacing as number
+          }
         />
       )}
 
       {certificates.map((cert, index) => {
         const prefix = getListPrefix(index);
-        
+
         return (
           <View key={cert.id} style={styles.entryBlock}>
             <View style={styles.headerRow}>
               <View style={styles.nameRow}>
                 {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
                 <Text style={styles.name}>{cert.name}</Text>
+                {cert.url &&
+                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
+                    <Link src={cert.url} style={{ textDecoration: "none" }}>
+                      <Text
+                        style={{
+                          fontSize: fontSize - 1,
+                          color: linkColor,
+                          marginLeft: 4,
+                          fontWeight: settings.certificatesUrlBold
+                            ? "bold"
+                            : "normal",
+                          fontStyle: settings.certificatesUrlItalic
+                            ? "italic"
+                            : "normal",
+                        }}
+                      >
+                        {settings.linkShowFullUrl
+                          ? `  ${cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
+                          : settings.linkShowIcon
+                            ? " 🔗"
+                            : ""}
+                      </Text>
+                    </Link>
+                  )}
               </View>
-              {cert.date && <Text style={styles.date}>{formatDate(cert.date)}</Text>}
+              {cert.date && (
+                <Text style={styles.date}>{formatDate(cert.date)}</Text>
+              )}
             </View>
-            
+
             {cert.issuer && <Text style={styles.issuer}>{cert.issuer}</Text>}
-            
-            {cert.url && (
-              <Link src={cert.url}>
-                <Text style={styles.url}>
-                  {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </Text>
-              </Link>
-            )}
-            
+
+            {cert.url &&
+              !settings.linkShowIcon &&
+              !settings.linkShowFullUrl && (
+                <Link src={cert.url}>
+                  <Text style={styles.url}>
+                    {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </Text>
+                </Link>
+              )}
+
             {cert.summary && (
               <RichText
                 text={cert.summary}
                 fontSize={fontSize}
                 fonts={fonts}
                 lineHeight={lineHeight}
+                linkColor={linkColor}
+                showLinkIcon={settings.linkShowIcon}
+                showFullUrl={settings.linkShowFullUrl}
                 style={styles.summary}
               />
             )}

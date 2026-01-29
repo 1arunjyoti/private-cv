@@ -1,4 +1,11 @@
-import { Document, Page, View, StyleSheet, pdf, Text } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  View,
+  StyleSheet,
+  pdf,
+  Text,
+} from "@react-pdf/renderer";
 import type { Resume } from "@/db";
 import { getTemplateDefaults } from "@/lib/template-defaults";
 import "@/lib/fonts";
@@ -27,53 +34,64 @@ interface ModernTemplateProps {
 // Helper to convert basics to contact items
 function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
   const items: ContactItem[] = [];
-  
+
   if (basics.email) {
-    items.push({ type: "email", value: basics.email, url: `mailto:${basics.email}` });
+    items.push({
+      type: "email",
+      value: basics.email,
+      url: `mailto:${basics.email}`,
+    });
   }
   if (basics.phone) {
-    items.push({ type: "phone", value: basics.phone, url: `tel:${basics.phone}` });
+    items.push({
+      type: "phone",
+      value: basics.phone,
+      url: `tel:${basics.phone}`,
+    });
   }
   if (basics.location?.city) {
-    const loc = [basics.location.city, basics.location.country].filter(Boolean).join(", ");
+    const loc = [basics.location.city, basics.location.country]
+      .filter(Boolean)
+      .join(", ");
     items.push({ type: "location", value: loc });
   }
   if (basics.url) {
     items.push({ type: "url", value: "Portfolio", url: basics.url });
   }
-  
+
   // Add profiles
   basics.profiles?.forEach((profile) => {
     if (profile.url) {
-      items.push({ 
-        type: "profile", 
+      items.push({
+        type: "profile",
         value: profile.username || profile.network || profile.url,
         url: profile.url,
-        label: profile.network
+        label: profile.network,
       });
     }
   });
-  
+
   return items;
 }
 
 export function ModernTemplate({ resume }: ModernTemplateProps) {
-  const {
-    basics,
-    work,
-    education,
-    skills,
-    projects,
-  } = resume;
+  const { basics, work, education, skills, projects } = resume;
 
   // Merge template defaults with resume settings
-  const templateDefaults = getTemplateDefaults(resume.meta.templateId || "modern");
+  const templateDefaults = getTemplateDefaults(
+    resume.meta.templateId || "modern",
+  );
   const settings = { ...templateDefaults, ...resume.meta.layoutSettings };
   const themeColor = resume.meta.themeColor || "#10b981"; // Default emerald
 
   // Create shared configs
-  const fonts: FontConfig = createFontConfig(settings.fontFamily || "Open Sans");
-  const getColor: GetColorFn = createGetColorFn(themeColor, settings.themeColorTarget);
+  const fonts: FontConfig = createFontConfig(
+    settings.fontFamily || "Open Sans",
+  );
+  const getColor: GetColorFn = createGetColorFn(
+    themeColor,
+    settings.themeColorTarget,
+  );
   const fontSize = settings.fontSize;
 
   // Styles
@@ -164,8 +182,8 @@ export function ModernTemplate({ resume }: ModernTemplateProps) {
         {/* Work Experience */}
         {work && work.length > 0 && (
           <View style={styles.section}>
-            <WorkSection 
-              work={work} 
+            <WorkSection
+              work={work}
               {...commonProps}
               sectionTitle="Experience"
             />
@@ -175,8 +193,8 @@ export function ModernTemplate({ resume }: ModernTemplateProps) {
         {/* Skills */}
         {skills && skills.length > 0 && (
           <View style={styles.section}>
-            <SkillsSection 
-              skills={skills} 
+            <SkillsSection
+              skills={skills}
               {...commonProps}
               sectionTitle="Skills & Expertise"
             />
@@ -186,13 +204,21 @@ export function ModernTemplate({ resume }: ModernTemplateProps) {
         {/* Education & Projects Grid */}
         <View style={styles.gridTwo}>
           {education && education.length > 0 && (
-            <View style={{ width: projects && projects.length > 0 ? "48%" : "100%" }}>
+            <View
+              style={{
+                width: projects && projects.length > 0 ? "48%" : "100%",
+              }}
+            >
               <EducationSection education={education} {...commonProps} />
             </View>
           )}
 
           {projects && projects.length > 0 && (
-            <View style={{ width: education && education.length > 0 ? "48%" : "100%" }}>
+            <View
+              style={{
+                width: education && education.length > 0 ? "48%" : "100%",
+              }}
+            >
               <ProjectsSection projects={projects} {...commonProps} />
             </View>
           )}

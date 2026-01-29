@@ -1,4 +1,11 @@
-import { Document, Page, View, StyleSheet, pdf, Text } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  View,
+  StyleSheet,
+  pdf,
+  Text,
+} from "@react-pdf/renderer";
 import type { Resume } from "@/db";
 import { getTemplateDefaults } from "@/lib/template-defaults";
 import { mmToPt } from "@/lib/template-utils";
@@ -35,32 +42,46 @@ interface ProfessionalTemplateProps {
 // Helper to convert basics to contact items
 function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
   const items: ContactItem[] = [];
-  
+
   if (basics.email) {
-    items.push({ type: "email", value: basics.email, url: `mailto:${basics.email}` });
+    items.push({
+      type: "email",
+      value: basics.email,
+      url: `mailto:${basics.email}`,
+    });
   }
   if (basics.phone) {
-    items.push({ type: "phone", value: basics.phone, url: `tel:${basics.phone}` });
+    items.push({
+      type: "phone",
+      value: basics.phone,
+      url: `tel:${basics.phone}`,
+    });
   }
   if (basics.location?.city) {
-    const loc = [basics.location.city, basics.location.country].filter(Boolean).join(", ");
+    const loc = [basics.location.city, basics.location.country]
+      .filter(Boolean)
+      .join(", ");
     items.push({ type: "location", value: loc });
   }
   if (basics.url) {
-    items.push({ type: "url", value: basics.url.replace(/^https?:\/\//, ""), url: basics.url });
+    items.push({
+      type: "url",
+      value: basics.url.replace(/^https?:\/\//, ""),
+      url: basics.url,
+    });
   }
-  
+
   basics.profiles?.forEach((profile) => {
     if (profile.url) {
-      items.push({ 
-        type: "profile", 
+      items.push({
+        type: "profile",
         value: profile.username || profile.network || profile.url,
         url: profile.url,
-        label: profile.network
+        label: profile.network,
       });
     }
   });
-  
+
   return items;
 }
 
@@ -81,12 +102,17 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
   } = resume;
 
   // Merge template defaults with resume settings
-  const templateDefaults = getTemplateDefaults(resume.meta.templateId || "professional");
+  const templateDefaults = getTemplateDefaults(
+    resume.meta.templateId || "professional",
+  );
   const settings = { ...templateDefaults, ...resume.meta.layoutSettings };
 
   // Create shared configs
   const fonts: FontConfig = createFontConfig(settings.fontFamily || "Roboto");
-  const getColor: GetColorFn = createGetColorFn(resume.meta.themeColor, settings.themeColorTarget);
+  const getColor: GetColorFn = createGetColorFn(
+    resume.meta.themeColor,
+    settings.themeColorTarget,
+  );
   const fontSize = settings.fontSize || 9;
 
   // Layout measurements
@@ -124,11 +150,12 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
     name: {
       fontSize: settings.nameFontSize || 24,
       fontWeight: settings.nameBold ? "bold" : "normal",
-      fontFamily: settings.nameFont === "creative"
-        ? "Helvetica"
-        : settings.nameBold
-          ? fonts.bold
-          : fonts.base,
+      fontFamily:
+        settings.nameFont === "creative"
+          ? "Helvetica"
+          : settings.nameBold
+            ? fonts.bold
+            : fonts.base,
       textTransform: "uppercase",
       color: getColor("name"),
       lineHeight: settings.nameLineHeight || 1.2,
@@ -252,12 +279,27 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
   };
 
   // Two-column layout logic
-  const LHS_SECTIONS = ["skills", "education", "languages", "certificates", "awards", "interests"];
-  const RHS_SECTIONS = ["summary", "work", "projects", "publications", "references", "custom"];
+  const LHS_SECTIONS = [
+    "skills",
+    "education",
+    "languages",
+    "certificates",
+    "awards",
+    "interests",
+  ];
+  const RHS_SECTIONS = [
+    "summary",
+    "work",
+    "projects",
+    "publications",
+    "references",
+    "custom",
+  ];
 
-  const order = settings.sectionOrder && settings.sectionOrder.length > 0
-    ? settings.sectionOrder
-    : [...RHS_SECTIONS, ...LHS_SECTIONS];
+  const order =
+    settings.sectionOrder && settings.sectionOrder.length > 0
+      ? settings.sectionOrder
+      : [...RHS_SECTIONS, ...LHS_SECTIONS];
 
   const leftColumnContent = order.filter((id) => LHS_SECTIONS.includes(id));
   const rightColumnContent = order.filter((id) => RHS_SECTIONS.includes(id));
@@ -288,7 +330,9 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
           {basics.label && <Text style={styles.title}>{basics.label}</Text>}
           <ContactInfo
             items={basicsToContactItems(basics)}
-            style={settings.personalDetailsArrangement === 1 ? "bar" : "stacked"}
+            style={
+              settings.personalDetailsArrangement === 1 ? "bar" : "stacked"
+            }
             align={headerAlign}
             fontSize={settings.contactFontSize || fontSize}
             fonts={fonts}
@@ -300,9 +344,7 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
 
         {/* Content */}
         {columnCount === 1 ? (
-          <View>
-            {order.map((sectionId) => renderSection(sectionId))}
-          </View>
+          <View>{order.map((sectionId) => renderSection(sectionId))}</View>
         ) : (
           <View style={styles.mainContainer}>
             <View style={styles.leftColumn}>

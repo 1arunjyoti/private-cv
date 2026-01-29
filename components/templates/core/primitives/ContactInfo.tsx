@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * ContactInfo - Universal contact information display component
- * 
+ *
  * Supports multiple display styles:
  * - icon: Icons before each item
  * - bullet: Bullet points before each item
@@ -36,8 +37,12 @@ export interface ContactInfoProps {
   italic?: boolean;
   /** Gap between items (for inline styles) */
   gap?: number;
-  /** Custom separator character */
+  /** Custom separator character or style name */
   separator?: string;
+  /** Show underline on links */
+  linkUnderline?: boolean;
+  /** Line height for text */
+  lineHeight?: number;
 }
 
 // Default icons for contact types
@@ -60,21 +65,35 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
   textColor = "#555555",
   bold = false,
   italic = false,
-  gap = 12,
+  gap = 6,
   separator,
+  linkUnderline = true,
+  lineHeight = 1.2,
 }) => {
   if (!items || items.length === 0) return null;
 
-  const linkColor = getColor("links", "#3b82f6");
-  const iconColor = getColor("icons", "#666666");
+  const linkColor = getColor("links", textColor);
+  const iconColor = getColor("icons", textColor);
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: style === "stacked" ? "column" : "row",
       flexWrap: "wrap",
-      justifyContent: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start",
-      alignItems: style === "stacked" ? (align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start") : "center",
-      gap: style === "stacked" ? 4 : gap,
+      justifyContent:
+        align === "center"
+          ? "center"
+          : align === "right"
+            ? "flex-end"
+            : "flex-start",
+      alignItems:
+        style === "stacked"
+          ? align === "center"
+            ? "center"
+            : align === "right"
+              ? "flex-end"
+              : "flex-start"
+          : "center",
+      gap: style === "stacked" ? 0 : gap, // Reduced gap for stacked to let lineHeight handle spacing
     },
     item: {
       flexDirection: "row",
@@ -84,16 +103,19 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
       fontSize,
       color: iconColor,
       marginRight: 4,
+      lineHeight,
     },
     bullet: {
       fontSize,
       color: textColor,
       marginRight: 4,
+      lineHeight,
     },
     separator: {
       fontSize,
       color: textColor,
       marginHorizontal: 4,
+      lineHeight,
     },
     text: {
       fontSize,
@@ -101,6 +123,7 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
       fontWeight: bold ? "bold" : "normal",
       fontStyle: italic ? "italic" : "normal",
       color: textColor,
+      lineHeight,
     },
     link: {
       fontSize,
@@ -108,43 +131,68 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
       fontWeight: bold ? "bold" : "normal",
       fontStyle: italic ? "italic" : "normal",
       color: linkColor,
-      textDecoration: "none",
+      textDecoration: linkUnderline ? "underline" : "none",
+      lineHeight,
     },
   });
 
   const getSeparator = (): string => {
-    if (separator) return separator;
-    switch (style) {
-      case "bar":
+    if (!separator) {
+      switch (style) {
+        case "bar":
+          return "|";
+        case "comma":
+          return ",";
+        case "bullet":
+          return "•";
+        default:
+          return "";
+      }
+    }
+
+    // Map keywords to characters
+    switch (separator) {
+      case "pipe":
         return "|";
+      case "dash":
+        return "-";
       case "comma":
         return ",";
       case "bullet":
         return "•";
       default:
-        return "";
+        return separator;
     }
   };
 
   const renderItem = (item: ContactItem, index: number) => {
     const isLink = item.url || item.type === "email" || item.type === "url";
-    const href = item.url || (item.type === "email" ? `mailto:${item.value}` : undefined);
+    const href =
+      item.url || (item.type === "email" ? `mailto:${item.value}` : undefined);
     const displayValue = item.label || item.value;
+
+    // Use accent color for location items to match other contact items
+    const useAccentColor = isLink || item.type === "location";
+
+    // Non-link accented items (like location) should not have an underline
+    const textStyle = useAccentColor
+      ? { ...styles.link, textDecoration: "none" as any }
+      : styles.text;
 
     const content = (
       <View style={styles.item} key={index}>
         {style === "icon" && (
-          <Text style={styles.icon}>{item.icon || DEFAULT_ICONS[item.type] || "•"}</Text>
+          <Text style={styles.icon}>
+            {item.icon || DEFAULT_ICONS[item.type] || "•"}
+          </Text>
         )}
-        {style === "bullet" && (
-          <Text style={styles.bullet}>•</Text>
-        )}
+        {style === "bullet" && <Text style={styles.bullet}>•</Text>}
         {isLink && href ? (
           <Link src={href}>
             <Text style={styles.link}>{displayValue}</Text>
           </Link>
         ) : (
-          <Text style={styles.text}>{displayValue}</Text>
+          <Text style={textStyle}>{displayValue}</Text>
         )}
       </View>
     );
@@ -163,7 +211,7 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
 
   // Inline layouts with separators
   const separatorChar = getSeparator();
-  const needsSeparator = style === "bar" || style === "comma";
+  const needsSeparator = style === "bar" || style === "comma" || !!separator;
 
   return (
     <View style={styles.container}>

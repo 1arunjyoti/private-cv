@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { Text, View } from "@react-pdf/renderer";
+import { Link, Text, View } from "@react-pdf/renderer";
 import { Style } from "@react-pdf/types";
 
 // Define a recursive style type to match React-PDF's behavior
@@ -12,6 +13,10 @@ interface PDFRichTextProps {
   fontFamily?: string;
   boldFontFamily?: string;
   italicFontFamily?: string;
+  boldItalicFontFamily?: string;
+  linkColor?: string;
+  showLinkIcon?: boolean;
+  showFullUrl?: boolean;
 }
 
 interface Context {
@@ -19,7 +24,14 @@ interface Context {
   fontFamily: string;
   boldFontFamily: string;
   italicFontFamily: string;
+  boldItalicFontFamily: string;
   style: PdfStyle;
+  linkColor: string;
+  showLinkIcon: boolean;
+  showFullUrl: boolean;
+  /** Tracks active styles for font selection */
+  isBold: boolean;
+  isItalic: boolean;
 }
 
 export const PDFRichText = ({
@@ -29,10 +41,30 @@ export const PDFRichText = ({
   fontFamily = "Times-Roman",
   boldFontFamily = "Times-Bold",
   italicFontFamily = "Times-Italic",
+  boldItalicFontFamily,
+  linkColor = "#3b82f6",
+  showLinkIcon = false,
+  showFullUrl = false,
 }: PDFRichTextProps) => {
   if (!text) return null;
 
-  // Split text by newlines first to handle paragraphs/lists
+  // Use boldFontFamily as fallback for boldItalic if not provided
+  const finalBoldItalic = boldItalicFontFamily || boldFontFamily;
+
+  const ctx: Context = {
+    fontSize,
+    fontFamily,
+    boldFontFamily,
+    italicFontFamily,
+    boldItalicFontFamily: finalBoldItalic,
+    style: style || {},
+    linkColor,
+    showLinkIcon,
+    showFullUrl,
+    isBold: false,
+    isItalic: false,
+  };
+
   const lines = text.split("\n");
 
   return (
@@ -46,35 +78,35 @@ export const PDFRichText = ({
               key={lineIndex}
               style={{ flexDirection: "row", marginLeft: 10, marginBottom: 2 }}
             >
-              <Text style={{ fontSize, fontFamily, marginRight: 5 }}>•</Text>
-              <Text style={{ flex: 1 }}>
-                {renderInline(content, {
-                  fontSize,
-                  fontFamily,
-                  boldFontFamily,
-                  italicFontFamily,
-                  style: style || {},
-                })}
+              <Text
+                style={[
+                  { fontSize, fontFamily, marginRight: 5 },
+                  ctx.style as any,
+                ]}
+              >
+                •
+              </Text>
+              <Text
+                style={[{ flex: 1, fontSize, fontFamily }, ctx.style as any]}
+              >
+                {renderBold(content, ctx)}
               </Text>
             </View>
           );
         }
 
-        // Handle empty lines (spacing)
         if (!line.trim()) {
           return <View key={lineIndex} style={{ height: fontSize * 0.5 }} />;
         }
 
-        // Handle Div Alignment (Basic support for wrapper divs)
-        let align: "left" | "center" | "right" | "justify" = "justify"; // Default alignment
+        let align: any = "justify";
         let lineContent = line;
 
         if (line.includes('align="center"')) align = "center";
-        if (line.includes('align="right"')) align = "right";
-        if (line.includes('align="left"')) align = "left";
-        if (line.includes('align="justify"')) align = "justify";
+        else if (line.includes('align="right"')) align = "right";
+        else if (line.includes('align="left"')) align = "left";
+        else if (line.includes('align="justify"')) align = "justify";
 
-        // Strip div tags if present to just show text (naive strip)
         if (line.includes("<div")) {
           lineContent = lineContent
             .replace(/<div[^>]*>/g, "")
@@ -83,14 +115,13 @@ export const PDFRichText = ({
 
         return (
           <View key={lineIndex} style={{ marginBottom: 2 }}>
-            <Text style={{ textAlign: align }}>
-              {renderInline(lineContent, {
-                fontSize,
-                fontFamily,
-                boldFontFamily,
-                italicFontFamily,
-                style: style || {},
-              })}
+            <Text
+              style={[
+                { textAlign: align, fontSize, fontFamily },
+                ctx.style as any,
+              ]}
+            >
+              {renderBold(lineContent, ctx)}
             </Text>
           </View>
         );
@@ -99,27 +130,25 @@ export const PDFRichText = ({
   );
 };
 
-// Helper to render bold/italic/links inline
-const renderInline = (text: string, ctx: Context) => {
-  // We need a proper tokenizer for nested styles, but for now we'll do simplistic sequential replacement
-  // or splitting. Since recursion is tricky with multiple regexes, let's try a split approach.
+const getFontForContext = (ctx: Context) => {
+  if (ctx.isBold && ctx.isItalic) return ctx.boldItalicFontFamily;
+  if (ctx.isBold) return ctx.boldFontFamily;
+  if (ctx.isItalic) return ctx.italicFontFamily;
+  return ctx.fontFamily;
+};
 
-  // Supported: **bold**, *italic*, <u>underline</u>, [link](url)
-
-  // We will split by one token type at a time.
-  // Order: Bold -> Italic -> Underline -> Link
-
-  // 1. Bold: **text**
+const renderBold = (text: string, ctx: Context) => {
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
       const content = part.substring(2, part.length - 2);
+      const newCtx = { ...ctx, isBold: true };
       return (
         <Text
           key={i}
-          style={{ fontFamily: ctx.boldFontFamily, fontWeight: "bold" }}
+          style={{ fontFamily: getFontForContext(newCtx), fontWeight: "bold" }}
         >
-          {renderItalic(content, ctx)}
+          {renderItalic(content, newCtx)}
         </Text>
       );
     }
@@ -130,15 +159,15 @@ const renderInline = (text: string, ctx: Context) => {
 const renderItalic = (text: string, ctx: Context) => {
   const parts = text.split(/(\*.*?\*)/g);
   return parts.map((part, i) => {
-    // Only match *text* if it's not empty and valid
     if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
       const content = part.substring(1, part.length - 1);
+      const newCtx = { ...ctx, isItalic: true };
       return (
         <Text
           key={i}
-          style={{ fontFamily: ctx.italicFontFamily, fontStyle: "italic" }}
+          style={{ fontFamily: getFontForContext(newCtx), fontStyle: "italic" }}
         >
-          {renderUnderline(content, ctx)}
+          {renderUnderline(content, newCtx)}
         </Text>
       );
     }
@@ -153,29 +182,47 @@ const renderUnderline = (text: string, ctx: Context) => {
       const content = part.substring(3, part.length - 4);
       return (
         <Text key={i} style={{ textDecoration: "underline" }}>
-          {renderText(content, ctx)}
+          {renderLink(content, ctx)}
         </Text>
       );
+    }
+    return renderLink(part, ctx);
+  });
+};
+
+const renderLink = (text: string, ctx: Context) => {
+  const parts = text.split(/(\[.*?\]\(.*?\))/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("[") && part.includes("](") && part.endsWith(")")) {
+      const split = part.slice(1, -1).split("](");
+      if (split.length === 2) {
+        const linkText = split[0];
+        const linkUrl = split[1];
+        // Determine display text based on options
+        const displayText = ctx.showFullUrl ? linkUrl : linkText;
+        const iconPrefix = ctx.showLinkIcon ? "🔗 " : "";
+        return (
+          <Link
+            key={i}
+            src={linkUrl}
+            style={{
+              color: ctx.linkColor,
+              textDecoration: "none",
+            }}
+          >
+            {iconPrefix}
+            {renderText(displayText, ctx)}
+          </Link>
+        );
+      }
     }
     return renderText(part, ctx);
   });
 };
 
 const renderText = (text: string, ctx: Context) => {
-  // Determine style based on context/props
-  // For now just return text node
-  return (
-    <Text
-      key={Math.random()}
-      style={[
-        {
-          fontSize: ctx.fontSize,
-          fontFamily: ctx.fontFamily,
-        },
-        ctx.style as unknown as Style,
-      ]}
-    >
-      {text}
-    </Text>
-  );
+  if (!text) return null;
+  // Return just the string or a Text node that ONLY manages font if we're deeper
+  // But React-PDF handles nesting well if we just return the string here since it's already inside a Text
+  return text;
 };

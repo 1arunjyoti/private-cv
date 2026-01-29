@@ -1,17 +1,24 @@
 /**
  * Template Factory - Simplified template creation
- * 
+ *
  * This module provides a factory system for creating resume templates with minimal code.
  * Instead of 500+ lines per template, new templates can be created in ~50 lines by:
  * 1. Selecting a layout type (single column, two-column, sidebar, etc.)
  * 2. Applying a theme configuration
  * 3. Adding any custom overrides
- * 
+ *
  * The factory handles all common rendering logic, section ordering, and styling.
  */
 
 import React from "react";
-import { Document, Page, View, StyleSheet, Text, pdf } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  View,
+  StyleSheet,
+  Text,
+  pdf,
+} from "@react-pdf/renderer";
 import type { Resume, LayoutSettings } from "@/db";
 import { mmToPt } from "@/lib/template-utils";
 import "@/lib/fonts";
@@ -23,7 +30,11 @@ import {
   ProfileImage,
   SectionHeading,
 } from "@/components/templates/core";
-import type { FontConfig, GetColorFn, ContactItem } from "@/components/templates/core";
+import type {
+  FontConfig,
+  GetColorFn,
+  ContactItem,
+} from "@/components/templates/core";
 import { ContactInfo } from "@/components/templates/core/primitives/ContactInfo";
 
 // Universal sections
@@ -46,7 +57,7 @@ import { getCompiledTheme, deepMerge } from "./theme-system";
 // TYPES
 // ============================================================================
 
-export type LayoutType = 
+export type LayoutType =
   | "single-column"
   | "single-column-centered"
   | "two-column-sidebar-left"
@@ -103,32 +114,48 @@ export interface TemplateProps {
  */
 function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
   const items: ContactItem[] = [];
-  
+
   if (basics.email) {
-    items.push({ type: "email", value: basics.email, url: `mailto:${basics.email}` });
+    items.push({
+      type: "email",
+      value: basics.email,
+      url: `mailto:${basics.email}`,
+    });
   }
   if (basics.phone) {
-    items.push({ type: "phone", value: basics.phone, url: `tel:${basics.phone}` });
+    items.push({
+      type: "phone",
+      value: basics.phone,
+      url: `tel:${basics.phone}`,
+    });
   }
   if (basics.location?.city) {
-    const loc = [basics.location.city, basics.location.country].filter(Boolean).join(", ");
+    const loc = [basics.location.city, basics.location.country]
+      .filter(Boolean)
+      .join(", ");
     items.push({ type: "location", value: loc });
   }
   if (basics.url) {
-    items.push({ type: "url", value: basics.url.replace(/^https?:\/\//, ""), url: basics.url });
+    items.push({
+      type: "url",
+      value: basics.url.replace(/^https?:\/\//, ""),
+      url: basics.url,
+    });
   }
-  
+
   basics.profiles?.forEach((profile) => {
     if (profile.url) {
-      items.push({ 
-        type: "profile", 
+      items.push({
+        type: "profile",
         value: profile.username || profile.network || profile.url,
         url: profile.url,
-        label: profile.network
+        label: profile.username
+          ? `${profile.network}: ${profile.username}`
+          : profile.network,
       });
     }
   });
-  
+
   return items;
 }
 
@@ -147,15 +174,18 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
   const nameStyle = {
     fontSize: settings.nameFontSize || 28,
     fontWeight: settings.nameBold ? ("bold" as const) : ("normal" as const),
-    fontFamily: settings.nameFont === "creative"
-      ? "Helvetica"
-      : settings.nameBold
-        ? fonts.bold
-        : fonts.base,
+    fontFamily:
+      settings.nameFont === "creative"
+        ? "Helvetica"
+        : settings.nameBold
+          ? fonts.bold
+          : fonts.base,
     textTransform: "uppercase" as const,
     color: getColor("name"),
     lineHeight: settings.nameLineHeight || 1.2,
-    letterSpacing: (settings as unknown as Record<string, unknown>).nameLetterSpacing as number || 0,
+    letterSpacing:
+      ((settings as unknown as Record<string, unknown>)
+        .nameLetterSpacing as number) || 0,
     marginBottom: 4,
     textAlign: align,
   };
@@ -172,10 +202,20 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
     lineHeight: settings.titleLineHeight || 1.2,
     marginBottom: 8,
     textAlign: align,
+    color: getColor("title"),
   };
 
   return (
-    <View style={{ alignItems: align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start" }}>
+    <View
+      style={{
+        alignItems:
+          align === "center"
+            ? "center"
+            : align === "right"
+              ? "flex-end"
+              : "flex-start",
+      }}
+    >
       {showImage && basics.image && settings.showProfileImage && (
         <ProfileImage
           src={typeof basics.image === "string" ? basics.image : ""}
@@ -198,6 +238,11 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
         bold={settings.contactBold}
         italic={settings.contactItalic}
         separator={settings.contactSeparator}
+        linkUnderline={
+          ((settings as unknown as Record<string, unknown>)
+            .contactLinkUnderline as boolean) ?? true
+        }
+        lineHeight={settings.lineHeight}
       />
     </View>
   );
@@ -226,8 +271,21 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
   getColor,
   sectionMargin,
 }) => {
-  const { basics, work, education, skills, projects, certificates, languages, interests, awards, publications, references, custom } = resume;
-  
+  const {
+    basics,
+    work,
+    education,
+    skills,
+    projects,
+    certificates,
+    languages,
+    interests,
+    awards,
+    publications,
+    references,
+    custom,
+  } = resume;
+
   const commonProps = {
     settings,
     fonts,
@@ -326,16 +384,31 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
 export function createTemplate(config: TemplateConfig) {
   // Pre-compute theme
   const baseTheme = getCompiledTheme(config.baseTheme || config.id);
-  const theme = config.themeOverrides 
+  const theme = config.themeOverrides
     ? deepMerge<LayoutSettings>(baseTheme, config.themeOverrides)
     : baseTheme;
 
   // Default column assignments based on layout type
-  const defaultLeftSections = ["skills", "education", "languages", "certificates", "interests", "awards", "references"];
-  const defaultRightSections = ["summary", "work", "projects", "publications", "custom"];
+  const defaultLeftSections = [
+    "skills",
+    "education",
+    "languages",
+    "certificates",
+    "interests",
+    "awards",
+    "references",
+  ];
+  const defaultRightSections = [
+    "summary",
+    "work",
+    "projects",
+    "publications",
+    "custom",
+  ];
 
   const leftColumnSections = config.leftColumnSections || defaultLeftSections;
-  const rightColumnSections = config.rightColumnSections || defaultRightSections;
+  const rightColumnSections =
+    config.rightColumnSections || defaultRightSections;
 
   // Template component
   const Template: React.FC<TemplateProps> = ({ resume }) => {
@@ -344,13 +417,17 @@ export function createTemplate(config: TemplateConfig) {
     // Merge theme with resume settings
     const settings = deepMerge<LayoutSettings>(
       theme as LayoutSettings,
-      resume.meta.layoutSettings || {}
+      resume.meta.layoutSettings || {},
     );
-    const themeColor = resume.meta.themeColor || config.defaultThemeColor || "#2563eb";
+    const themeColor =
+      resume.meta.themeColor || config.defaultThemeColor || "#2563eb";
 
     // Create shared configs
     const fonts: FontConfig = createFontConfig(settings.fontFamily || "Roboto");
-    const getColor: GetColorFn = createGetColorFn(themeColor, settings.themeColorTarget || []);
+    const getColor: GetColorFn = createGetColorFn(
+      themeColor,
+      settings.themeColorTarget || [],
+    );
     const fontSize = settings.fontSize || 9;
 
     // Layout measurements
@@ -359,31 +436,36 @@ export function createTemplate(config: TemplateConfig) {
     const sectionMargin = settings.sectionMargin || 8;
 
     // Header alignment - matches Classic template logic
-    const headerAlign: "left" | "center" | "right" = 
+    const headerAlign: "left" | "center" | "right" =
       // For Classic template, use headerPosition setting
-      config.id === "classic" ? (
-        settings.headerPosition === "left" || settings.headerPosition === "right"
+      config.id === "classic"
+        ? settings.headerPosition === "left" ||
+          settings.headerPosition === "right"
           ? settings.headerPosition
           : "center"
-      ) :
-      // For other templates, use existing logic
-      config.layoutType === "single-column-centered" ? "center" :
-      settings.personalDetailsAlign === "center" ? "center" :
-      settings.personalDetailsAlign === "right" ? "right" : "left";
+        : // For other templates, use existing logic
+          config.layoutType === "single-column-centered"
+          ? "center"
+          : settings.personalDetailsAlign === "center"
+            ? "center"
+            : settings.personalDetailsAlign === "right"
+              ? "right"
+              : "left";
 
     // Column widths
     const leftWidth = settings.leftColumnWidth || 30;
     const rightWidth = 100 - leftWidth - 4; // 4% gap
 
     // Section order
-    const order = settings.sectionOrder && settings.sectionOrder.length > 0
-      ? settings.sectionOrder
-      : [...rightColumnSections, ...leftColumnSections];
+    const order =
+      settings.sectionOrder && settings.sectionOrder.length > 0
+        ? settings.sectionOrder
+        : [...rightColumnSections, ...leftColumnSections];
 
     // Filter sections by column
     const leftContent = order.filter((id) => leftColumnSections.includes(id));
     const rightContent = order.filter((id) => rightColumnSections.includes(id));
-    
+
     // Orphan sections go to right/main column
     const knownSections = [...leftColumnSections, ...rightColumnSections];
     const orphans = order.filter((id) => !knownSections.includes(id));
@@ -398,13 +480,20 @@ export function createTemplate(config: TemplateConfig) {
         fontSize,
         lineHeight: settings.lineHeight || 1.3,
         color: "#000",
-        flexDirection: config.layoutType === "creative-sidebar" ? "row" : "column",
-        ...(config.layoutType === "creative-sidebar" ? { paddingTop: 30, paddingBottom: 30 } : {}),
+        flexDirection:
+          config.layoutType === "creative-sidebar" ? "row" : "column",
+        ...(config.layoutType === "creative-sidebar"
+          ? { paddingTop: 30, paddingBottom: 30 }
+          : {}),
       },
       header: {
         marginBottom: settings.headerBottomMargin || 12,
-        borderBottomWidth: settings.sectionHeadingStyle === 1 ? 
-          (config.id === "classic" ? 2 : 1) : 0, // Classic uses thicker border
+        borderBottomWidth:
+          settings.sectionHeadingStyle === 1
+            ? config.id === "classic"
+              ? 2
+              : 1
+            : 0, // Classic uses thicker border
         borderBottomColor: getColor("decorations"),
         borderBottomStyle: "solid",
         paddingBottom: settings.sectionHeadingStyle === 1 ? 8 : 0,
@@ -461,8 +550,10 @@ export function createTemplate(config: TemplateConfig) {
 
     // Render based on layout type and settings
     const effectiveColumnCount = settings.columnCount || 1;
-    const isDynamicLayout = config.layoutType === "single-column-centered" && effectiveColumnCount > 1;
-    
+    const isDynamicLayout =
+      config.layoutType === "single-column-centered" &&
+      effectiveColumnCount > 1;
+
     switch (config.layoutType) {
       case "single-column":
       case "single-column-centered":
@@ -479,12 +570,10 @@ export function createTemplate(config: TemplateConfig) {
                   align={headerAlign}
                 />
               </View>
-              
+
               {/* Support dynamic column layout for templates like Classic */}
               {effectiveColumnCount === 1 ? (
-                <View>
-                  {order.map(renderSection)}
-                </View>
+                <View>{order.map(renderSection)}</View>
               ) : (
                 <View style={styles.columnsContainer}>
                   <View style={styles.leftColumn}>
@@ -516,18 +605,28 @@ export function createTemplate(config: TemplateConfig) {
                   align={headerAlign}
                 />
               </View>
-              
+
               {settings.columnCount === 1 ? (
-                <View>
-                  {order.map(renderSection)}
-                </View>
+                <View>{order.map(renderSection)}</View>
               ) : (
                 <View style={styles.columnsContainer}>
-                  <View style={isLeftSidebar ? styles.leftColumn : styles.rightColumn}>
-                    {(isLeftSidebar ? leftContent : rightContent).map(renderSection)}
+                  <View
+                    style={
+                      isLeftSidebar ? styles.leftColumn : styles.rightColumn
+                    }
+                  >
+                    {(isLeftSidebar ? leftContent : rightContent).map(
+                      renderSection,
+                    )}
                   </View>
-                  <View style={isLeftSidebar ? styles.rightColumn : styles.leftColumn}>
-                    {(isLeftSidebar ? rightContent : leftContent).map(renderSection)}
+                  <View
+                    style={
+                      isLeftSidebar ? styles.rightColumn : styles.leftColumn
+                    }
+                  >
+                    {(isLeftSidebar ? rightContent : leftContent).map(
+                      renderSection,
+                    )}
                   </View>
                 </View>
               )}
@@ -542,9 +641,11 @@ export function createTemplate(config: TemplateConfig) {
               {config.sidebarBackground && (
                 <View fixed style={styles.sidebarBackground} />
               )}
-              
+
               <View style={styles.sidebar}>
-                <View style={{ marginBottom: sectionMargin, alignItems: "center" }}>
+                <View
+                  style={{ marginBottom: sectionMargin, alignItems: "center" }}
+                >
                   <HeaderComponent
                     basics={basics}
                     settings={settings}
@@ -556,10 +657,8 @@ export function createTemplate(config: TemplateConfig) {
                 </View>
                 {leftContent.map(renderSection)}
               </View>
-              
-              <View style={styles.main}>
-                {rightContent.map(renderSection)}
-              </View>
+
+              <View style={styles.main}>{rightContent.map(renderSection)}</View>
             </Page>
           </Document>
         );
@@ -578,9 +677,7 @@ export function createTemplate(config: TemplateConfig) {
                   align={headerAlign}
                 />
               </View>
-              <View>
-                {order.map(renderSection)}
-              </View>
+              <View>{order.map(renderSection)}</View>
             </Page>
           </Document>
         );
@@ -615,18 +712,27 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     layoutType: "single-column",
     defaultThemeColor: "#2563eb",
   },
-  
+
   classic: {
     id: "classic",
     name: "Classic",
     layoutType: "single-column-centered",
     defaultThemeColor: "#000000",
     leftColumnSections: [
-      "skills", "education", "languages", "interests", 
-      "awards", "certificates", "references"
+      "skills",
+      "education",
+      "languages",
+      "interests",
+      "awards",
+      "certificates",
+      "references",
     ],
     rightColumnSections: [
-      "summary", "work", "projects", "custom", "publications"  
+      "summary",
+      "work",
+      "projects",
+      "custom",
+      "publications",
     ],
     themeOverrides: {
       fontFamily: "Times-Roman",
@@ -634,19 +740,20 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
       sectionMargin: 5,
       bulletMargin: 1,
       entryIndentBody: false,
-      entryTitleSize: "M", 
+      entryTitleSize: "M",
       entrySubtitleStyle: "italic",
       contactSeparator: "pipe",
+      contactLinkUnderline: false,
     },
   },
-  
+
   modern: {
     id: "modern",
     name: "Modern",
     layoutType: "single-column",
     defaultThemeColor: "#10b981",
   },
-  
+
   creative: {
     id: "creative",
     name: "Creative",
@@ -655,76 +762,109 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     sidebarBackground: true,
     sidebarBackgroundColor: "#f4f4f0",
     leftColumnSections: ["summary", "certificates", "languages", "interests"],
-    rightColumnSections: ["work", "education", "skills", "projects", "awards", "publications", "references", "custom"],
+    rightColumnSections: [
+      "work",
+      "education",
+      "skills",
+      "projects",
+      "awards",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
-  
+
   professional: {
     id: "professional",
     name: "Professional",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#0f172a",
-    leftColumnSections: ["skills", "education", "languages", "certificates", "awards", "interests"],
-    rightColumnSections: ["summary", "work", "projects", "publications", "references", "custom"],
+    leftColumnSections: [
+      "skills",
+      "education",
+      "languages",
+      "certificates",
+      "awards",
+      "interests",
+    ],
+    rightColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
-  
+
   elegant: {
     id: "elegant",
     name: "Elegant",
     layoutType: "single-column",
     defaultThemeColor: "#2c3e50",
   },
-  
+
   "classic-slate": {
     id: "classic-slate",
     name: "Classic Slate",
     layoutType: "two-column-equal",
     defaultThemeColor: "#334155",
   },
-  
+
   multicolumn: {
     id: "multicolumn",
     name: "Multicolumn",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#0284c7",
     leftColumnSections: ["skills", "languages", "interests"],
-    rightColumnSections: ["summary", "work", "projects", "education", "certificates", "awards", "publications", "references", "custom"],
+    rightColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "education",
+      "certificates",
+      "awards",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
-  
+
   glow: {
     id: "glow",
     name: "Glow",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#f59e0b",
   },
-  
+
   stylish: {
     id: "stylish",
     name: "Stylish",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#ec4899",
   },
-  
+
   timeline: {
     id: "timeline",
     name: "Timeline",
     layoutType: "single-column",
     defaultThemeColor: "#6366f1",
   },
-  
+
   polished: {
     id: "polished",
     name: "Polished",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#0d9488",
   },
-  
+
   developer: {
     id: "developer",
     name: "Developer",
     layoutType: "single-column",
     defaultThemeColor: "#22c55e",
   },
-  
+
   developer2: {
     id: "developer2",
     name: "Developer 2",
@@ -757,6 +897,6 @@ export function createAllTemplates() {
     Object.entries(TEMPLATE_CONFIGS).map(([id, config]) => [
       id,
       createTemplate(config),
-    ])
+    ]),
   );
 }

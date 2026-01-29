@@ -1,6 +1,6 @@
 /**
  * RichText - Universal rich text component with markdown-like formatting
- * 
+ *
  * Wraps PDFRichText with standardized props
  */
 
@@ -14,6 +14,9 @@ export interface RichTextProps {
   fonts: FontConfig;
   lineHeight?: number;
   color?: string;
+  linkColor?: string;
+  showLinkIcon?: boolean;
+  showFullUrl?: boolean;
   style?: object;
 }
 
@@ -23,6 +26,9 @@ export const RichText: React.FC<RichTextProps> = ({
   fonts,
   lineHeight = 1.3,
   color = "#444444",
+  linkColor,
+  showLinkIcon,
+  showFullUrl,
   style,
 }) => {
   if (!text) return null;
@@ -34,6 +40,10 @@ export const RichText: React.FC<RichTextProps> = ({
       fontFamily={fonts.base}
       boldFontFamily={fonts.bold}
       italicFontFamily={fonts.italic}
+      boldItalicFontFamily={fonts.boldItalic}
+      linkColor={linkColor}
+      showLinkIcon={showLinkIcon}
+      showFullUrl={showFullUrl}
       style={{
         fontSize,
         color,
