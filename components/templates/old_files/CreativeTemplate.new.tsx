@@ -9,23 +9,23 @@ import {
   createGetColorFn,
   ProfileImage,
   SectionHeading,
-} from "./core";
-import type { FontConfig, GetColorFn, ContactItem } from "./core";
-import { ContactInfo } from "./core/primitives/ContactInfo";
+} from "../core";
+import type { FontConfig, GetColorFn, ContactItem } from "../core";
+import { ContactInfo } from "../core/primitives/ContactInfo";
 
 // Universal sections
-import { SummarySection } from "./core/sections/SummarySection";
-import { WorkSection } from "./core/sections/WorkSection";
-import { EducationSection } from "./core/sections/EducationSection";
-import { SkillsSection } from "./core/sections/SkillsSection";
-import { ProjectsSection } from "./core/sections/ProjectsSection";
-import { CertificatesSection } from "./core/sections/CertificatesSection";
-import { LanguagesSection } from "./core/sections/LanguagesSection";
-import { InterestsSection } from "./core/sections/InterestsSection";
-import { AwardsSection } from "./core/sections/AwardsSection";
-import { PublicationsSection } from "./core/sections/PublicationsSection";
-import { ReferencesSection } from "./core/sections/ReferencesSection";
-import { CustomSection } from "./core/sections/CustomSection";
+import { SummarySection } from "../core/sections/SummarySection";
+import { WorkSection } from "../core/sections/WorkSection";
+import { EducationSection } from "../core/sections/EducationSection";
+import { SkillsSection } from "../core/sections/SkillsSection";
+import { ProjectsSection } from "../core/sections/ProjectsSection";
+import { CertificatesSection } from "../core/sections/CertificatesSection";
+import { LanguagesSection } from "../core/sections/LanguagesSection";
+import { InterestsSection } from "../core/sections/InterestsSection";
+import { AwardsSection } from "../core/sections/AwardsSection";
+import { PublicationsSection } from "../core/sections/PublicationsSection";
+import { ReferencesSection } from "../core/sections/ReferencesSection";
+import { CustomSection } from "../core/sections/CustomSection";
 
 interface CreativeTemplateProps {
   resume: Resume;

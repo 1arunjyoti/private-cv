@@ -514,19 +514,20 @@ export function createTemplate(config: TemplateConfig) {
         top: -30,
         left: 0,
         bottom: -30,
-        width: "32%",
+        width: `${leftWidth}%`,
         backgroundColor: config.sidebarBackgroundColor || "#f4f4f0",
       },
       sidebar: {
-        width: "32%",
-        paddingHorizontal: 20,
+        width: `${leftWidth}%`,
+        paddingLeft: 0,
+        paddingRight: 30, // Increased right padding to prevent clash
         color: "#333",
       },
       main: {
-        width: "68%",
-        paddingHorizontal: 30,
+        width: `${100 - leftWidth}%`,
+        paddingHorizontal: 0,
         backgroundColor: "#fff",
-        paddingLeft: 25,
+        paddingLeft: 20,
       },
       ...config.customStyles,
     });

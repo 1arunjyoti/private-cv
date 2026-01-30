@@ -630,7 +630,9 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "iconDash",
     overrides: {
-      headerBottomMargin: 25,
+      leftColumnWidth: 33, // Optimized width
+      headerBottomMargin: 20,
+      nameFontSize: 24, // Reduced fro 30
       showProfileImage: true,
       profileImageBorder: true,
       skillsListStyle: "blank",

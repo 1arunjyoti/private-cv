@@ -54,6 +54,7 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
     // List style
     listContainer: {
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: 4,
     },
     listItem: {

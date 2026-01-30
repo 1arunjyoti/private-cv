@@ -6,19 +6,19 @@ import "@/lib/fonts"; // Auto-registers all fonts
 import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 // Sub-components
-import { CreativeHeader } from "./creative/CreativeHeader";
-import { CreativeSummary } from "./creative/CreativeSummary";
-import { CreativeExperience } from "./creative/CreativeExperience";
-import { CreativeEducation } from "./creative/CreativeEducation";
-import { CreativeSkills } from "./creative/CreativeSkills";
-import { CreativeProjects } from "./creative/CreativeProjects";
-import { CreativeCertificates } from "./creative/CreativeCertificates";
-import { CreativeAwards } from "./creative/CreativeAwards";
-import { CreativePublications } from "./creative/CreativePublications";
-import { CreativeReferences } from "./creative/CreativeReferences";
-import { CreativeLanguages } from "./creative/CreativeLanguages";
-import { CreativeInterests } from "./creative/CreativeInterests";
-import { CreativeCustom } from "./creative/CreativeCustom";
+import { CreativeHeader } from "./CreativeHeader";
+import { CreativeSummary } from "./CreativeSummary";
+import { CreativeExperience } from "./CreativeExperience";
+import { CreativeEducation } from "./CreativeEducation";
+import { CreativeSkills } from "./CreativeSkills";
+import { CreativeProjects } from "./CreativeProjects";
+import { CreativeCertificates } from "./CreativeCertificates";
+import { CreativeAwards } from "./CreativeAwards";
+import { CreativePublications } from "./CreativePublications";
+import { CreativeReferences } from "./CreativeReferences";
+import { CreativeLanguages } from "./CreativeLanguages";
+import { CreativeInterests } from "./CreativeInterests";
+import { CreativeCustom } from "./CreativeCustom";
 
 interface CreativeTemplateProps {
   resume: Resume;

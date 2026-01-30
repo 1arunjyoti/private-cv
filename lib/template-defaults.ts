@@ -1,3 +1,5 @@
+//legacy code
+
 import { LayoutSettings } from "@/components/design/types";
 import { SECTIONS } from "./constants";
 

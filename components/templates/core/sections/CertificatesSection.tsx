@@ -52,6 +52,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
     },
     headerRow: {
       flexDirection: "row",
+      flexWrap: "wrap",
       justifyContent: "space-between",
       alignItems: "baseline",
       marginBottom: 2,

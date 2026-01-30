@@ -77,7 +77,9 @@ function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
         type: "profile",
         value: profile.username || profile.network || profile.url,
         url: profile.url,
-        label: profile.network,
+        label: profile.username
+          ? `${profile.network}: ${profile.username}`
+          : profile.network,
       });
     }
   });
@@ -108,22 +110,22 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
   const settings = { ...templateDefaults, ...resume.meta.layoutSettings };
 
   // Create shared configs
-  const fonts: FontConfig = createFontConfig(settings.fontFamily || "Roboto");
+  const fonts: FontConfig = createFontConfig(settings.fontFamily);
   const getColor: GetColorFn = createGetColorFn(
     resume.meta.themeColor,
     settings.themeColorTarget,
   );
-  const fontSize = settings.fontSize || 9;
+  const fontSize = settings.fontSize;
 
   // Layout measurements
-  const marginH = mmToPt(settings.marginHorizontal || 15);
-  const marginV = mmToPt(settings.marginVertical || 15);
-  const columnCount = settings.columnCount || 2;
-  const leftColumnWidthPercent = settings.leftColumnWidth || 30;
+  const marginH = mmToPt(settings.marginHorizontal);
+  const marginV = mmToPt(settings.marginVertical);
+  const columnCount = settings.columnCount;
+  const leftColumnWidthPercent = settings.leftColumnWidth;
   const rightColumnWidthPercent = 100 - leftColumnWidthPercent - 4; // 4% gap
 
   // Header alignment
-  const layoutHeaderPos = settings.headerPosition || "left";
+  const layoutHeaderPos = settings.headerPosition;
   const headerAlign: "left" | "center" | "right" =
     layoutHeaderPos === "left" || layoutHeaderPos === "right"
       ? layoutHeaderPos
@@ -136,19 +138,25 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
       paddingVertical: marginV,
       fontFamily: fonts.base,
       fontSize,
-      lineHeight: settings.lineHeight || 1.4,
+      lineHeight: settings.lineHeight,
       color: "#000",
       flexDirection: "column",
     },
     header: {
-      marginBottom: settings.headerBottomMargin ?? settings.sectionMargin,
+      marginBottom: settings.headerBottomMargin,
       borderBottomWidth: settings.sectionHeadingStyle === 1 ? 1 : 0,
       borderBottomColor: getColor("decorations"),
       paddingBottom: 10,
       width: "100%",
+      alignItems:
+        headerAlign === "center"
+          ? "center"
+          : headerAlign === "right"
+            ? "flex-end"
+            : "flex-start",
     },
     name: {
-      fontSize: settings.nameFontSize || 24,
+      fontSize: settings.nameFontSize,
       fontWeight: settings.nameBold ? "bold" : "normal",
       fontFamily:
         settings.nameFont === "creative"
@@ -158,11 +166,12 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
             : fonts.base,
       textTransform: "uppercase",
       color: getColor("name"),
-      lineHeight: settings.nameLineHeight || 1.2,
+      lineHeight: settings.nameLineHeight,
       marginBottom: 4,
+      textAlign: headerAlign,
     },
     title: {
-      fontSize: settings.titleFontSize || 14,
+      fontSize: settings.titleFontSize,
       color: getColor("title", "#444"),
       marginBottom: 4,
       fontWeight: settings.titleBold ? "bold" : "normal",
@@ -172,7 +181,8 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
         : settings.titleItalic
           ? fonts.italic
           : fonts.base,
-      lineHeight: settings.titleLineHeight || 1.2,
+      lineHeight: settings.titleLineHeight,
+      textAlign: headerAlign,
     },
     mainContainer: {
       flexDirection: "row",
@@ -185,7 +195,7 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
       width: `${rightColumnWidthPercent}%`,
     },
     section: {
-      marginBottom: settings.sectionMargin || 10,
+      marginBottom: settings.sectionMargin,
     },
   });
 
@@ -197,6 +207,15 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
     getColor,
     SectionHeading,
   };
+
+  const contactStyle =
+    settings.personalDetailsArrangement === 2
+      ? "stacked"
+      : settings.personalDetailsContactStyle === "icon"
+        ? "icon"
+        : settings.personalDetailsContactStyle === "bullet"
+          ? "bullet"
+          : "bar";
 
   // Section renderers
   const renderSection = (sectionId: string) => {
@@ -299,7 +318,9 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
   const order =
     settings.sectionOrder && settings.sectionOrder.length > 0
       ? settings.sectionOrder
-      : [...RHS_SECTIONS, ...LHS_SECTIONS];
+      : templateDefaults.sectionOrder && templateDefaults.sectionOrder.length > 0
+        ? templateDefaults.sectionOrder
+        : [...RHS_SECTIONS, ...LHS_SECTIONS];
 
   const leftColumnContent = order.filter((id) => LHS_SECTIONS.includes(id));
   const rightColumnContent = order.filter((id) => RHS_SECTIONS.includes(id));
@@ -330,15 +351,16 @@ export function ProfessionalTemplate({ resume }: ProfessionalTemplateProps) {
           {basics.label && <Text style={styles.title}>{basics.label}</Text>}
           <ContactInfo
             items={basicsToContactItems(basics)}
-            style={
-              settings.personalDetailsArrangement === 1 ? "bar" : "stacked"
-            }
+            style={contactStyle}
             align={headerAlign}
             fontSize={settings.contactFontSize || fontSize}
             fonts={fonts}
             getColor={getColor}
             bold={settings.contactBold}
             italic={settings.contactItalic}
+            separator={settings.contactSeparator}
+            lineHeight={settings.lineHeight}
+            linkUnderline={settings.contactLinkUnderline}
           />
         </View>
 

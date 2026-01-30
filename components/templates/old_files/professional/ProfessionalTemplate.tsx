@@ -7,19 +7,19 @@ import "@/lib/fonts";
 import { getSectionHeadingWrapperStyles } from "@/lib/template-styles";
 
 // Components
-import { ProfessionalHeader } from "./professional/ProfessionalHeader";
-import { ProfessionalSummary } from "./professional/ProfessionalSummary";
-import { ProfessionalExperience } from "./professional/ProfessionalExperience";
-import { ProfessionalEducation } from "./professional/ProfessionalEducation";
-import { ProfessionalSkills } from "./professional/ProfessionalSkills";
-import { ProfessionalProjects } from "./professional/ProfessionalProjects";
-import { ProfessionalCertificates } from "./professional/ProfessionalCertificates";
-import { ProfessionalLanguages } from "./professional/ProfessionalLanguages";
-import { ProfessionalInterests } from "./professional/ProfessionalInterests";
-import { ProfessionalAwards } from "./professional/ProfessionalAwards";
-import { ProfessionalPublications } from "./professional/ProfessionalPublications";
-import { ProfessionalReferences } from "./professional/ProfessionalReferences";
-import { ProfessionalCustom } from "./professional/ProfessionalCustom";
+import { ProfessionalHeader } from "./ProfessionalHeader";
+import { ProfessionalSummary } from "./ProfessionalSummary";
+import { ProfessionalExperience } from "./ProfessionalExperience";
+import { ProfessionalEducation } from "./ProfessionalEducation";
+import { ProfessionalSkills } from "./ProfessionalSkills";
+import { ProfessionalProjects } from "./ProfessionalProjects";
+import { ProfessionalCertificates } from "./ProfessionalCertificates";
+import { ProfessionalLanguages } from "./ProfessionalLanguages";
+import { ProfessionalInterests } from "./ProfessionalInterests";
+import { ProfessionalAwards } from "./ProfessionalAwards";
+import { ProfessionalPublications } from "./ProfessionalPublications";
+import { ProfessionalReferences } from "./ProfessionalReferences";
+import { ProfessionalCustom } from "./ProfessionalCustom";
 
 interface ProfessionalTemplateProps {
   resume: Resume;
