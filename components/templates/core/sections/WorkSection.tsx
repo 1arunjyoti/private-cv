@@ -67,7 +67,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
     },
     summaryText: {
       fontSize,
-      color: "#444444",
+      color: getColor("text", "#444444"),
       marginTop: 2,
       /* marginBottom: 2, */
       lineHeight,
@@ -248,7 +248,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                           lineHeight={lineHeight}
                           bulletMargin={settings.bulletMargin}
                           bulletColor={getColor("decorations", "#333")}
-                          textColor="#444444"
+                          textColor={getColor("text", "#444444")}
                           getColor={getColor}
                           linkColor={getColor("links")}
                           showLinkIcon={settings.linkShowIcon}
@@ -319,7 +319,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                     lineHeight={lineHeight}
                     bulletMargin={settings.bulletMargin}
                     bulletColor={getColor("decorations", "#333")}
-                    textColor="#444444"
+                    textColor={getColor("text", "#444444")}
                     getColor={getColor}
                     linkColor={getColor("links")}
                     showLinkIcon={settings.linkShowIcon}

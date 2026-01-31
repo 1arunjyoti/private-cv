@@ -14,6 +14,7 @@
 
 import { createTemplate, type TemplateConfig } from "@/lib/template-factory";
 import { StylishHeader } from "./headers/StylishHeader";
+import { Developer2Header } from "./headers/Developer2Header";
 
 // ============================================================================
 // TEMPLATE CONFIGURATIONS
@@ -279,22 +280,32 @@ const polishedConfig: TemplateConfig = {
 const developerConfig: TemplateConfig = {
   id: "developer",
   name: "Developer",
-  layoutType: "two-column-sidebar-right", // Main on left (60%), Sidebar on right (40%)
-  defaultThemeColor: "#38b6ff", // Blue to match legacy
+  layoutType: "creative-sidebar", // Sidebar on left (35%)
+  sidebarBackground: false,
+  fullWidthHeader: false,
+  defaultThemeColor: "#38bdf8", // Sky 400
+  pageBackgroundColor: "#0f172a", // Slate 900
+  cardBackgroundColor: "#1e293b", // Slate 800
+  cardBorderColor: "#334155", // Slate 700
+  sidebarPaddingRight: 10, // Reduce padding to fit content better
+  rightColumnBackgroundColor: "#0f172a", // Match page background to avoid white stripe
+  headerTextColor: "#e2e8f0",
+  sidebarTextColor: "#e2e8f0",
+  rightColumnTextColor: "#e2e8f0",
   leftColumnSections: [
-    // Main content (60%)
-    "work",
-    "projects",
-  ],
-  rightColumnSections: [
-    // Sidebar content (40%)
-    "summary",
+    // Sidebar content
     "skills",
     "education",
-    "certificates",
     "languages",
     "interests",
     "awards",
+  ],
+  rightColumnSections: [
+    // Main content
+    "summary",
+    "work",
+    "projects",
+    "certificates",
     "publications",
     "references",
     "custom",
@@ -304,28 +315,61 @@ const developerConfig: TemplateConfig = {
 const developer2Config: TemplateConfig = {
   id: "developer2",
   name: "Developer 2",
-  layoutType: "creative-sidebar", // Sidebar on left with decorative elements
-  defaultThemeColor: "#74C365", // Mantis Green to match legacy
+  layoutType: "creative-sidebar", // Full-height sidebar with split main content
+  defaultThemeColor: "#3b82f6", // Blue accent color
   sidebarBackground: true,
   sidebarBackgroundColor: "#1C1C1C", // Dark grey sidebar
+  pageBackgroundColor: "#222222", // Dark grey page background
+  rightColumnBackgroundColor: "#222222", // Dark background for main content
+  headerTextColor: "#FFFFFF",
+  sidebarTextColor: "#FFFFFF",
+  rightColumnTextColor: "#FFFFFF",
+  sidebarPaddingRight: 0, // No padding for centered vertical header
+  headerComponent: Developer2Header,
+  // Section distribution matching the design
   leftColumnSections: [
-    // Sidebar content (35% - dark background)
-    "summary",
+    // Just the header (vertical name) - no other sections
+  ],
+  middleColumnSections: [
+    // First content column - credentials
+    "education",
+    "work",
+    "projects",
   ],
   rightColumnSections: [
-    // Main content (65% - numbered sections)
-    "education",
+    // Second content column - experience
+    "summary",
     "skills",
-    "projects",
     "certificates",
+    "languages",
     "interests",
-    "work",
     "awards",
     "publications",
-    "languages",
     "references",
     "custom",
   ],
+  themeOverrides: {
+    // Narrow sidebar for vertical name
+    leftColumnWidth: 15,
+
+    // Spacing optimized for dark theme
+    marginVertical: 20,
+    marginHorizontal: 0,
+    headerBottomMargin: 0, // Header is vertical, no bottom margin needed
+
+    // Section spacing
+    sectionMargin: 12,
+    bulletMargin: 3,
+
+    // Typography
+    fontSize: 9,
+    lineHeight: 1.35,
+
+    // Styles
+    sectionHeadingStyle: 8, // Plain/Minimal
+    sectionHeadingCapitalization: "uppercase",
+    sectionHeadingBold: true,
+  },
 };
 
 // ============================================================================

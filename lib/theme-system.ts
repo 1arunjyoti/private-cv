@@ -94,6 +94,7 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   profileImageSize: "M",
   profileImageShape: "circle",
   profileImageBorder: false,
+  sectionDisplayStyle: "plain",
 };
 
 // ============================================================================
@@ -197,6 +198,22 @@ export const TYPOGRAPHY_PRESETS = {
     contactBold: false,
     contactItalic: false,
   },
+
+  /** Monospace for developer look */
+  monospace: {
+    fontFamily: "Courier",
+    nameFontSize: 26,
+    nameLineHeight: 1.2,
+    nameBold: true,
+    nameFont: "body",
+    titleFontSize: 14,
+    titleLineHeight: 1.2,
+    titleBold: false,
+    titleItalic: false,
+    contactFontSize: 10,
+    contactBold: false,
+    contactItalic: false,
+  },
 } as const;
 
 // ============================================================================
@@ -262,6 +279,16 @@ export const HEADING_PRESETS = {
     sectionHeadingBold: true,
     sectionHeadingCapitalization: "uppercase" as const,
     sectionHeadingSize: "S" as const,
+    sectionHeadingIcons: "none" as const,
+  },
+
+  /** Code style with hash prefix */
+  code: {
+    sectionHeadingStyle: 9 as const, // New style ID for code look
+    sectionHeadingAlign: "left" as const,
+    sectionHeadingBold: true,
+    sectionHeadingCapitalization: "capitalize" as const,
+    sectionHeadingSize: "M" as const,
     sectionHeadingIcons: "none" as const,
   },
 } as const;
@@ -608,6 +635,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       fontSize: 8.5,
       lineHeight: 1.1,
       headerBottomMargin: 2,
+      personalDetailsContactStyle: "bar",
       experienceCompanyListStyle: "bullet",
       educationInstitutionListStyle: "bullet",
       titleItalic: true,
@@ -625,6 +653,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       nameFontSize: 36,
       sectionHeadingAlign: "left",
+      personalDetailsContactStyle: "bar",
       entryListStyle: "hyphen",
       sectionOrder: [
         "summary", "work", "projects", "skills", "education",
@@ -641,6 +670,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "iconDash",
     overrides: {
+      personalDetailsContactStyle: "bar",
       leftColumnWidth: 33, // Optimized width
       headerPosition: "left", // Default to left alignment per user request
       headerBottomMargin: 24, // Increased for better separation
@@ -678,6 +708,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       headerPosition: "left", // Default to left alignment
       headerBottomMargin: 15,
+      personalDetailsContactStyle: "bar",
       sectionOrder: [
         "summary", "work", "education", "skills", "certificates",
         "projects", "languages", "awards", "publications",
@@ -695,6 +726,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       fontFamily: "Open Sans",
       headerBottomMargin: 24,
+      personalDetailsContactStyle: "bar",
       sectionHeadingCapitalization: "uppercase",
     },
   },
@@ -708,6 +740,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       leftColumnWidth: 65,
       headerBottomMargin: 10,
+      personalDetailsContactStyle: "bar",
       sectionOrder: [
         "summary", "work", "skills", "education", "projects",
         "certificates", "publications", "awards", "languages",
@@ -723,6 +756,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "compact", // Changed from 'modern' for tighter entries
     contact: "iconDash",
     overrides: {
+      personalDetailsContactStyle: "bar",
       // Compact sizing
       fontSize: 8,
       lineHeight: 1.15,
@@ -742,9 +776,10 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       publicationsPublisherItalic: true,
       awardsAwarderItalic: true,
       referencesPositionItalic: true,
+      skillsListStyle: "inline",
       sectionOrder: [
-        "skills", "languages", "interests",
-        "summary", "work", "projects",
+        "summary", "skills", "languages", "interests",
+        "work", "projects",
         "education", "certificates", "awards",
         "publications", "references", "custom",
       ],
@@ -758,6 +793,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "iconDash",
     overrides: {
+      personalDetailsContactStyle: "bar",
       showProfileImage: true,
       profileImageBorder: true,
       headerPosition: "left",
@@ -771,6 +807,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "iconDash",
     overrides: {
+      personalDetailsContactStyle: "bar",
       leftColumnWidth: 65, // Main content gets 65%
       headerPosition: "left",
       showProfileImage: true,
@@ -812,6 +849,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "compact",
     contact: "iconPipe",
     overrides: {
+      personalDetailsContactStyle: "bar",
       leftColumnWidth: 60, // Main content (Left) is 65%
       headerPosition: "left",
       showProfileImage: true,
@@ -826,19 +864,26 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
   },
   
   developer: {
-    typography: "professional",
-    headings: "filled",
-    layout: "twoColumnWide", // Will use sidebar-right from factory
+    typography: "monospace",
+    headings: "code",
+    layout: "twoColumnWide", // Will use sidebar-right from factory. Actually we will use sidebar-left in config
     entries: "compact",
     contact: "iconDash",
     overrides: {
-      leftColumnWidth: 60, // Main content gets 60%
+      personalDetailsContactStyle: "bar",
+      leftColumnWidth: 40, // Increased from 35% to 40% for wider sidebar
       headerPosition: "left",
       skillsDisplayStyle: "level",
       projectsTechnologiesBold: true,
+      sectionDisplayStyle: "card",
+      fontSize: 9, // Ensure font isn't too large
+      lineHeight: 1.3,
+      sectionMargin: 10, // Slight reduction to fit more
+      bulletMargin: 2, // Tighter bullets
+      themeColorTarget: ["decorations", "links", "icons"], // Exclude headings so they take text color
       sectionOrder: [
-        "work", "projects",
-        "summary", "skills", "education", "certificates", "languages",
+        "summary", "work", "projects",
+        "skills", "education", "certificates", "languages",
         "interests", "awards", "publications", "references", "custom",
       ],
     },
@@ -846,21 +891,35 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
   
   developer2: {
     typography: "professional",
-    headings: "accent",
-    layout: "twoColumnWide", // Will use creative-sidebar from factory
+    headings: "plain", // Simple headings for dark theme
+    layout: "twoColumnWide",
     entries: "modern",
-    contact: "iconDash",
+    contact: "bullet",
     overrides: {
-      leftColumnWidth: 35, // Sidebar is 35%
-      headerPosition: "left",
-      showProfileImage: true,
-      profileImageBorder: true,
-      skillsDisplayStyle: "level",
-      projectsTechnologiesBold: true,
+      // Narrow sidebar for vertical name
+      leftColumnWidth: 15,
+      
+      // Typography for readability
+      fontSize: 9,
+      lineHeight: 1.35,
+      
+      // Section styling
+      sectionHeadingStyle: 8, // Plain/Minimal
+      sectionHeadingCapitalization: "uppercase",
+      sectionHeadingBold: true,
+      sectionMargin: 12,
+      bulletMargin: 3,
+      
+      // Theme colors - blue accents only on decorations
+      themeColorTarget: ["decorations", "links", "icons"],
+      
+      // Section order - controls ordering within each column
       sectionOrder: [
-        "summary",
-        "education", "skills", "projects", "certificates", "interests",
-        "work", "awards", "publications", "languages", "references", "custom",
+        // Middle column
+        "education", "work", "projects",
+        // Right column - summary (profile) should come first
+        "summary", "skills", "certificates", "languages",
+        "interests", "awards", "publications", "references", "custom",
       ],
     },
   },

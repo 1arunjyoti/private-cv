@@ -160,6 +160,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
       minWidth: listStyle === "number" ? 18 : 12,
     },
     listContent: {
+      flex: 1,
       flexShrink: 1,
     },
   });

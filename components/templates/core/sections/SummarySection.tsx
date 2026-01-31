@@ -43,7 +43,7 @@ export const SummarySection: React.FC<SummarySectionProps> = ({
     },
     summaryText: {
       fontSize,
-      color: "#444444",
+      color: getColor("text", "#444444"),
       lineHeight,
       textAlign: "justify",
     },

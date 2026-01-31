@@ -106,6 +106,14 @@ export interface TemplateConfig {
   rightColumnTextColor?: string;
   /** Sidebar (Left column) text color */
   sidebarTextColor?: string;
+  /** Background color for the entire page */
+  pageBackgroundColor?: string;
+  /** Background color for section cards (when sectionDisplayStyle is 'card') */
+  cardBackgroundColor?: string;
+  /** Border color for section cards */
+  cardBorderColor?: string;
+  /** Right padding for the sidebar (default 30) */
+  sidebarPaddingRight?: number;
 }
 
 export interface HeaderProps {
@@ -293,6 +301,7 @@ interface SectionRendererProps {
   fontSize: number;
   getColor: GetColorFn;
   sectionMargin: number;
+  containerStyle?: any; // Allow style override
 }
 
 const SectionRenderer: React.FC<SectionRendererProps> = ({
@@ -303,6 +312,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
   fontSize,
   getColor,
   sectionMargin,
+  containerStyle,
 }) => {
   const {
     basics,
@@ -327,80 +337,80 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
     SectionHeading,
   };
 
-  const sectionStyle: { marginBottom: number } = {
+  const style = containerStyle || {
     marginBottom: sectionMargin,
   };
 
   switch (sectionId) {
     case "summary":
       return basics.summary ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <SummarySection summary={basics.summary} {...commonProps} />
         </View>
       ) : null;
     case "work":
       return work && work.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <WorkSection work={work} {...commonProps} />
         </View>
       ) : null;
     case "education":
       return education && education.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <EducationSection education={education} {...commonProps} />
         </View>
       ) : null;
     case "skills":
       return skills && skills.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <SkillsSection skills={skills} {...commonProps} />
         </View>
       ) : null;
     case "projects":
       return projects && projects.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <ProjectsSection projects={projects} {...commonProps} />
         </View>
       ) : null;
     case "certificates":
       return certificates && certificates.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <CertificatesSection certificates={certificates} {...commonProps} />
         </View>
       ) : null;
     case "languages":
       return languages && languages.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <LanguagesSection languages={languages} {...commonProps} />
         </View>
       ) : null;
     case "interests":
       return interests && interests.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <InterestsSection interests={interests} {...commonProps} />
         </View>
       ) : null;
     case "awards":
       return awards && awards.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <AwardsSection awards={awards} {...commonProps} />
         </View>
       ) : null;
     case "publications":
       return publications && publications.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <PublicationsSection publications={publications} {...commonProps} />
         </View>
       ) : null;
     case "references":
       return references && references.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <ReferencesSection references={references} {...commonProps} />
         </View>
       ) : null;
     case "custom":
       return custom && custom.length > 0 ? (
-        <View style={sectionStyle}>
+        <View style={style}>
           <CustomSection custom={custom} {...commonProps} />
         </View>
       ) : null;
@@ -531,10 +541,17 @@ export function createTemplate(config: TemplateConfig) {
         fontSize,
         lineHeight: settings.lineHeight || 1.3,
         color: "#000",
+        backgroundColor: config.pageBackgroundColor || "#ffffff",
         flexDirection:
-          config.layoutType === "creative-sidebar" ? "row" : "column",
-        ...(config.layoutType === "creative-sidebar"
-          ? { paddingTop: 30, paddingBottom: 30 }
+          config.layoutType === "creative-sidebar" ||
+          (config.layoutType === "three-column" &&
+            settings.headerPosition === "sidebar")
+            ? "row"
+            : "column",
+        ...(config.layoutType === "creative-sidebar" ||
+        (config.layoutType === "three-column" &&
+          settings.headerPosition === "sidebar")
+          ? { paddingTop: 30, paddingBottom: 30, paddingHorizontal: 0 }
           : {}),
       },
       // Body content wrapper - no longer needs to handle padding
@@ -601,7 +618,10 @@ export function createTemplate(config: TemplateConfig) {
       sidebar: {
         width: `${leftWidth}%`,
         paddingLeft: 0,
-        paddingRight: 30, // Increased right padding to prevent clash
+        paddingRight:
+          config.sidebarPaddingRight !== undefined
+            ? config.sidebarPaddingRight
+            : 30,
         color: config.sidebarTextColor || "#333",
       },
       main: {
@@ -625,26 +645,56 @@ export function createTemplate(config: TemplateConfig) {
     const HeaderComponent = config.headerComponent || DefaultHeader;
 
     // Section renderer helper
-    const renderSection = (sectionId: string, colorFn?: GetColorFn) => (
-      <SectionRenderer
-        key={sectionId}
-        sectionId={sectionId}
-        resume={resume}
-        settings={settings}
-        fonts={fonts}
-        fontSize={fontSize}
-        getColor={colorFn || getColor}
-        sectionMargin={sectionMargin}
-      />
-    );
+    const renderSection = (sectionId: string, colorFn?: GetColorFn) => {
+      // Determine style based on preferences
+      let containerStyle = { marginBottom: sectionMargin } as any;
+
+      if (settings.sectionDisplayStyle === "card") {
+        containerStyle = {
+          marginBottom: sectionMargin,
+          backgroundColor: config.cardBackgroundColor || "#ffffff",
+          borderRadius: 6,
+          padding: 10, // Reduced from 12 to save space
+          borderWidth: 1,
+          borderColor: config.cardBorderColor || "transparent",
+        };
+      }
+
+      return (
+        <SectionRenderer
+          key={sectionId}
+          sectionId={sectionId}
+          resume={resume}
+          settings={settings}
+          fonts={fonts}
+          fontSize={fontSize}
+          getColor={colorFn || getColor}
+          sectionMargin={sectionMargin}
+          containerStyle={containerStyle}
+        />
+      );
+    };
 
     // Render based on layout type and settings
     const effectiveColumnCount = settings.columnCount || 1;
 
-    // Create color function for right column if text color is specified
-    const rightColorFn: GetColorFn | undefined = config.rightColumnTextColor
-      ? () => config.rightColumnTextColor!
-      : undefined;
+    // Create color function for columns that respects theme targets
+    const createColumnColorFn = (
+      columnTextColor?: string,
+    ): GetColorFn | undefined => {
+      if (!columnTextColor) return undefined;
+      return (target: string) => {
+        // If target is configured to use theme color, return theme color
+        if (settings.themeColorTarget?.includes(target)) {
+          return themeColor;
+        }
+        // Otherwise return column text color
+        return columnTextColor;
+      };
+    };
+
+    const rightColorFn = createColumnColorFn(config.rightColumnTextColor);
+    const sidebarColorFn = createColumnColorFn(config.sidebarTextColor);
 
     switch (config.layoutType) {
       case "single-column":
@@ -729,9 +779,77 @@ export function createTemplate(config: TemplateConfig) {
         );
 
       case "three-column":
+        // Calculate middle column width
+        const middleWidth = settings.middleColumnWidth || 50;
+        const remainingWidth = 100 - leftWidth - middleWidth;
+
+        // Ensure right column has at least some space, otherwise adjust
+        // This is a simple safeguard
+        const finalRightWidth = remainingWidth > 0 ? remainingWidth : 10;
+        const finalMiddleWidth =
+          remainingWidth > 0 ? middleWidth : 100 - leftWidth - finalRightWidth;
+
+        // Sidebar header mode - columns render directly as page uses row flex
+        if (settings.headerPosition === "sidebar") {
+          return (
+            <Document>
+              <Page size="A4" style={styles.page}>
+                {config.sidebarBackground && (
+                  <View fixed style={styles.sidebarBackground} />
+                )}
+
+                {/* Left column with header spanning full height */}
+                <View
+                  style={{
+                    width: `${leftWidth}%`,
+                    paddingLeft: 15,
+                    paddingRight: 10,
+                  }}
+                >
+                  <HeaderComponent
+                    basics={basics}
+                    settings={settings}
+                    fonts={fonts}
+                    getColor={getColor}
+                    fontSize={fontSize}
+                    align={headerAlign}
+                    headerTextColor={config.headerTextColor}
+                  />
+                  {leftContent.map((id) => renderSection(id, sidebarColorFn))}
+                </View>
+
+                {/* Middle column */}
+                <View
+                  style={{
+                    width: `${finalMiddleWidth}%`,
+                    paddingHorizontal: 15,
+                  }}
+                >
+                  {middleContent.map((id) => renderSection(id))}
+                </View>
+
+                {/* Right column */}
+                <View
+                  style={{
+                    width: `${finalRightWidth}%`,
+                    paddingHorizontal: 15,
+                  }}
+                >
+                  {rightContent.map((id) => renderSection(id))}
+                </View>
+              </Page>
+            </Document>
+          );
+        }
+
+        // Standard three-column (header at top)
         return (
           <Document>
             <Page size="A4" style={styles.page}>
+              {config.sidebarBackground && (
+                <View fixed style={styles.sidebarBackground} />
+              )}
+
               <View style={styles.header}>
                 <HeaderComponent
                   basics={basics}
@@ -746,12 +864,12 @@ export function createTemplate(config: TemplateConfig) {
 
               <View style={styles.columnsContainer}>
                 <View style={styles.leftColumn}>
-                  {leftContent.map((id) => renderSection(id))}
+                  {leftContent.map((id) => renderSection(id, sidebarColorFn))}
                 </View>
-                <View style={styles.middleColumn}>
+                <View style={{ width: `${finalMiddleWidth}%` }}>
                   {middleContent.map((id) => renderSection(id))}
                 </View>
-                <View style={styles.rightColumn}>
+                <View style={{ width: `${finalRightWidth}%` }}>
                   {rightContent.map((id) => renderSection(id))}
                 </View>
               </View>
@@ -760,6 +878,10 @@ export function createTemplate(config: TemplateConfig) {
         );
 
       case "creative-sidebar":
+        // Check if main content should be split into two columns
+        const hasSplitMain =
+          config.middleColumnSections && config.middleColumnSections.length > 0;
+
         return (
           <Document>
             <Page size="A4" style={styles.page}>
@@ -789,14 +911,29 @@ export function createTemplate(config: TemplateConfig) {
                     getColor={getColor}
                     fontSize={fontSize}
                     align={headerAlign}
+                    headerTextColor={config.sidebarTextColor}
                   />
                 </View>
-                {leftContent.map((id) => renderSection(id))}
+                {leftContent.map((id) => renderSection(id, sidebarColorFn))}
               </View>
 
-              <View style={styles.main}>
-                {rightContent.map((id) => renderSection(id, rightColorFn))}
-              </View>
+              {/* Main content - single or split into two columns */}
+              {hasSplitMain ? (
+                <View style={{ ...styles.main, flexDirection: "row" }}>
+                  {/* Middle column */}
+                  <View style={{ width: "50%", paddingRight: 8 }}>
+                    {middleContent.map((id) => renderSection(id, rightColorFn))}
+                  </View>
+                  {/* Right column */}
+                  <View style={{ width: "50%", paddingLeft: 8 }}>
+                    {rightContent.map((id) => renderSection(id, rightColorFn))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.main}>
+                  {rightContent.map((id) => renderSection(id, rightColorFn))}
+                </View>
+              )}
             </Page>
           </Document>
         );

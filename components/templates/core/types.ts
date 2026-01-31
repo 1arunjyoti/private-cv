@@ -49,7 +49,7 @@ export interface BaseSectionProps {
 /**
  * Section heading style options (1-8)
  */
-export type SectionHeadingStyle = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type SectionHeadingStyle = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 /**
  * Section heading configuration

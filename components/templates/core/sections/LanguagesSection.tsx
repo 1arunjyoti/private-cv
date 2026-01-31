@@ -140,7 +140,8 @@ export const LanguagesSection: React.FC<LanguagesSectionProps> = ({
             style={[
               styles.levelDot,
               {
-                backgroundColor: i <= score ? themeColor : "#e5e7eb",
+                backgroundColor:
+                  i <= score ? themeColor : getColor("muted", "#e5e7eb"),
               },
             ]}
           />

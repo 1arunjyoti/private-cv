@@ -127,6 +127,10 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
           borderStyle: "dotted",
           paddingBottom: 3,
         };
+      case 9: // Code Style
+        return {
+          paddingBottom: 3,
+        };
       default:
         return {};
     }
@@ -164,6 +168,13 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
 
   return (
     <View style={styles.wrapper} minPresenceAhead={50}>
+      {style === 9 && (
+        <Text
+          style={{ ...styles.text, color: decorationColor, marginRight: 4 }}
+        >
+          #
+        </Text>
+      )}
       <Text style={styles.text}>{formatTitle(title)}</Text>
     </View>
   );

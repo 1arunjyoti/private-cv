@@ -113,38 +113,6 @@ export default function TemplatesPage() {
     },
     {
       release: "Work in Progress",
-      id: "developer",
-      name: "Developer",
-      description:
-        "Clean 2-column layout with sidebar. Perfect for highlighting skills and education alongside experience.",
-      category: ["Modern", "Professional"],
-      gradient: "bg-linear-to-br from-blue-50 to-sky-100",
-      image: "/images/developer_template.jpg",
-      features: [
-        "Two Column Layout",
-        "Sidebar Design",
-        "Clean Hierarchy",
-        "Customizable",
-      ],
-    },
-    {
-      release: "Work in Progress",
-      id: "developer2",
-      name: "Developer 2",
-      description:
-        "Dark theme with numbered sections and vertical typography. Distinctive and modern.",
-      category: ["Modern", "Professional"],
-      gradient: "bg-linear-to-br from-green-900 to-black",
-      image: "/images/developer_template.jpg",
-      features: [
-        "Dark Theme",
-        "Numbered Sections",
-        "Vertical Text",
-        "Modern Layout",
-      ],
-    },
-    {
-      release: "Work in Progress",
       id: "stylish",
       name: "Stylish",
       description:
@@ -192,13 +160,14 @@ export default function TemplatesPage() {
       ],
     },
     {
-      release: "coming soon",
+      release: "Work in Progress",
       id: "ats",
       name: "ATS Scanner",
       description:
         "A clean, single-column layout optimized for Applicant Tracking Systems. Essential for online applications.",
       category: "Simple",
       gradient: "bg-linear-to-br from-gray-50 to-gray-100",
+      image: "/images/ats_scanner_template.jpg",
       features: [
         "Single Column Layout",
         "Machine Readable",
@@ -206,15 +175,14 @@ export default function TemplatesPage() {
         "Keyword Optimized",
       ],
     },
-
     {
-      release: "coming soon",
+      release: "Work in Progress",
       id: "modern",
       name: "Modern Minimalist",
-      description:
-        "A sleek, typography-focused design. (Coming Soon - using ATS template for now)",
+      description: "A sleek, typography-focused design.",
       category: "Modern",
       gradient: "bg-linear-to-br from-emerald-50 to-teal-50",
+      image: "/images/modern_minimalist_template.jpg",
       features: [
         "Clean Typography",
         "Minimalist Header",
@@ -223,20 +191,52 @@ export default function TemplatesPage() {
       ],
       disabled: false,
     },
-
     {
-      release: "coming soon",
+      release: "Work in Progress",
       id: "elegant",
       name: "Elegant Banner",
       description:
         "A sophisticated design with a full-width header. Stands out while maintaining readability.",
       category: "Elegant",
       gradient: "bg-linear-to-br from-slate-800 to-slate-900",
+      image: "/images/elegant_template.jpg",
       features: [
         "Header Banner",
         "Visual Impact",
         "Clean Structure",
         "Modern Feel",
+      ],
+    },
+    {
+      release: "Work in Progress",
+      id: "developer",
+      name: "Developer",
+      description:
+        "Clean 2-column layout with sidebar. Perfect for highlighting skills and education alongside experience.",
+      category: ["Modern", "Creative"],
+      gradient: "bg-linear-to-br from-blue-50 to-sky-100",
+      image: "/images/developer_template.jpg",
+      features: [
+        "Two Column Layout",
+        "Sidebar Design",
+        "Clean Hierarchy",
+        "Customizable",
+      ],
+    },
+    {
+      release: "Work in Progress",
+      id: "developer2",
+      name: "Developer 2",
+      description:
+        "Dark theme with numbered sections and vertical typography. Distinctive and modern.",
+      category: ["Modern", "Creative"],
+      gradient: "bg-linear-to-br from-green-900 to-black",
+      //image: "/images/developer_template.jpg",
+      features: [
+        "Dark Theme",
+        "Numbered Sections",
+        "Vertical Text",
+        "Modern Layout",
       ],
     },
   ];
@@ -253,8 +253,8 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between relative">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
+        <div className="landing-container mx-auto px-4 h-16 flex items-center justify-between relative">
           <Link href="/">
             <Button
               variant="ghost"
@@ -275,8 +275,8 @@ export default function TemplatesPage() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="flex-1 landing-container mx-auto px-4 py-8 md:py-12">
+        <div className="landing-container mx-auto space-y-8">
           {/* Header & Filter Section */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b">
             <div className="space-y-1 text-center md:text-left">
@@ -436,6 +436,32 @@ export default function TemplatesPage() {
           )}
         </div>
       </main>
+
+      <footer className="border-t py-6 bg-background">
+        <div className="landing-container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-sm text-muted-foreground text-center md:text-left">
+            © {new Date().getFullYear()} PrivateCV. Open Source & Privacy-First.
+          </div>
+          <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
+            <Link href="/" className="hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <Link
+              href="https://github.com/1arunjyoti/resume-builder"
+              className="hover:text-foreground transition-colors"
+              target="_blank"
+            >
+              GitHub
+            </Link>
+            <Link
+              href="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

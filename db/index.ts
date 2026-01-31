@@ -130,20 +130,22 @@ export interface LayoutSettings {
   lineHeight: number; // 1.2-1.8, default 1.4
   sectionMargin: number; // 8-20, default 12
   bulletMargin: number; // 2-8, default 4
+  sectionDisplayStyle: 'plain' | 'card'; // default 'plain'
   useBullets: boolean; // default true
   fontFamily: string; // default "Roboto"
   // Theme
   themeColorTarget: string[]; // 'name' | 'title' | 'headings' | 'links' | 'icons' | 'decorations'
   // Advanced Layout
   columnCount: 1 | 2 | 3; // 1=One, 2=Two, 3=Mix/Custom
-  headerPosition: 'top' | 'left' | 'right';
+  headerPosition: 'top' | 'left' | 'right' | 'sidebar';
   leftColumnWidth: number; // percentage 20-80
+  middleColumnWidth?: number; // percentage, optional
   sectionOrder: string[];
   marginHorizontal: number; // 0-30mm
   marginVertical: number; // 0-30mm
   headerBottomMargin: number; // 0-50, default 20
   // Section Headings
-  sectionHeadingStyle: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; // 8 visual styles
+  sectionHeadingStyle: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // 9 visual styles
   sectionHeadingAlign: 'left' | 'center' | 'right';
   sectionHeadingBold: boolean;
   sectionHeadingCapitalization: 'capitalize' | 'uppercase';

@@ -74,7 +74,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
           : fonts.base,
       fontWeight: settings.publicationsNameBold ? "bold" : "normal",
       fontStyle: settings.publicationsNameItalic ? "italic" : "normal",
-      color: "#1a1a1a",
+      color: getColor("title", "#1a1a1a"),
     },
     date: {
       fontSize,
@@ -85,7 +85,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
           : fonts.base,
       fontWeight: settings.publicationsDateBold ? "bold" : "normal",
       fontStyle: settings.publicationsDateItalic ? "italic" : "normal",
-      color: "#666666",
+      color: getColor("meta", "#666666"),
     },
     publisher: {
       fontSize,
@@ -96,7 +96,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
           : fonts.base,
       fontWeight: settings.publicationsPublisherBold ? "bold" : "normal",
       fontStyle: settings.publicationsPublisherItalic ? "italic" : "normal",
-      color: "#555555",
+      color: getColor("subtext", "#555555"),
     },
 
     url: {
@@ -107,7 +107,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
     },
     summary: {
       fontSize,
-      color: "#444444",
+      color: getColor("text", "#444444"),
       marginTop: 2,
       lineHeight,
     },

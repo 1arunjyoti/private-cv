@@ -65,7 +65,7 @@ export const ReferencesSection: React.FC<ReferencesSectionProps> = ({
           : fonts.base,
       fontWeight: settings.referencesNameBold ? "bold" : "normal",
       fontStyle: settings.referencesNameItalic ? "italic" : "normal",
-      color: "#1a1a1a",
+      color: getColor("title", "#1a1a1a"),
     },
     position: {
       fontSize,
@@ -76,11 +76,11 @@ export const ReferencesSection: React.FC<ReferencesSectionProps> = ({
           : fonts.base,
       fontWeight: settings.referencesPositionBold ? "bold" : "normal",
       fontStyle: settings.referencesPositionItalic ? "italic" : "normal",
-      color: "#555555",
+      color: getColor("subtext", "#555555"),
     },
     reference: {
       fontSize,
-      color: "#444444",
+      color: getColor("text", "#444444"),
       marginTop: 4,
       lineHeight,
       fontStyle: "italic",
