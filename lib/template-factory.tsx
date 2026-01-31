@@ -553,7 +553,7 @@ export function createTemplate(config: TemplateConfig) {
         ...(config.layoutType === "creative-sidebar" ||
         (config.layoutType === "three-column" &&
           settings.headerPosition === "sidebar")
-          ? { paddingTop: 30, paddingBottom: 30, paddingHorizontal: 0 }
+          ? { paddingTop: 30, paddingBottom: 30, paddingLeft: marginH, paddingRight: marginH }
           : {}),
       },
       // Body content wrapper - no longer needs to handle padding
@@ -619,11 +619,11 @@ export function createTemplate(config: TemplateConfig) {
       },
       sidebar: {
         width: `${leftWidth}%`,
-        paddingLeft: config.sidebarPaddingLeft || 0,
+        paddingLeft: config.sidebarPaddingLeft !== undefined ? config.sidebarPaddingLeft : 0,
         paddingRight:
           config.sidebarPaddingRight !== undefined
             ? config.sidebarPaddingRight
-            : 30,
+            : 12,
         color: config.sidebarTextColor || "#333",
       },
       main: {
@@ -632,8 +632,8 @@ export function createTemplate(config: TemplateConfig) {
         backgroundColor: config.rightColumnBackgroundColor
           ? "transparent"
           : "#fff",
-        paddingLeft: 20,
-        paddingRight: config.rightColumnBackgroundColor ? 20 : 0,
+        paddingLeft: 12,
+        paddingRight: 0,
         // Add vertical padding if background is set
         ...(config.rightColumnBackgroundColor
           ? { paddingTop: 20, paddingBottom: 20 }
@@ -1131,8 +1131,11 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
   polished: {
     id: "polished",
     name: "Polished",
-    layoutType: "two-column-sidebar-left",
+    layoutType: "creative-sidebar",
     defaultThemeColor: "#0d9488",
+    sidebarBackground: false,
+    leftColumnSections: ["skills", "education", "awards", "certificates", "interests", "languages"],
+    rightColumnSections: ["summary", "work", "projects", "publications", "references", "custom"],
   },
 
   developer: {
