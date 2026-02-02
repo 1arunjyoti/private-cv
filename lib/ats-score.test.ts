@@ -15,6 +15,7 @@ const mockResume = (overrides: Partial<Resume> = {}): Resume => ({
   basics: {
     name: 'John Doe',
     label: 'Developer',
+    image: '',
     email: 'john@example.com',
     phone: '123-456-7890',
     url: '',

@@ -86,6 +86,102 @@ export function HeaderSettings({
 
       <Separator />
 
+      {/* Profile Photo Settings */}
+      <div className="space-y-4">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Profile Photo
+        </Label>
+
+        {/* Photo Position */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Position in Header
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { value: "left", label: "Left" },
+                { value: "right", label: "Right" },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  updateSetting("profilePhotoPosition", option.value)
+                }
+                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all hover:bg-accent ${
+                  (layoutSettings.profilePhotoPosition || "right") ===
+                  option.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
+              >
+                <div className="h-8 w-14 rounded bg-muted/80 border flex items-center gap-1 p-1">
+                  {option.value === "left" ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full bg-foreground/30 shrink-0" />
+                      <div className="flex-1 flex flex-col gap-0.5">
+                        <div className="h-1 w-full bg-foreground/20 rounded-sm" />
+                        <div className="h-1 w-3/4 bg-foreground/10 rounded-sm" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1 flex flex-col gap-0.5">
+                        <div className="h-1 w-full bg-foreground/20 rounded-sm" />
+                        <div className="h-1 w-3/4 bg-foreground/10 rounded-sm" />
+                      </div>
+                      <div className="w-4 h-4 rounded-full bg-foreground/30 shrink-0" />
+                    </>
+                  )}
+                </div>
+                <span className="text-xs font-medium">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Photo Shape */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Shape
+          </Label>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { value: "circle", label: "Circle" },
+                { value: "rounded", label: "Rounded" },
+                { value: "square", label: "Square" },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting("profilePhotoShape", option.value)}
+                className={`flex flex-col items-center gap-2 p-2 rounded-lg border transition-all hover:bg-accent ${
+                  (layoutSettings.profilePhotoShape || "circle") ===
+                  option.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 bg-foreground/30 ${
+                    option.value === "circle"
+                      ? "rounded-full"
+                      : option.value === "rounded"
+                        ? "rounded-md"
+                        : "rounded-none"
+                  }`}
+                />
+                <span className="text-xs font-medium">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
       {/* Name Section */}
       <div className="space-y-4">
         <div className="space-y-3">
@@ -335,80 +431,6 @@ export function HeaderSettings({
               ))}
             </div>
           </div>
-        </div>
-
-        <Separator />
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Profile Picture
-            </Label>
-            <Switch
-              checked={layoutSettings.showProfileImage ?? true}
-              onCheckedChange={(val) => updateSetting("showProfileImage", val)}
-            />
-          </div>
-
-          {(layoutSettings.showProfileImage ?? true) && (
-            <div className="space-y-3 pt-1">
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Size & Shape
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex rounded-md border p-1 bg-muted/20">
-                    {(["S", "M", "L"] as const).map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => updateSetting("profileImageSize", size)}
-                        className={`flex-1 rounded-sm text-xs font-medium py-1 transition-all ${
-                          (layoutSettings.profileImageSize || "M") === size
-                            ? "bg-white text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex rounded-md border p-1 bg-muted/20">
-                    {[
-                      { value: "circle", label: "Cir" },
-                      { value: "square", label: "Sqr" },
-                    ].map((shape) => (
-                      <button
-                        key={shape.value}
-                        onClick={() =>
-                          updateSetting("profileImageShape", shape.value)
-                        }
-                        className={`flex-1 rounded-sm text-xs font-medium py-1 transition-all ${
-                          (layoutSettings.profileImageShape || "circle") ===
-                          shape.value
-                            ? "bg-white text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {shape.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Add Border
-                </Label>
-                <Switch
-                  checked={layoutSettings.profileImageBorder || false}
-                  onCheckedChange={(val) =>
-                    updateSetting("profileImageBorder", val)
-                  }
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">

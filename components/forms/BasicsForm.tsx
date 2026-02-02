@@ -1,19 +1,15 @@
 "use client";
 
-import Image from "next/image";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Trash2, Upload, User, Crop } from "lucide-react";
+import { Plus, Trash2, User, Camera, X, Loader2 } from "lucide-react";
 import type { ResumeBasics } from "@/db";
-import { useRef, useState, useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
-import { ImageCropper } from "@/components/ui/ImageCropper";
-import { useImageUrl } from "@/lib/hooks/useImageUrl";
+import { compressImage, validateImageFile } from "@/lib/image-utils";
 
 // Moved outside component to prevent recreation on every render
 const SOCIAL_NETWORKS = [
@@ -31,18 +27,11 @@ interface BasicsFormProps {
 }
 
 export function BasicsForm({ data, onChange }: BasicsFormProps) {
+  // Image upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Use custom hook for image URL management with automatic cleanup
-  const {
-    displayUrl: displayImageUrl,
-    setPreviewFromBlob,
-    clearPreview,
-  } = useImageUrl(data.image);
-
-  // Cropper dialog state
-  const [showCropper, setShowCropper] = useState(false);
-  const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageSizeKB, setImageSizeKB] = useState<number | null>(null);
 
   const updateField = useCallback(
     <K extends keyof ResumeBasics>(field: K, value: ResumeBasics[K]) => {
@@ -50,6 +39,46 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     },
     [data, onChange],
   );
+
+  // Image upload handler
+  const handleImageSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        setImageError(validation.error || "Invalid file");
+        return;
+      }
+
+      setImageError(null);
+      setIsCompressing(true);
+
+      try {
+        const result = await compressImage(file, 500);
+        setImageSizeKB(result.sizeKB);
+        updateField("image", result.dataUrl);
+      } catch (err) {
+        setImageError("Failed to process image. Please try another.");
+        console.error("Image compression error:", err);
+      } finally {
+        setIsCompressing(false);
+        // Reset file input so same file can be selected again
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    },
+    [updateField],
+  );
+
+  const handleRemoveImage = useCallback(() => {
+    updateField("image", "");
+    setImageSizeKB(null);
+    setImageError(null);
+  }, [updateField]);
 
   const updateLocation = useCallback(
     (field: "city" | "country", value: string) => {
@@ -60,64 +89,6 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     },
     [data, onChange],
   );
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Create URL for the cropper
-      const url = URL.createObjectURL(file);
-      setCropperImageSrc(url);
-      setShowCropper(true);
-    }
-  };
-
-  const handleCropComplete = (blob: Blob) => {
-    // Revoke cropper URL
-    if (cropperImageSrc) {
-      URL.revokeObjectURL(cropperImageSrc);
-    }
-
-    // Set preview using the hook (handles cleanup automatically)
-    setPreviewFromBlob(blob);
-
-    // Save the cropped blob
-    updateField("image", blob);
-
-    // Close cropper
-    setShowCropper(false);
-    setCropperImageSrc(null);
-  };
-
-  const handleCropCancel = () => {
-    // Revoke cropper URL
-    if (cropperImageSrc) {
-      URL.revokeObjectURL(cropperImageSrc);
-    }
-    setCropperImageSrc(null);
-    setShowCropper(false);
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleEditImage = () => {
-    // Open cropper with currently displayed image
-    if (displayImageUrl) {
-      setCropperImageSrc(displayImageUrl);
-      setShowCropper(true);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    // Clear preview (hook handles URL cleanup)
-    clearPreview();
-    updateField("image", undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
 
   const addProfile = useCallback(
     (network?: string) => {
@@ -184,70 +155,6 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
           Basics
         </h2>
       </div>
-
-      {/* Profile Photo */}
-      <CollapsibleSection title="Profile Photo" icon={User} defaultOpen={true}>
-        <div className="flex items-center gap-4">
-          <div className="relative h-24 w-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/25">
-            {typeof displayImageUrl === "string" && displayImageUrl ? (
-              <Image
-                src={displayImageUrl}
-                alt="Profile"
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <User className="h-10 w-10 text-muted-foreground" />
-            )}
-          </div>
-          <div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="h-4 w-4" />
-              Upload Photo
-            </Button>
-            {displayImageUrl && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="ml-2"
-                  onClick={handleEditImage}
-                >
-                  <Crop className="h-4 w-4" />
-                  Crop
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive ml-2"
-                  onClick={handleRemoveImage}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Remove
-                </Button>
-              </>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">
-              PNG, JPG up to 2MB
-            </p>
-          </div>
-        </div>
-      </CollapsibleSection>
 
       {/* Personal Info */}
       <CollapsibleSection title="Personal Information" defaultOpen={true}>
@@ -363,6 +270,93 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
         </div>
       </CollapsibleSection>
 
+      {/* Profile Photo */}
+      <CollapsibleSection title="Profile Photo" defaultOpen={true}>
+        <div className="space-y-4">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleImageSelect}
+            id="profile-photo-input"
+          />
+
+          {/* Upload area or preview */}
+          {data.image ? (
+            <div className="flex items-center gap-4">
+              {/* Image preview */}
+              <div className="relative">
+                <img
+                  src={data.image}
+                  alt="Profile preview"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={handleRemoveImage}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Photo uploaded</p>
+                {imageSizeKB && (
+                  <p className="text-xs text-muted-foreground">
+                    Size: {imageSizeKB}KB
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Change Photo
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isCompressing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Compressing...
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Camera className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm font-medium">Upload Profile Photo</p>
+                  <p className="text-xs text-muted-foreground">
+                    JPEG, PNG, or WebP (max 5MB)
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Error message */}
+          {imageError && (
+            <p className="text-sm text-destructive">{imageError}</p>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            Photo will be automatically compressed to optimize file size. Only
+            templates that support profile photos will display it.
+          </p>
+        </div>
+      </CollapsibleSection>
+
       {/* Social Profiles */}
       <CollapsibleSection
         title="Social Profiles"
@@ -464,25 +458,6 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
           ))}
         </div>
       </CollapsibleSection>
-
-      {/* Image Cropper Dialog */}
-      <Dialog
-        open={showCropper}
-        onOpenChange={(open) => {
-          if (!open) handleCropCancel();
-        }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogTitle className="sr-only">Crop Profile Photo</DialogTitle>
-          {cropperImageSrc && (
-            <ImageCropper
-              imageSrc={cropperImageSrc}
-              onCrop={handleCropComplete}
-              onCancel={handleCropCancel}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

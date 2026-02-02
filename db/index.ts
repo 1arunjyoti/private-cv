@@ -4,7 +4,7 @@ import Dexie, { type EntityTable } from 'dexie';
 export interface ResumeBasics {
   name: string;
   label: string;
-  image?: Blob | string;
+  image: string; // Base64 data URL or empty string
   email: string;
   phone: string;
   url: string;
@@ -195,11 +195,9 @@ export interface LayoutSettings {
   // Link Display Options
   linkShowIcon: boolean;       // Show link icon (🔗) before links
   linkShowFullUrl: boolean;    // Show full URL instead of link text
-  // Profile Image
-  showProfileImage: boolean;
-  profileImageSize: 'S' | 'M' | 'L';
-  profileImageShape: 'circle' | 'square';
-  profileImageBorder: boolean;
+  // Profile Photo Options
+  profilePhotoPosition: 'left' | 'right'; // Position in horizontal header
+  profilePhotoShape: 'circle' | 'rounded' | 'square'; // Shape of profile photo
   // Skills
   skillsDisplayStyle: 'grid' | 'level' | 'compact' | 'bubble' | 'boxed';
   skillsLevelStyle: 0 | 1 | 2 | 3 | 4;

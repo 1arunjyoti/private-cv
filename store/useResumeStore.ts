@@ -38,6 +38,7 @@ const createEmptyResume = (title: string = 'Untitled Resume', templateId: string
     basics: {
       name: '',
       label: '',
+      image: '',
       email: '',
       phone: '',
       url: '',

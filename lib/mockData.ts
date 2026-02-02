@@ -10,6 +10,7 @@ export function generateMockResume(): Omit<Resume, "id" | "meta"> {
     basics: {
       name: "Alex Johnson",
       label: "Senior Full-Stack Developer",
+      image: "",
       email: "alex.johnson@example.com",
       phone: "+1 (555) 123-4567",
       url: "https://alexjohnson.dev",

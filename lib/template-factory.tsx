@@ -28,7 +28,6 @@ import "@/lib/fonts";
 import {
   createFontConfig,
   createGetColorFn,
-  ProfileImage,
   SectionHeading,
 } from "@/components/templates/core";
 import type {
@@ -37,6 +36,7 @@ import type {
   ContactItem,
 } from "@/components/templates/core";
 import { ContactInfo } from "@/components/templates/core/primitives/ContactInfo";
+import { ProfileImage } from "@/components/templates/core/primitives/ProfileImage";
 
 // Universal sections
 import { SummarySection } from "@/components/templates/core/sections/SummarySection";
@@ -188,8 +188,13 @@ function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
 
 /**
  * Default header component
+ *
+ * layout: "horizontal" - Image on right, text on left (for standard headers)
+ * layout: "vertical" - Image on top, text below (for sidebars)
  */
-const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
+const DefaultHeader: React.FC<
+  HeaderProps & { showImage?: boolean; layout?: "horizontal" | "vertical" }
+> = ({
   basics,
   settings,
   fonts,
@@ -198,6 +203,7 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
   align,
   headerTextColor,
   showImage = true,
+  layout = "horizontal",
 }) => {
   const nameStyle = {
     fontSize: settings.nameFontSize || 28,
@@ -233,9 +239,92 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
     color: getColor("title", headerTextColor),
   };
 
-  return (
+  const isVertical = layout === "vertical";
+
+  // Vertical layout for sidebars: image on top, then name, then contact
+  if (isVertical) {
+    return (
+      <View
+        style={{
+          alignItems:
+            align === "center"
+              ? "center"
+              : align === "right"
+                ? "flex-end"
+                : "flex-start",
+        }}
+      >
+        {showImage && basics.image && (
+          <View
+            style={{ marginBottom: 12, alignItems: "center", width: "100%" }}
+          >
+            <ProfileImage
+              src={basics.image}
+              size="L"
+              shape={settings.profilePhotoShape || "circle"}
+              border
+              borderColor={getColor("decorations", "#000000")}
+              borderWidth={2}
+            />
+          </View>
+        )}
+        {basics.name && (
+          <Text style={nameStyle} hyphenationCallback={(word) => [word]}>
+            {basics.name}
+          </Text>
+        )}
+        {basics.label && (
+          <Text style={titleStyle} hyphenationCallback={(word) => [word]}>
+            {basics.label}
+          </Text>
+        )}
+        <ContactInfo
+          items={basicsToContactItems(basics)}
+          style="stacked"
+          align={align}
+          fontSize={settings.contactFontSize || fontSize}
+          fonts={fonts}
+          getColor={getColor}
+          bold={settings.contactBold}
+          italic={settings.contactItalic}
+          separator={settings.contactSeparator}
+          linkUnderline={
+            ((settings as unknown as Record<string, unknown>)
+              .contactLinkUnderline as boolean) ?? true
+          }
+          lineHeight={settings.lineHeight}
+          color={headerTextColor}
+        />
+      </View>
+    );
+  }
+
+  // Horizontal layout (default): text and image, position based on settings
+  const photoPosition = settings.profilePhotoPosition || "right";
+  const photoShape = settings.profilePhotoShape || "circle";
+
+  const imageView = showImage && basics.image && (
     <View
       style={{
+        marginLeft: photoPosition === "right" ? 12 : 0,
+        marginRight: photoPosition === "left" ? 12 : 0,
+      }}
+    >
+      <ProfileImage
+        src={basics.image}
+        size="M"
+        shape={photoShape}
+        border
+        borderColor={getColor("decorations", "#000000")}
+        borderWidth={1}
+      />
+    </View>
+  );
+
+  const textView = (
+    <View
+      style={{
+        flex: 1,
         alignItems:
           align === "center"
             ? "center"
@@ -244,18 +333,6 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
               : "flex-start",
       }}
     >
-      {showImage && basics.image && settings.showProfileImage && (
-        <ProfileImage
-          src={typeof basics.image === "string" ? basics.image : ""}
-          size={settings.profileImageSize}
-          shape={settings.profileImageShape}
-          border={settings.profileImageBorder}
-          borderColor={
-            headerTextColor ? headerTextColor : getColor("decorations")
-          }
-          style={{ marginBottom: 10 }}
-        />
-      )}
       {basics.name && (
         <Text style={nameStyle} hyphenationCallback={(word) => [word]}>
           {basics.name}
@@ -287,6 +364,20 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
         lineHeight={settings.lineHeight}
         color={headerTextColor}
       />
+    </View>
+  );
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: showImage && basics.image ? "space-between" : "center",
+        alignItems: "flex-start",
+      }}
+    >
+      {photoPosition === "left" && imageView}
+      {textView}
+      {photoPosition === "right" && imageView}
     </View>
   );
 };
@@ -553,7 +644,12 @@ export function createTemplate(config: TemplateConfig) {
         ...(config.layoutType === "creative-sidebar" ||
         (config.layoutType === "three-column" &&
           settings.headerPosition === "sidebar")
-          ? { paddingTop: 30, paddingBottom: 30, paddingLeft: marginH, paddingRight: marginH }
+          ? {
+              paddingTop: 30,
+              paddingBottom: 30,
+              paddingLeft: marginH,
+              paddingRight: marginH,
+            }
           : {}),
       },
       // Body content wrapper - no longer needs to handle padding
@@ -619,7 +715,10 @@ export function createTemplate(config: TemplateConfig) {
       },
       sidebar: {
         width: `${leftWidth}%`,
-        paddingLeft: config.sidebarPaddingLeft !== undefined ? config.sidebarPaddingLeft : 0,
+        paddingLeft:
+          config.sidebarPaddingLeft !== undefined
+            ? config.sidebarPaddingLeft
+            : 0,
         paddingRight:
           config.sidebarPaddingRight !== undefined
             ? config.sidebarPaddingRight
@@ -906,15 +1005,29 @@ export function createTemplate(config: TemplateConfig) {
                           : "flex-start",
                   }}
                 >
-                  <HeaderComponent
-                    basics={basics}
-                    settings={settings}
-                    fonts={fonts}
-                    getColor={getColor}
-                    fontSize={fontSize}
-                    align={headerAlign}
-                    headerTextColor={config.sidebarTextColor}
-                  />
+                  {/* Use vertical layout for sidebar if using DefaultHeader */}
+                  {config.headerComponent ? (
+                    <HeaderComponent
+                      basics={basics}
+                      settings={settings}
+                      fonts={fonts}
+                      getColor={getColor}
+                      fontSize={fontSize}
+                      align={headerAlign}
+                      headerTextColor={config.sidebarTextColor}
+                    />
+                  ) : (
+                    <DefaultHeader
+                      basics={basics}
+                      settings={settings}
+                      fonts={fonts}
+                      getColor={getColor}
+                      fontSize={fontSize}
+                      align={headerAlign}
+                      headerTextColor={config.sidebarTextColor}
+                      layout="vertical"
+                    />
+                  )}
                 </View>
                 {leftContent.map((id) => renderSection(id, sidebarColorFn))}
               </View>
@@ -1134,8 +1247,22 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     layoutType: "creative-sidebar",
     defaultThemeColor: "#0d9488",
     sidebarBackground: false,
-    leftColumnSections: ["skills", "education", "awards", "certificates", "interests", "languages"],
-    rightColumnSections: ["summary", "work", "projects", "publications", "references", "custom"],
+    leftColumnSections: [
+      "skills",
+      "education",
+      "awards",
+      "certificates",
+      "interests",
+      "languages",
+    ],
+    rightColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
 
   developer: {

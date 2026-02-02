@@ -132,3 +132,17 @@ We provide dedicated "ATS Safe" templates that enforce:
 - No columns / tables.
 - Standard headings.
 - Machine-readable fonts.
+
+### Profile photo handling
+
+Implement image upload functionality.
+
+1. User selects an image from the file system (using the file input).
+2. Image is compressed to a maximum of 500KB.
+3. Image shows on the preview.
+4. Image is attached to the downloaded resume file.
+
+## Future features
+
+- Photo background removal
+- 

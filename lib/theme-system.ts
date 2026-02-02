@@ -88,12 +88,6 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   awardsHeadingVisible: true,
   referencesHeadingVisible: true,
   customHeadingVisible: true,
-  
-  // Default profile image settings
-  showProfileImage: false,
-  profileImageSize: "M",
-  profileImageShape: "circle",
-  profileImageBorder: false,
   sectionDisplayStyle: "plain",
 };
 
@@ -675,8 +669,6 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       headerPosition: "left", // Default to left alignment per user request
       headerBottomMargin: 24, // Increased for better separation
       nameFontSize: 20, // Balanced size (was 24)
-      showProfileImage: true,
-      profileImageBorder: true,
       skillsListStyle: "inline",
       languagesFluencyBold: true,
       interestsKeywordsItalic: true,
@@ -765,7 +757,6 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       headerBottomMargin: 4,
       leftColumnWidth: 22, // Narrower left column
       // Styling
-      showProfileImage: false, // Remove image for more space
       sectionHeadingSize: "S",
       entryTitleSize: "S",
       experienceDateItalic: true,
@@ -794,8 +785,6 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     contact: "iconDash",
     overrides: {
       personalDetailsContactStyle: "bar",
-      showProfileImage: true,
-      profileImageBorder: true,
       headerPosition: "left",
     },
   },
@@ -810,8 +799,6 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       personalDetailsContactStyle: "bar",
       leftColumnWidth: 65, // Main content gets 65%
       headerPosition: "left",
-      showProfileImage: true,
-      profileImageBorder: false, // No border for stylish header
       skillsDisplayStyle: "bubble", // Chip style for skills
       entrySubtitleStyle: "italic",
       sectionOrder: [
@@ -852,8 +839,6 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       personalDetailsContactStyle: "bar",
       leftColumnWidth: 60, // Main content (Left) is 65%
       headerPosition: "left",
-      showProfileImage: true,
-      profileImageBorder: true,
       sectionOrder: [
         // Main Content (Left)
         "summary", "work", "projects",  "publications", "references",

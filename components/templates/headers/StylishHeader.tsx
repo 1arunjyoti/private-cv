@@ -10,7 +10,7 @@ import {
   Stop,
 } from "@react-pdf/renderer";
 import type { HeaderProps } from "@/lib/template-factory";
-import { ProfileImage } from "../core";
+import { ProfileImage } from "@/components/templates/core/primitives/ProfileImage";
 
 export const StylishHeader: React.FC<HeaderProps> = ({
   basics,
@@ -47,7 +47,10 @@ export const StylishHeader: React.FC<HeaderProps> = ({
       alignItems: "flex-start",
     },
     textContent: {
-      width: "100%",
+      flex: 1,
+    },
+    imageWrapper: {
+      marginLeft: 12,
     },
     name: {
       fontSize: 32,
@@ -142,15 +145,17 @@ export const StylishHeader: React.FC<HeaderProps> = ({
             ))}
           </View>
         </View>
-
-        {settings.showProfileImage && basics.image && (
-          <ProfileImage
-            src={typeof basics.image === "string" ? basics.image : ""}
-            size={settings.profileImageSize}
-            shape={settings.profileImageShape}
-            border={settings.profileImageBorder}
-            borderColor={themeColor}
-          />
+        {basics.image && (
+          <View style={styles.imageWrapper}>
+            <ProfileImage
+              src={basics.image}
+              size="M"
+              shape="circle"
+              border
+              borderColor={themeColor}
+              borderWidth={2}
+            />
+          </View>
         )}
       </View>
     </View>
