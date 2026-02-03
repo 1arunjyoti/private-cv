@@ -1,8 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { AlignLeft, AlignRight, Heading } from "lucide-react";
-import React from "react";
+import { Heading } from "lucide-react";
 import { SettingsSection } from "../SettingsSection";
 import { SpacingControl } from "../SpacingControl";
 
@@ -74,8 +72,8 @@ export function HeaderSettings({
         </div>
         <br />
         <SpacingControl
-          label="Header Spacing"
-          value={layoutSettings.headerBottomMargin || 20}
+          label="Space below header"
+          value={layoutSettings.headerBottomMargin || 10}
           unit="px"
           min={0}
           max={60}
@@ -178,6 +176,17 @@ export function HeaderSettings({
             ))}
           </div>
         </div>
+
+        {/* Photo Size */}
+        <SpacingControl
+          label="Photo Size"
+          value={layoutSettings.profilePhotoSize || 80}
+          unit="pt"
+          min={40}
+          max={150}
+          step={5}
+          onChange={(val) => updateSetting("profilePhotoSize", val)}
+        />
       </div>
 
       <Separator />
@@ -200,6 +209,18 @@ export function HeaderSettings({
               }`}
             >
               Bold
+            </button>
+            <button
+              onClick={() =>
+                updateSetting("nameItalic", !layoutSettings.nameItalic)
+              }
+              className={`px-3 h-8 rounded-md border flex items-center justify-center transition-all text-xs font-medium w-full ${
+                layoutSettings.nameItalic
+                  ? "bg-accent border-accent-foreground/20 text-accent-foreground font-bold italic"
+                  : "border-border bg-background text-muted-foreground italic"
+              }`}
+            >
+              Italic
             </button>
           </div>
 
@@ -322,6 +343,18 @@ export function HeaderSettings({
               </button>
             </div>
           </div>
+          {/* Contact Line Height */}
+          <div className="flex-1">
+            <SpacingControl
+              label="Line Height"
+              value={layoutSettings.contactLineHeight || 1.2}
+              min={0.8}
+              max={2.0}
+              step={0.05}
+              decimals={2}
+              onChange={(val) => updateSetting("contactLineHeight", val)}
+            />
+          </div>
 
           {/* Contact Layout & Style */}
           <div className="space-y-4">
@@ -370,9 +403,9 @@ export function HeaderSettings({
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
-                    { value: "pipe", label: "|" },
-                    { value: "dash", label: "-" },
-                    { value: "comma", label: "," },
+                    { value: "pipe", label: "| (pipe)" },
+                    { value: "dash", label: "- (dash)" },
+                    { value: "comma", label: ", (comma)" },
                   ] as const
                 ).map((option) => (
                   <button
@@ -392,66 +425,47 @@ export function HeaderSettings({
                 ))}
               </div>
             </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  { value: "left", label: "Left" },
-                  { value: "center", label: "Center" },
-                  { value: "right", label: "Right" },
-                ] as const
-              ).map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() =>
-                    updateSetting("personalDetailsAlign", option.value)
-                  }
-                  className={`flex flex-col items-center gap-1.5 p-2 rounded-md border transition-all hover:bg-accent/50 ${
-                    (layoutSettings.personalDetailsAlign || "center") ===
-                    option.value
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border bg-transparent hover:border-primary/30"
-                  }`}
-                >
-                  <div className="h-6 w-full flex items-center justify-center opacity-70">
-                    {option.value === "left" && (
-                      <AlignLeft className="h-4 w-4" />
-                    )}
-                    {option.value === "center" && (
-                      <div className="h-4 w-4 flex flex-col items-center justify-center">
-                        <div className="w-full h-0.5 bg-current mb-0.5" />
-                      </div>
-                    )}
-                    {option.value === "right" && (
-                      <AlignRight className="h-4 w-4" />
-                    )}
-                  </div>
-                  <span className="text-xs font-medium">{option.label}</span>
-                </button>
-              ))}
+            <div className="flex-1">
+              <SpacingControl
+                label="Separator Gap"
+                value={layoutSettings.contactSeparatorGap || 4}
+                unit="px"
+                min={1}
+                max={20}
+                step={1}
+                onChange={(val) => updateSetting("contactSeparatorGap", val)}
+              />
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {(
-            [
-              { value: "body", label: "Standard Font" },
-              { value: "creative", label: "Creative Font" },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value}
-              onClick={() => updateSetting("nameFont", option.value)}
-              className={`py-2 px-3 rounded-md border text-xs font-medium transition-all ${
-                (layoutSettings.nameFont || "body") === option.value
-                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                  : "border-border bg-background hover:bg-muted"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
+          {/* Link Display Style */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground">
+              Link Style
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => updateSetting("linkShowFullUrl", false)}
+                className={`flex items-center justify-center p-2 rounded-md border transition-all text-xs font-medium ${
+                  !layoutSettings.linkShowFullUrl
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
+              >
+                Short (Username)
+              </button>
+              <button
+                onClick={() => updateSetting("linkShowFullUrl", true)}
+                className={`flex items-center justify-center p-2 rounded-md border transition-all text-xs font-medium ${
+                  layoutSettings.linkShowFullUrl
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
+              >
+                Full (URL)
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </SettingsSection>

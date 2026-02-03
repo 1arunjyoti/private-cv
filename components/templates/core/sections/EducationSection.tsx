@@ -151,10 +151,17 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.educationDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.educationDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.educationDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.educationDateBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.educationDateItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
@@ -166,10 +173,17 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.educationDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.educationDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.educationDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.educationDateBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.educationDateItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
@@ -186,6 +200,19 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                         color: getColor("meta", "#555555"),
                         textAlign: "right",
                         marginTop: 2,
+                        fontFamily: settings.educationGpaBold
+                          ? settings.educationGpaItalic
+                            ? fonts.boldItalic
+                            : fonts.bold
+                          : settings.educationGpaItalic
+                            ? fonts.italic
+                            : fonts.base,
+                        fontWeight: settings.educationGpaBold
+                          ? "bold"
+                          : "normal",
+                        fontStyle: settings.educationGpaItalic
+                          ? "italic"
+                          : "normal",
                       }}
                     >
                       {edu.score.includes(":") ||
@@ -239,10 +266,17 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                           ? fontSize + 2
                           : fontSize + 1,
                       fontFamily: settings.educationDegreeBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.educationDegreeItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.educationDegreeItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.educationDegreeBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.educationDegreeItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("primary", "#000"),
                     }}
@@ -253,7 +287,19 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       color: getColor("title", "#333"),
-                      fontFamily: fonts.bold,
+                      fontFamily: settings.educationInstitutionBold
+                        ? settings.educationInstitutionItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.educationInstitutionItalic
+                          ? fonts.italic
+                          : fonts.base,
+                      fontWeight: settings.educationInstitutionBold
+                        ? "bold"
+                        : "normal",
+                      fontStyle: settings.educationInstitutionItalic
+                        ? "italic"
+                        : "normal",
                       marginTop: 1,
                       marginBottom: 2,
                     }}
@@ -278,9 +324,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                   {/* Courses */}
                   {edu.courses && edu.courses.length > 0 && (
                     <View style={styles.coursesWrapper}>
-                      <Text style={styles.coursesLabel}>
-                        Relevant Coursework:
-                      </Text>
+                      <Text style={styles.coursesLabel}>Courses:</Text>
                       <BulletList
                         items={edu.courses}
                         style="inline"
@@ -390,7 +434,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               edu.courses.length > 0 &&
               settings.entryLayoutStyle !== 3 && (
                 <View style={styles.coursesWrapper}>
-                  <Text style={styles.coursesLabel}>Relevant Coursework:</Text>
+                  <Text style={styles.coursesLabel}>Courses:</Text>
                   <BulletList
                     items={edu.courses}
                     style="inline"

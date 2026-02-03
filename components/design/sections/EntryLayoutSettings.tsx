@@ -1,5 +1,4 @@
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { AlignLeft } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
@@ -32,73 +31,85 @@ export function EntryLayoutSettings({
           Layout Variation
         </Label>
         <div className="grid grid-cols-1 gap-2">
-          {[1, 2, 3, 4, 5].map((style) => (
+          {[1, 2, 3, 5].map((style) => (
             <button
               key={style}
               onClick={() => updateSetting("entryLayoutStyle", style)}
-              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all hover:bg-muted/50 ${
+              className={`flex flex-col gap-1.5 p-3 rounded-lg border-2 transition-all text-left ${
                 (layoutSettings.entryLayoutStyle || 1) === style
                   ? "border-primary bg-accent"
-                  : "border-transparent bg-muted/20 hover:border-border"
+                  : "border-transparent bg-muted/20 hover:border-border hover:bg-muted/40"
               }`}
             >
-              {/* Style 1: Title left, dates right */}
-              {style === 1 && (
-                <div className="flex items-center justify-between w-full gap-2 opacity-80">
-                  <span className="text-xs font-semibold">Standard</span>
-                  <div className="h-1.5 w-1/3 bg-foreground/20 rounded-sm" />
-                </div>
-              )}
-              {/* Style 2: Dates left, content right */}
-              {style === 2 && (
-                <div className="flex items-center gap-3 w-full opacity-80">
-                  <div className="h-1.5 w-1/4 bg-foreground/20 rounded-sm" />
-                  <div className="h-px bg-border flex-1 mx-2" />
-                  <span className="text-xs font-semibold">Sidebar Date</span>
-                </div>
-              )}
-
-              {/* Style 3... etc placeholders */}
-              {style > 2 && (
-                <span className="text-xs font-medium pl-1">
-                  Variation {style}
+              <div className="flex items-center justify-between w-full gap-2">
+                <span className="text-xs font-semibold">
+                  {style === 1 && "Standard"}
+                  {style === 2 && "Inline"}
+                  {style === 3 && "Timeline"}
+                  {style === 5 && "Compact"}
                 </span>
-              )}
+              </div>
+
+              {/* Visual Preview */}
+              <div className="w-full opacity-80 pointer-events-none select-none">
+                {/* Style 1: Title...Date / Subtitle */}
+                {style === 1 && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <div className="h-1.5 w-1/3 bg-foreground/80 rounded-sm" />
+                      <div className="h-1.5 w-1/5 bg-foreground/50 rounded-sm" />
+                    </div>
+                    <div className="h-1.5 w-1/2 bg-foreground/60 rounded-sm" />
+                  </div>
+                )}
+
+                {/* Style 2: Title | Subtitle | Date... */}
+                {style === 2 && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1/4 bg-foreground/80 rounded-sm" />
+                    <div className="h-px bg-border w-2" />
+                    <div className="h-1.5 w-1/4 bg-foreground/60 rounded-sm" />
+                    <div className="h-px bg-border w-2" />
+                    <div className="h-1.5 w-1/5 bg-foreground/50 rounded-sm" />
+                  </div>
+                )}
+
+                {/* Style 3: Timeline */}
+                {style === 3 && (
+                  <div className="flex gap-2">
+                    {/* Date Column */}
+                    <div className="w-[20%] flex justify-end pt-0.5">
+                      <div className="h-1.5 w-full bg-foreground/50 rounded-sm" />
+                    </div>
+                    {/* Line Column */}
+                    <div className="relative w-2 flex flex-col items-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-foreground/80 z-10" />
+                      <div className="w-px h-4 bg-border absolute top-1.5" />
+                    </div>
+                    {/* Content Column */}
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="h-1.5 w-3/4 bg-foreground/80 rounded-sm" />
+                      <div className="h-1.5 w-1/2 bg-foreground/60 rounded-sm" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Style 4: Removed (Stacked) */}
+
+                {/* Style 5: Title - Subtitle (Date) */}
+                {style === 5 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 w-3/4">
+                      <div className="h-1.5 w-1/3 bg-foreground/80 rounded-sm" />
+                      <div className="text-[8px] opacity-50">-</div>
+                      <div className="h-1.5 w-1/3 bg-foreground/60 rounded-sm" />
+                    </div>
+                    <div className="h-1.5 w-1/6 bg-foreground/50 rounded-sm" />
+                  </div>
+                )}
+              </div>
             </button>
           ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Subtitle Style</Label>
-          <select
-            className="w-full h-8 rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm"
-            value={layoutSettings.entrySubtitleStyle || "italic"}
-            onChange={(e) =>
-              updateSetting("entrySubtitleStyle", e.target.value)
-            }
-          >
-            <option value="normal">Normal</option>
-            <option value="bold">Bold</option>
-            <option value="italic">Italic</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Placement</Label>
-          <select
-            className="w-full h-8 rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm"
-            value={layoutSettings.entrySubtitlePlacement || "nextLine"}
-            onChange={(e) =>
-              updateSetting("entrySubtitlePlacement", e.target.value)
-            }
-          >
-            <option value="nextLine">Next Line</option>
-            <option value="sameLine">Same Line</option>
-          </select>
         </div>
       </div>
     </SettingsSection>

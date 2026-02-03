@@ -12,7 +12,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "@react-pdf/renderer";
+import { View, Text, StyleSheet, Link } from "@react-pdf/renderer";
 import type { WorkExperience, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
 import {
@@ -126,10 +126,17 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.experienceDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.experienceDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.experienceDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.experienceDateBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.experienceDateItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
@@ -141,10 +148,17 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.experienceDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.experienceDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.experienceDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.experienceDateBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.experienceDateItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
@@ -198,11 +212,18 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                         settings.entryTitleSize === "L"
                           ? fontSize + 2
                           : fontSize + 1,
-                      fontFamily: settings.experienceCompanyBold
-                        ? fonts.bold
-                        : fonts.base,
-                      fontWeight: settings.experienceCompanyBold
+                      fontFamily: settings.experiencePositionBold
+                        ? settings.experiencePositionItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.experiencePositionItalic
+                          ? fonts.italic
+                          : fonts.base,
+                      fontWeight: settings.experiencePositionBold
                         ? "bold"
+                        : "normal",
+                      fontStyle: settings.experiencePositionItalic
+                        ? "italic"
                         : "normal",
                       color: getColor("primary", "#000"), // Section primary color
                     }}
@@ -213,13 +234,53 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       color: getColor("title", "#333"),
-                      fontFamily: fonts.bold,
+                      fontFamily: settings.experienceCompanyBold
+                        ? settings.experienceCompanyItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.experienceCompanyItalic
+                          ? fonts.italic
+                          : fonts.base,
+                      fontWeight: settings.experienceCompanyBold
+                        ? "bold"
+                        : "normal",
+                      fontStyle: settings.experienceCompanyItalic
+                        ? "italic"
+                        : "normal",
                       marginTop: 1,
                       marginBottom: 2,
                     }}
                   >
                     {exp.company}
                   </Text>
+
+                  {exp.url && (
+                    <Link src={exp.url}>
+                      <Text
+                        style={{
+                          fontSize: fontSize - 1,
+                          color: getColor("links", "#444444"),
+                          textDecoration: "underline",
+                          marginBottom: 2,
+                          fontFamily: settings.experienceWebsiteBold
+                            ? settings.experienceWebsiteItalic
+                              ? fonts.boldItalic
+                              : fonts.bold
+                            : settings.experienceWebsiteItalic
+                              ? fonts.italic
+                              : fonts.base,
+                          fontWeight: settings.experienceWebsiteBold
+                            ? "bold"
+                            : "normal",
+                          fontStyle: settings.experienceWebsiteItalic
+                            ? "italic"
+                            : "normal",
+                        }}
+                      >
+                        {exp.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                      </Text>
+                    </Link>
+                  )}
 
                   {exp.summary && (
                     <RichText

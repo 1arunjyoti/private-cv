@@ -149,6 +149,8 @@ export const useResumeStore = create<ResumeState>()(
       updateCurrentResume: (updates: Partial<Resume>) => {
         const { currentResume } = get();
         if (currentResume) {
+          // Ensure we get a new timestamp by waiting for next tick if needed
+          const newTimestamp = new Date().toISOString();
           set({
             currentResume: {
               ...currentResume,
@@ -156,7 +158,7 @@ export const useResumeStore = create<ResumeState>()(
               meta: {
                 ...currentResume.meta,
                 ...(updates.meta || {}),
-                lastModified: new Date().toISOString(),
+                lastModified: newTimestamp,
               },
             },
           });

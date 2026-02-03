@@ -43,6 +43,8 @@ export interface ContactInfoProps {
   linkUnderline?: boolean;
   /** Line height for text */
   lineHeight?: number;
+  /** Gap between separator and items */
+  separatorGap?: number;
   /** Override text color for all items */
   color?: string;
 }
@@ -71,6 +73,7 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
   separator,
   linkUnderline = true,
   lineHeight = 1.2,
+  separatorGap = 4,
   color,
 }) => {
   if (!items || items.length === 0) return null;
@@ -119,7 +122,7 @@ export const ContactInfo: React.FC<ContactInfoProps> = ({
     separator: {
       fontSize,
       color: finalTextColor,
-      marginHorizontal: 4,
+      marginHorizontal: separatorGap,
       lineHeight,
     },
     text: {

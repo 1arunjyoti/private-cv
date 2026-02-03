@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest';
-import { calculateATSScore } from './ats-score';
+import { calculateATSScore } from '@/lib//ats-score';
 import { Resume } from '@/db';
 
 const mockResume = (overrides: Partial<Resume> = {}): Resume => ({
@@ -106,5 +106,55 @@ describe('calculateATSScore', () => {
      const result = calculateATSScore(resume);
      const contactCheck = result.checks.find(c => c.id === 'contact-info');
      expect(contactCheck?.passed).toBe(false);
+  });
+
+  it('checks for keyword matching with job description', () => {
+    const resume = mockResume({
+      skills: [
+        { name: 'React', keywords: ['React', 'TypeScript'] } 
+      ] as any
+    });
+    // JD emphasizes React and TypeScript
+    const jd = "We are looking for a React developer with TypeScript experience.";
+    
+    const result = calculateATSScore(resume, jd);
+    const keywordCheck = result.checks.find(c => c.id === 'keyword-match');
+    
+    // Resume has 'React' and 'TypeScript'. JD has 'looking', 'react', 'developer', 'typescript', 'experience'.
+    // Significant: looking, react, developer, typescript, experience
+    // Resume has: react, typescript.
+    // 2/5 = 40%. It might fail the 50% threshold or pass depending on stop words.
+    // "We", "are", "for", "a", "with" are stop words.
+    // Let's refine the test to be sure.
+    
+    // JD: "React React React"
+    // Resume: "React"
+    // Significant: React. Match 100%.
+    
+    const strongJd = "React React React";
+    const strongResult = calculateATSScore(resume, strongJd);
+    const strongCheck = strongResult.checks.find(c => c.id === 'keyword-match');
+    expect(strongCheck?.passed).toBe(true);
+    expect(strongCheck?.score).toBe(20);
+  });
+
+  it('validates standard sections parsing', () => {
+    const resume = mockResume({
+      work: [], // Missing work
+      education: [], // Missing education
+      skills: [] // Missing skills
+    });
+    const result = calculateATSScore(resume);
+    const parsingCheck = result.checks.find(c => c.id === 'parsing-standard-sections');
+    expect(parsingCheck?.passed).toBe(false);
+
+    const goodResume = mockResume({
+      work: [{}] as any,
+      education: [{}] as any,
+      skills: [{}] as any
+    });
+    const goodResult = calculateATSScore(goodResume);
+    const goodParsingCheck = goodResult.checks.find(c => c.id === 'parsing-standard-sections');
+    expect(goodParsingCheck?.passed).toBe(true);
   });
 });

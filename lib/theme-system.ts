@@ -611,6 +611,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       headerBottomMargin: 15,
       personalDetailsArrangement: 2,
+      personalDetailsContactStyle: "bar",
       sectionOrder: [
         "summary", "work", "skills", "education", "projects",
         "certificates", "languages", "publications", "awards",
@@ -626,9 +627,10 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "traditional",
     contact: "iconPipe",
     overrides: {
-      fontSize: 8.5,
+      fontSize: 9.5,
       lineHeight: 1.1,
       headerBottomMargin: 2,
+      skillsListStyle: "blank",
       personalDetailsContactStyle: "bar",
       experienceCompanyListStyle: "bullet",
       educationInstitutionListStyle: "bullet",
@@ -664,6 +666,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "iconDash",
     overrides: {
+      personalDetailsArrangement: 2,
       personalDetailsContactStyle: "bar",
       leftColumnWidth: 33, // Optimized width
       headerPosition: "left", // Default to left alignment per user request
@@ -698,6 +701,8 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "compact",
     contact: "iconPipe",
     overrides: {
+      leftColumnWidth: 40,
+      skillsListStyle: "inline",
       headerPosition: "left", // Default to left alignment
       headerBottomMargin: 15,
       personalDetailsContactStyle: "bar",
@@ -732,12 +737,25 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     overrides: {
       leftColumnWidth: 65,
       headerBottomMargin: 10,
+      skillsListStyle: "inline",
       personalDetailsContactStyle: "bar",
       sectionOrder: [
         "summary", "work", "skills", "education", "projects",
         "certificates", "publications", "awards", "languages",
         "interests", "references", "custom",
       ],
+      // List style overrides
+      experienceAchievementsListStyle: "none",
+      projectsAchievementsListStyle: "none",
+      projectsListStyle: "none",
+      customSectionListStyle: "none",
+      educationInstitutionListStyle: "none",
+      certificatesListStyle: "none",
+      publicationsListStyle: "none",
+      awardsListStyle: "none",
+      languagesListStyle: "none",
+      interestsListStyle: "none",
+      referencesListStyle: "none",
     },
   },
   
@@ -839,6 +857,14 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       personalDetailsContactStyle: "bar",
       leftColumnWidth: 60, // Main content (Left) is 65%
       headerPosition: "left",
+      skillsListStyle: "blank",
+      awardsListStyle: "none",
+      certificatesListStyle: "none",
+      publicationsListStyle: "none",
+      referencesListStyle: "none",
+      interestsListStyle: "none",
+      languagesListStyle: "none",
+      customSectionListStyle: "none",
       sectionOrder: [
         // Main Content (Left)
         "summary", "work", "projects",  "publications", "references",
@@ -881,6 +907,9 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
     entries: "modern",
     contact: "bullet",
     overrides: {
+      // Column count for UI - shows 3 columns in reorder UI
+      columnCount: 3,
+      
       // Narrow sidebar for vertical name
       leftColumnWidth: 15,
       

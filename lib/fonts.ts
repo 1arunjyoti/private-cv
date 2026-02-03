@@ -27,7 +27,8 @@ export function registerPDFFonts() {
         fontWeight: "bold",
       },
       {
-        src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-italic.ttf",
+        src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700italic.ttf",
+        fontWeight: "bold",
         fontStyle: "italic",
       },
     ],
@@ -49,6 +50,11 @@ export function registerPDFFonts() {
         src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-italic-webfont.ttf",
         fontStyle: "italic",
       },
+      {
+        src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bolditalic-webfont.ttf",
+        fontWeight: "bold",
+        fontStyle: "italic",
+      },
     ],
   });
 
@@ -68,6 +74,11 @@ export function registerPDFFonts() {
         src: "https://cdn.jsdelivr.net/npm/@fontsource/lato@4.5.8/files/lato-latin-400-italic.woff",
         fontStyle: "italic",
       },
+      {
+        src: "https://cdn.jsdelivr.net/npm/@fontsource/lato@4.5.8/files/lato-latin-700-italic.woff",
+        fontWeight: "bold",
+        fontStyle: "italic",
+      },
     ],
   });
 
@@ -85,6 +96,11 @@ export function registerPDFFonts() {
       },
       {
         src: "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@4.5.13/files/montserrat-latin-400-italic.woff",
+        fontStyle: "italic",
+      },
+      {
+        src: "https://cdn.jsdelivr.net/npm/@fontsource/montserrat@4.5.13/files/montserrat-latin-700-italic.woff",
+        fontWeight: "bold",
         fontStyle: "italic",
       },
     ],

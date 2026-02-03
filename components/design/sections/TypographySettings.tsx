@@ -90,7 +90,7 @@ export function TypographySettings({
         label="Section Spacing"
         value={layoutSettings.sectionMargin}
         unit="px"
-        min={4}
+        min={0}
         max={32}
         step={2}
         onChange={(val) => updateSetting("sectionMargin", val)}

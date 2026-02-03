@@ -59,7 +59,9 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
     },
     nameRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      flex: 1,
     },
     listPrefix: {
       fontSize,

@@ -125,7 +125,7 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
         <View key={section.id} style={styles.sectionBlock}>
           {(settings.customHeadingVisible ?? true) && (
             <SectionHeading
-              title={section.name}
+              title={settings.sectionTitles?.[section.id] || section.name}
               style={settings.sectionHeadingStyle as SectionHeadingStyle}
               align={settings.sectionHeadingAlign}
               bold={settings.sectionHeadingBold}

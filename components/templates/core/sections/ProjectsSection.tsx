@@ -151,9 +151,16 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.projectsDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.projectsDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.projectsDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.projectsDateBold ? "bold" : "normal",
+                      fontStyle: settings.projectsDateItalic
+                        ? "italic"
+                        : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
                     }}
@@ -164,9 +171,16 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                     style={{
                       fontSize: fontSize,
                       fontFamily: settings.projectsDateBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.projectsDateItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.projectsDateItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.projectsDateBold ? "bold" : "normal",
+                      fontStyle: settings.projectsDateItalic
+                        ? "italic"
+                        : "normal",
                       color: getColor("text", "#444444"),
                       textAlign: "right",
                     }}
@@ -211,7 +225,6 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                   )}
                 </View>
 
-                {/* Right Column: Content */}
                 <View style={{ flex: 1, paddingLeft: 8 }}>
                   <Text
                     style={{
@@ -220,15 +233,52 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                           ? fontSize + 2
                           : fontSize + 1,
                       fontFamily: settings.projectsNameBold
-                        ? fonts.bold
-                        : fonts.base,
+                        ? settings.projectsNameItalic
+                          ? fonts.boldItalic
+                          : fonts.bold
+                        : settings.projectsNameItalic
+                          ? fonts.italic
+                          : fonts.base,
                       fontWeight: settings.projectsNameBold ? "bold" : "normal",
+                      fontStyle: settings.projectsNameItalic
+                        ? "italic"
+                        : "normal",
                       color: getColor("primary", "#000"),
                       marginBottom: 2,
                     }}
                   >
                     {proj.name}
                   </Text>
+
+                  {proj.url && (
+                    <Link src={proj.url}>
+                      <Text
+                        style={{
+                          fontSize: fontSize - 1,
+                          color: linkColor,
+                          textDecoration: "underline",
+                          marginBottom: 2,
+                          fontFamily: settings.projectsUrlBold
+                            ? settings.projectsUrlItalic
+                              ? fonts.boldItalic
+                              : fonts.bold
+                            : settings.projectsUrlItalic
+                              ? fonts.italic
+                              : fonts.base,
+                          fontWeight: settings.projectsUrlBold
+                            ? "bold"
+                            : "normal",
+                          fontStyle: settings.projectsUrlItalic
+                            ? "italic"
+                            : "normal",
+                        }}
+                      >
+                        {proj.url
+                          .replace(/^https?:\/\//, "")
+                          .replace(/\/$/, "")}
+                      </Text>
+                    </Link>
+                  )}
 
                   {/* Keywords/Technologies */}
                   {proj.keywords && proj.keywords.length > 0 && (

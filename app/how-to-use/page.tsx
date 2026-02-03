@@ -3,9 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   FileText,
-  Layout,
-  PenLine,
-  Palette,
   Download,
   ArrowRight,
   FileJson,

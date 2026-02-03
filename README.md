@@ -98,9 +98,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 5. Open a Pull Request
 
 ### For Template Contributions
-We use a factory-based template system that makes it easy to create new templates with minimal code (~20-50 lines vs 500+ lines). See our template development guides:
-- **Quick Start**: [docs/TemplateGuide.md](docs/TemplateGuide.md) - Simple overview of the system
-- **Detailed Guide**: [TEMPLATE_DEVELOPMENT_GUIDE.md](TEMPLATE_DEVELOPMENT_GUIDE.md) - Comprehensive development guide
-- **Contributing Guide**: [CONTRIBUTING_TEMPLATES.md](CONTRIBUTING_TEMPLATES.md) - Step-by-step template creation
+We use a factory-based template system that makes it easy to create new templates with minimal code (~20-50 lines vs 500+ lines). See our comprehensive template development guide:
+- **[Template Development Guide](docs/TEMPLATE_GUIDE.md)** - Complete guide for creating and modifying templates, with configuration reference, presets, and examples.
 
 New templates can be created by selecting from reusable presets (typography, headings, layouts, etc.) and adding custom overrides as needed.
