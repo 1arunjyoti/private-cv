@@ -9,9 +9,18 @@
  * @returns Formatted date (e.g., "Jan 2024") or "Present" if empty
  */
 export function formatDate(dateStr: string): string {
-  if (!dateStr) return "Present";
+  // Handle empty string
+  if (dateStr === "") return "";
+  
+  // Handle "Present" or "present"
+  if (dateStr.toLowerCase() === "present") return "Present";
+  
+  // Handle year-only format (e.g., "2023")
+  if (/^\d{4}$/.test(dateStr)) return dateStr;
+  
   try {
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
     return date.toLocaleDateString("en-US", {
       month: "short",
       year: "numeric",
@@ -34,15 +43,16 @@ export const PROFILE_IMAGE_SIZES = {
 /**
  * Convert a skill level string to a numeric score (1-5)
  * @param level - Skill level string (e.g., "Beginner", "Expert")
- * @returns Numeric score from 1-5, defaulting to 3 if unknown
+ * @returns Numeric score from 1-5, defaulting to 0 if unknown
  */
 export function getLevelScore(level: string): number {
-  const l = (level || "").toLowerCase();
+  if (!level) return 0;
+  const l = level.toLowerCase();
   if (["beginner", "novice", "basic"].some((k) => l.includes(k))) return 1;
-  if (["intermediate", "competent"].some((k) => l.includes(k))) return 3;
-  if (["advanced", "expert", "master", "proficient"].some((k) => l.includes(k)))
-    return 5;
-  return 3; // Default to intermediate
+  if (["intermediate", "competent"].some((k) => l.includes(k))) return 2;
+  if (["advanced"].some((k) => l.includes(k))) return 3;
+  if (["expert", "master", "proficient"].some((k) => l.includes(k))) return 4;
+  return 0; // Default to 0 for unknown levels
 }
 
 /**
@@ -58,14 +68,19 @@ export function mmToPt(mm: number): number {
 /**
  * Format section title based on capitalization setting
  * @param title - The section title string
- * @param capitalization - "uppercase" | "capitalize" | "lowercase"
+ * @param capitalization - "uppercase" | "capitalize" | "lowercase" | "titlecase"
  * @returns Formatted title string
  */
 export function formatSectionTitle(title: string, capitalization: string): string {
   if (capitalization === "uppercase") return title.toUpperCase();
   if (capitalization === "lowercase") return title.toLowerCase();
-  if (capitalization === "capitalize") {
+  if (capitalization === "titlecase") {
+    // Title case: capitalize first letter of each word
     return title.toLowerCase().replace(/(^|\s)\S/g, (L) => L.toUpperCase());
+  }
+  if (capitalization === "capitalize") {
+    // Capitalize: only first letter of entire string
+    return title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
   }
   return title;
 }

@@ -117,32 +117,11 @@ const generatePDFAsync = async (
   resume: Resume,
   template: TemplateType,
 ): Promise<Blob> => {
-  // Pre-process image: Convert Blob to ObjectURL for PDF rendering
-  let processedResume = { ...resume };
-  let imageUrl: string | null = null;
-
-  if (resume.basics.image instanceof Blob) {
-    imageUrl = URL.createObjectURL(resume.basics.image);
-    processedResume = {
-      ...resume,
-      basics: {
-        ...resume.basics,
-        image: imageUrl,
-      },
-    };
-  }
-
-  try {
-    const loader =
-      templateRegistry[template as keyof typeof templateRegistry] ||
-      templateRegistry.ats;
-    const generateFn = await loader();
-    return await generateFn(processedResume);
-  } finally {
-    if (imageUrl) {
-      URL.revokeObjectURL(imageUrl);
-    }
-  }
+  const loader =
+    templateRegistry[template as keyof typeof templateRegistry] ||
+    templateRegistry.ats;
+  const generateFn = await loader();
+  return await generateFn(resume);
 };
 
 interface PDFPreviewProps {

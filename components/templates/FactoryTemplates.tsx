@@ -257,6 +257,9 @@ const polishedConfig: TemplateConfig = {
   sidebarBackground: false, // Disable left background
   rightColumnBackgroundColor: "#0e7490", // Enable right background
   rightColumnTextColor: "#ffffff", // White text on right background
+  sidebarPaddingRight: 24, // Increase space between main content and sidebar
+  rightColumnPaddingLeft: 24, // Increase internal sidebar left padding
+  rightColumnPaddingRight: 24, // Add internal sidebar right padding
   leftColumnSections: [
     // Main content (65%)
     "summary",
@@ -288,7 +291,7 @@ const developerConfig: TemplateConfig = {
   cardBackgroundColor: "#1e293b", // Slate 800
   cardBorderColor: "#334155", // Slate 700
   sidebarPaddingRight: 10, // Reduce padding to fit content better
-  sidebarPaddingLeft: 20,
+  sidebarPaddingLeft: 0,
   rightColumnBackgroundColor: "#0f172a", // Match page background to avoid white stripe
   headerTextColor: "#e2e8f0",
   sidebarTextColor: "#e2e8f0",

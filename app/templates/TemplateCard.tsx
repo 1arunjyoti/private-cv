@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, Maximize2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { Template } from "@/lib/templates-data";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +123,14 @@ export function TemplateCard({
 
       <div className="p-5 flex-1 flex flex-col gap-4">
         <div>
-          <h3 className="text-xl font-bold">{template.name}</h3>
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            {template.name}
+            {template.beta && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                Beta
+              </Badge>
+            )}
+          </h3>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
             {template.description}
           </p>

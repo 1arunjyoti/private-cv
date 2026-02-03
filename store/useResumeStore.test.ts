@@ -99,10 +99,6 @@ describe('Resume Store', () => {
           contactBold: false,
           contactItalic: false,
           contactSeparator: 'pipe',
-          showProfileImage: false,
-          profileImageSize: 'M',
-          profileImageShape: 'circle',
-          profileImageBorder: false,
           skillsDisplayStyle: 'grid',
           skillsLevelStyle: 3,
           skillsListStyle: 'bullet',
@@ -202,6 +198,7 @@ describe('Resume Store', () => {
       basics: {
         name: 'John Doe',
         label: 'Developer',
+        image: '',
         email: 'john@example.com',
         phone: '',
         url: '',

@@ -24,6 +24,7 @@ export interface Template {
   colors: string[];
   popularity: number; // 0-100
   date: string; // ISO date
+  beta?: boolean;
 }
 
 export const templates: Template[] = [
@@ -118,7 +119,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "multicolumn",
     name: "Multicolumn",
     description:
@@ -133,7 +133,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "stylish",
     name: "Stylish",
     description:
@@ -153,7 +152,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "timeline",
     name: "Timeline",
     description:
@@ -173,7 +171,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "polished",
     name: "Polished",
     description:
@@ -193,7 +190,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "ats",
     name: "ATS Scanner",
     description:
@@ -213,7 +209,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "modern",
     name: "Modern Minimalist",
     description: "A sleek, typography-focused design.",
@@ -233,7 +228,6 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "elegant",
     name: "Elegant Banner",
     description:
@@ -253,9 +247,9 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "developer",
     name: "Developer",
+    beta: true,
     description:
       "Clean 2-column layout with sidebar. Perfect for highlighting skills and education alongside experience.",
     category: ["Modern", "Creative"],
@@ -273,9 +267,9 @@ export const templates: Template[] = [
     date: "2025-01-31",
   },
   {
-    release: "Work in Progress",
     id: "developer2",
     name: "Developer 2",
+    beta: true,
     description:
       "Dark theme with numbered sections and vertical typography. Distinctive and modern.",
     category: ["Modern", "Creative"],

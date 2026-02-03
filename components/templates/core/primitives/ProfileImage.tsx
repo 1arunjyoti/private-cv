@@ -1,9 +1,9 @@
 /**
  * ProfileImage - Universal profile image component
- * 
+ *
  * Supports:
  * - Three sizes: S (50pt), M (80pt), L (120pt)
- * - Two shapes: circle, square
+ * - Three shapes: circle, rounded (10% radius), square
  * - Optional border
  */
 
@@ -18,7 +18,7 @@ export interface ProfileImageProps {
   /** Custom size in points (overrides size preset) */
   customSize?: number;
   /** Shape of the image */
-  shape?: "circle" | "square";
+  shape?: "circle" | "rounded" | "square";
   /** Show border */
   border?: boolean;
   /** Border color */
@@ -48,13 +48,30 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({
 }) => {
   if (!src) return null;
 
-  const dimension = customSize ?? SIZE_MAP[size];
+  const dimension = customSize ?? SIZE_MAP[size] ?? 80; // Default to 80 (M size)
+
+  // Calculate border radius based on shape - ensure we always return a valid number
+  const getBorderRadius = (): number => {
+    const effectiveShape = shape || "circle";
+    switch (effectiveShape) {
+      case "circle":
+        return dimension / 2;
+      case "rounded":
+        return Math.round(dimension * 0.1); // 10% of dimension for nice rounded corners
+      case "square":
+        return 0;
+      default:
+        return dimension / 2; // Default to circle
+    }
+  };
+
+  const borderRadius = getBorderRadius();
 
   const styles = StyleSheet.create({
     image: {
       width: dimension,
       height: dimension,
-      borderRadius: shape === "circle" ? dimension / 2 : 0,
+      ...(borderRadius > 0 ? { borderRadius } : {}), // Only set borderRadius if > 0
       borderWidth: border ? borderWidth : 0,
       borderColor: border ? borderColor : "transparent",
       objectFit: "cover",

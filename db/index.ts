@@ -4,7 +4,7 @@ import Dexie, { type EntityTable } from 'dexie';
 export interface ResumeBasics {
   name: string;
   label: string;
-  image?: Blob | string;
+  image: string; // Base64 data URL or empty string
   email: string;
   phone: string;
   url: string;
@@ -141,6 +141,10 @@ export interface LayoutSettings {
   leftColumnWidth: number; // percentage 20-80
   middleColumnWidth?: number; // percentage, optional
   sectionOrder: string[];
+  leftColumnSections?: string[];
+  middleColumnSections?: string[];
+  rightColumnSections?: string[];
+  sectionTitles: Record<string, string>;
   marginHorizontal: number; // 0-30mm
   marginVertical: number; // 0-30mm
   headerBottomMargin: number; // 0-50, default 20
@@ -183,6 +187,7 @@ export interface LayoutSettings {
   nameLineHeight: number;
   nameBold: boolean;
   nameFont: 'body' | 'creative';
+  nameItalic: boolean;
   titleFontSize: number;
   titleLineHeight: number;
   titleBold: boolean;
@@ -190,16 +195,17 @@ export interface LayoutSettings {
   contactFontSize: number;
   contactBold: boolean;
   contactItalic: boolean;
+  contactLineHeight: number;
+  contactSeparatorGap: number;
   contactSeparator: 'pipe' | 'dash' | 'comma';
   contactLinkUnderline: boolean; // Whether to underline links in contact info
   // Link Display Options
   linkShowIcon: boolean;       // Show link icon (🔗) before links
   linkShowFullUrl: boolean;    // Show full URL instead of link text
-  // Profile Image
-  showProfileImage: boolean;
-  profileImageSize: 'S' | 'M' | 'L';
-  profileImageShape: 'circle' | 'square';
-  profileImageBorder: boolean;
+  // Profile Photo Options
+  profilePhotoPosition: 'left' | 'right'; // Position in horizontal header
+  profilePhotoShape: 'circle' | 'rounded' | 'square'; // Shape of profile photo
+  profilePhotoSize: number; // Size in points (40-150)
   // Skills
   skillsDisplayStyle: 'grid' | 'level' | 'compact' | 'bubble' | 'boxed';
   skillsLevelStyle: 0 | 1 | 2 | 3 | 4;
@@ -346,6 +352,37 @@ const db = new Dexie('ResumeBuilderDB') as Dexie & {
 db.version(1).stores({
   resumes: 'id, meta.title, meta.lastModified',
   settings: 'id',
+});
+
+// Add validation hooks
+db.resumes.hook('creating', function (primKey, obj) {
+  // Validate that id is a string
+  if (typeof obj.id !== 'string') {
+    throw new Error('Resume id must be a string');
+  }
+  // Validate that meta is an object
+  if (typeof obj.meta !== 'object' || obj.meta === null) {
+    throw new Error('Resume meta must be an object');
+  }
+  // Validate that meta has required fields
+  if (typeof obj.meta.title !== 'string') {
+    throw new Error('Resume meta.title must be a string');
+  }
+  if (typeof obj.meta.templateId !== 'string') {
+    throw new Error('Resume meta.templateId must be a string');
+  }
+});
+
+db.resumes.hook('updating', function (modifications, primKey, obj) {
+  // Validate modifications if they include id or meta
+  if ('id' in modifications && typeof modifications.id !== 'string') {
+    throw new Error('Resume id must be a string');
+  }
+  if ('meta' in modifications) {
+    if (typeof modifications.meta !== 'object' || modifications.meta === null) {
+      throw new Error('Resume meta must be an object');
+    }
+  }
 });
 
 export { db };

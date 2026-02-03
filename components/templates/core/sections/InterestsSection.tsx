@@ -31,7 +31,6 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
   fonts,
   fontSize,
   getColor,
-  lineHeight = 1.3,
   sectionTitle = "Interests",
   sectionMargin,
   containerStyle,

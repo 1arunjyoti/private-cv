@@ -28,7 +28,6 @@ import "@/lib/fonts";
 import {
   createFontConfig,
   createGetColorFn,
-  ProfileImage,
   SectionHeading,
 } from "@/components/templates/core";
 import type {
@@ -37,6 +36,7 @@ import type {
   ContactItem,
 } from "@/components/templates/core";
 import { ContactInfo } from "@/components/templates/core/primitives/ContactInfo";
+import { ProfileImage } from "@/components/templates/core/primitives/ProfileImage";
 
 // Universal sections
 import { SummarySection } from "@/components/templates/core/sections/SummarySection";
@@ -116,6 +116,10 @@ export interface TemplateConfig {
   sidebarPaddingRight?: number;
   /** Left padding for the sidebar (default 0) */
   sidebarPaddingLeft?: number;
+  /** Left padding for the right column (default 12) */
+  rightColumnPaddingLeft?: number;
+  /** Right padding for the right column (default 0) */
+  rightColumnPaddingRight?: number;
 }
 
 export interface HeaderProps {
@@ -139,7 +143,10 @@ export interface TemplateProps {
 /**
  * Convert basics to contact items for ContactInfo component
  */
-function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
+function basicsToContactItems(
+  basics: Resume["basics"],
+  showFullUrl: boolean = false,
+): ContactItem[] {
   const items: ContactItem[] = [];
 
   if (basics.email) {
@@ -165,7 +172,9 @@ function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
   if (basics.url) {
     items.push({
       type: "url",
-      value: basics.url.replace(/^https?:\/\//, ""),
+      value: showFullUrl
+        ? basics.url
+        : basics.url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
       url: basics.url,
     });
   }
@@ -176,9 +185,11 @@ function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
         type: "profile",
         value: profile.username || profile.network || profile.url,
         url: profile.url,
-        label: profile.username
-          ? `${profile.network}: ${profile.username}`
-          : profile.network,
+        label: showFullUrl
+          ? `${profile.network}: ${profile.url}`
+          : profile.username
+            ? `${profile.network}: ${profile.username}`
+            : profile.network,
       });
     }
   });
@@ -188,8 +199,13 @@ function basicsToContactItems(basics: Resume["basics"]): ContactItem[] {
 
 /**
  * Default header component
+ *
+ * layout: "horizontal" - Image on right, text on left (for standard headers)
+ * layout: "vertical" - Image on top, text below (for sidebars)
  */
-const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
+const DefaultHeader: React.FC<
+  HeaderProps & { showImage?: boolean; layout?: "horizontal" | "vertical" }
+> = ({
   basics,
   settings,
   fonts,
@@ -198,16 +214,22 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
   align,
   headerTextColor,
   showImage = true,
+  layout = "horizontal",
 }) => {
   const nameStyle = {
     fontSize: settings.nameFontSize || 28,
     fontWeight: settings.nameBold ? ("bold" as const) : ("normal" as const),
+    fontStyle: settings.nameItalic ? ("italic" as const) : ("normal" as const),
     fontFamily:
       settings.nameFont === "creative"
         ? "Helvetica"
         : settings.nameBold
-          ? fonts.bold
-          : fonts.base,
+          ? settings.nameItalic
+            ? fonts.boldItalic
+            : fonts.bold
+          : settings.nameItalic
+            ? fonts.italic
+            : fonts.base,
     textTransform: "uppercase" as const,
     color: getColor("name", headerTextColor),
     lineHeight: settings.nameLineHeight || 1.2,
@@ -233,9 +255,102 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
     color: getColor("title", headerTextColor),
   };
 
-  return (
+  const isVertical = layout === "vertical";
+
+  // Vertical layout for sidebars: image on top, then name, then contact
+  if (isVertical) {
+    return (
+      <View
+        style={{
+          alignItems:
+            align === "center"
+              ? "center"
+              : align === "right"
+                ? "flex-end"
+                : "flex-start",
+        }}
+      >
+        {showImage && basics.image && (
+          <View
+            style={{ marginBottom: 12, alignItems: "center", width: "100%" }}
+          >
+            <ProfileImage
+              src={basics.image}
+              customSize={
+                settings.profilePhotoSize
+                  ? settings.profilePhotoSize * 1.25
+                  : 100
+              }
+              shape={settings.profilePhotoShape || "circle"}
+              border
+              borderColor={getColor("decorations", "#000000")}
+              borderWidth={2}
+            />
+          </View>
+        )}
+        {basics.name && (
+          <Text style={nameStyle} hyphenationCallback={(word) => [word]}>
+            {basics.name}
+          </Text>
+        )}
+        {basics.label && (
+          <Text style={titleStyle} hyphenationCallback={(word) => [word]}>
+            {basics.label}
+          </Text>
+        )}
+        <ContactInfo
+          items={basicsToContactItems(basics, settings.linkShowFullUrl)}
+          style={
+            settings.personalDetailsArrangement === 2
+              ? "stacked"
+              : (settings.personalDetailsContactStyle as any) || "stacked"
+          }
+          align={align}
+          fontSize={settings.contactFontSize || fontSize}
+          fonts={fonts}
+          getColor={getColor}
+          bold={settings.contactBold}
+          italic={settings.contactItalic}
+          separator={settings.contactSeparator}
+          linkUnderline={
+            ((settings as unknown as Record<string, unknown>)
+              .contactLinkUnderline as boolean) ?? true
+          }
+          lineHeight={settings.contactLineHeight || settings.lineHeight || 1.2}
+          separatorGap={settings.contactSeparatorGap}
+          color={headerTextColor}
+        />
+      </View>
+    );
+  }
+
+  // Horizontal layout (default): text and image, position based on settings
+  const photoPosition = settings.profilePhotoPosition || "right";
+  const photoShape = settings.profilePhotoShape || "circle";
+  const photoSize = settings.profilePhotoSize || 80;
+
+  const imageView = showImage && basics.image && (
     <View
       style={{
+        marginLeft: photoPosition === "right" ? 12 : 0,
+        marginRight: photoPosition === "left" ? 12 : 0,
+      }}
+    >
+      <ProfileImage
+        src={basics.image}
+        customSize={photoSize}
+        shape={photoShape}
+        border
+        borderColor={getColor("decorations", "#000000")}
+        borderWidth={1}
+      />
+    </View>
+  );
+
+  const textView = (
+    <View
+      style={{
+        flex: 1,
         alignItems:
           align === "center"
             ? "center"
@@ -244,18 +359,6 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
               : "flex-start",
       }}
     >
-      {showImage && basics.image && settings.showProfileImage && (
-        <ProfileImage
-          src={typeof basics.image === "string" ? basics.image : ""}
-          size={settings.profileImageSize}
-          shape={settings.profileImageShape}
-          border={settings.profileImageBorder}
-          borderColor={
-            headerTextColor ? headerTextColor : getColor("decorations")
-          }
-          style={{ marginBottom: 10 }}
-        />
-      )}
       {basics.name && (
         <Text style={nameStyle} hyphenationCallback={(word) => [word]}>
           {basics.name}
@@ -267,7 +370,7 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
         </Text>
       )}
       <ContactInfo
-        items={basicsToContactItems(basics)}
+        items={basicsToContactItems(basics, settings.linkShowFullUrl)}
         style={
           settings.personalDetailsArrangement === 2
             ? "stacked"
@@ -284,9 +387,24 @@ const DefaultHeader: React.FC<HeaderProps & { showImage?: boolean }> = ({
           ((settings as unknown as Record<string, unknown>)
             .contactLinkUnderline as boolean) ?? true
         }
-        lineHeight={settings.lineHeight}
+        lineHeight={settings.contactLineHeight || settings.lineHeight || 1.2}
+        separatorGap={settings.contactSeparatorGap}
         color={headerTextColor}
       />
+    </View>
+  );
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: showImage && basics.image ? "space-between" : "center",
+        alignItems: "flex-start",
+      }}
+    >
+      {photoPosition === "left" && imageView}
+      {textView}
+      {photoPosition === "right" && imageView}
     </View>
   );
 };
@@ -304,6 +422,7 @@ interface SectionRendererProps {
   getColor: GetColorFn;
   sectionMargin: number;
   containerStyle?: any; // Allow style override
+  sectionTitle?: string;
 }
 
 const SectionRenderer: React.FC<SectionRendererProps> = ({
@@ -315,6 +434,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
   getColor,
   sectionMargin,
   containerStyle,
+  sectionTitle,
 }) => {
   const {
     basics,
@@ -347,67 +467,111 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({
     case "summary":
       return basics.summary ? (
         <View style={style}>
-          <SummarySection summary={basics.summary} {...commonProps} />
+          <SummarySection
+            summary={basics.summary}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "work":
       return work && work.length > 0 ? (
         <View style={style}>
-          <WorkSection work={work} {...commonProps} />
+          <WorkSection
+            work={work}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "education":
       return education && education.length > 0 ? (
         <View style={style}>
-          <EducationSection education={education} {...commonProps} />
+          <EducationSection
+            education={education}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "skills":
       return skills && skills.length > 0 ? (
         <View style={style}>
-          <SkillsSection skills={skills} {...commonProps} />
+          <SkillsSection
+            skills={skills}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "projects":
       return projects && projects.length > 0 ? (
         <View style={style}>
-          <ProjectsSection projects={projects} {...commonProps} />
+          <ProjectsSection
+            projects={projects}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "certificates":
       return certificates && certificates.length > 0 ? (
         <View style={style}>
-          <CertificatesSection certificates={certificates} {...commonProps} />
+          <CertificatesSection
+            certificates={certificates}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "languages":
       return languages && languages.length > 0 ? (
         <View style={style}>
-          <LanguagesSection languages={languages} {...commonProps} />
+          <LanguagesSection
+            languages={languages}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "interests":
       return interests && interests.length > 0 ? (
         <View style={style}>
-          <InterestsSection interests={interests} {...commonProps} />
+          <InterestsSection
+            interests={interests}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "awards":
       return awards && awards.length > 0 ? (
         <View style={style}>
-          <AwardsSection awards={awards} {...commonProps} />
+          <AwardsSection
+            awards={awards}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "publications":
       return publications && publications.length > 0 ? (
         <View style={style}>
-          <PublicationsSection publications={publications} {...commonProps} />
+          <PublicationsSection
+            publications={publications}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "references":
       return references && references.length > 0 ? (
         <View style={style}>
-          <ReferencesSection references={references} {...commonProps} />
+          <ReferencesSection
+            references={references}
+            {...commonProps}
+            sectionTitle={sectionTitle}
+          />
         </View>
       ) : null;
     case "custom":
@@ -501,10 +665,6 @@ export function createTemplate(config: TemplateConfig) {
 
     // Column widths
     const leftWidth = settings.leftColumnWidth || 30;
-    const rightWidth =
-      config.layoutType === "three-column"
-        ? 100 - leftWidth - 50 // Fixed 50% middle column for now
-        : 100 - leftWidth - 4; // 4% gap for 2-column
 
     // Section order
     const order =
@@ -513,18 +673,35 @@ export function createTemplate(config: TemplateConfig) {
         : [...rightColumnSections, ...leftColumnSections];
 
     // Filter sections by column
-    // Filter sections by column
-    const leftContent = order.filter((id) => leftColumnSections.includes(id));
-    const middleContent = order.filter((id) =>
-      (config.middleColumnSections || []).includes(id),
-    );
-    const rightContent = order.filter((id) => rightColumnSections.includes(id));
+    // Determined column sections (Settings override Config)
+    const finalLeftIDs = settings.leftColumnSections || leftColumnSections;
+    const finalMiddleIDs =
+      settings.middleColumnSections || config.middleColumnSections || [];
+    const finalRightIDs = settings.rightColumnSections || rightColumnSections;
 
-    // Orphan sections go to right/main column
+    // Filter sections by column
+    // If we have explicit column settings, use them directly as they contain the order
+    let leftContent: string[];
+    let middleContent: string[];
+    let rightContent: string[];
+
+    if (settings.leftColumnSections || settings.rightColumnSections) {
+      // Use the explicit lists from settings
+      leftContent = finalLeftIDs;
+      middleContent = finalMiddleIDs;
+      rightContent = finalRightIDs;
+    } else {
+      // Legacy behavior: Use sectionOrder to sort, but Config to categorize
+      leftContent = order.filter((id) => finalLeftIDs.includes(id));
+      middleContent = order.filter((id) => finalMiddleIDs.includes(id));
+      rightContent = order.filter((id) => finalRightIDs.includes(id));
+    }
+
+    // Orphan handling
     const knownSections = [
-      ...leftColumnSections,
-      ...(config.middleColumnSections || []),
-      ...rightColumnSections,
+      ...finalLeftIDs,
+      ...finalMiddleIDs,
+      ...finalRightIDs,
     ];
     const orphans = order.filter((id) => !knownSections.includes(id));
 
@@ -553,7 +730,12 @@ export function createTemplate(config: TemplateConfig) {
         ...(config.layoutType === "creative-sidebar" ||
         (config.layoutType === "three-column" &&
           settings.headerPosition === "sidebar")
-          ? { paddingTop: 30, paddingBottom: 30, paddingLeft: marginH, paddingRight: marginH }
+          ? {
+              paddingTop: marginV,
+              paddingBottom: marginV,
+              paddingLeft: marginH,
+              paddingRight: marginH,
+            }
           : {}),
       },
       // Body content wrapper - no longer needs to handle padding
@@ -598,28 +780,31 @@ export function createTemplate(config: TemplateConfig) {
         width: "50%",
       },
       rightColumn: {
-        width: `${rightWidth}%`,
+        flex: 1,
       },
       // Creative sidebar styles
       sidebarBackground: {
         position: "absolute",
-        top: -30,
+        top: -marginV,
         left: 0,
-        bottom: -30,
+        bottom: -marginV,
         width: `${leftWidth}%`,
         backgroundColor: config.sidebarBackgroundColor || "#f4f4f0",
       },
       rightColumnBackground: {
         position: "absolute",
-        top: -30,
+        top: -marginV,
         right: 0,
-        bottom: -30,
+        bottom: -marginV,
         width: `${100 - leftWidth}%`,
         backgroundColor: config.rightColumnBackgroundColor || "transparent",
       },
       sidebar: {
         width: `${leftWidth}%`,
-        paddingLeft: config.sidebarPaddingLeft !== undefined ? config.sidebarPaddingLeft : 0,
+        paddingLeft:
+          config.sidebarPaddingLeft !== undefined
+            ? config.sidebarPaddingLeft
+            : 0,
         paddingRight:
           config.sidebarPaddingRight !== undefined
             ? config.sidebarPaddingRight
@@ -632,8 +817,14 @@ export function createTemplate(config: TemplateConfig) {
         backgroundColor: config.rightColumnBackgroundColor
           ? "transparent"
           : "#fff",
-        paddingLeft: 12,
-        paddingRight: 0,
+        paddingLeft:
+          config.rightColumnPaddingLeft !== undefined
+            ? config.rightColumnPaddingLeft
+            : 12,
+        paddingRight:
+          config.rightColumnPaddingRight !== undefined
+            ? config.rightColumnPaddingRight
+            : 0,
         // Add vertical padding if background is set
         ...(config.rightColumnBackgroundColor
           ? { paddingTop: 20, paddingBottom: 20 }
@@ -662,6 +853,24 @@ export function createTemplate(config: TemplateConfig) {
         };
       }
 
+      // Determine section title
+      const defaultTitles: Record<string, string> = {
+        summary: "Profile",
+        work: "Experience",
+        education: "Education",
+        skills: "Skills",
+        projects: "Projects",
+        certificates: "Certificates",
+        languages: "Languages",
+        interests: "Interests",
+        awards: "Awards",
+        publications: "Publications",
+        references: "References",
+      };
+
+      const customTitle = settings.sectionTitles?.[sectionId];
+      const sectionTitle = customTitle || defaultTitles[sectionId] || sectionId;
+
       return (
         <SectionRenderer
           key={sectionId}
@@ -673,6 +882,7 @@ export function createTemplate(config: TemplateConfig) {
           getColor={colorFn || getColor}
           sectionMargin={sectionMargin}
           containerStyle={containerStyle}
+          sectionTitle={sectionTitle}
         />
       );
     };
@@ -897,26 +1107,49 @@ export function createTemplate(config: TemplateConfig) {
               <View style={styles.sidebar}>
                 <View
                   style={{
-                    marginBottom: settings.headerBottomMargin || 24,
-                    alignItems:
-                      headerAlign === "center"
-                        ? "center"
-                        : headerAlign === "right"
-                          ? "flex-end"
-                          : "flex-start",
+                    paddingRight:
+                      config.sidebarPaddingRight !== undefined
+                        ? config.sidebarPaddingRight
+                        : 12,
                   }}
                 >
-                  <HeaderComponent
-                    basics={basics}
-                    settings={settings}
-                    fonts={fonts}
-                    getColor={getColor}
-                    fontSize={fontSize}
-                    align={headerAlign}
-                    headerTextColor={config.sidebarTextColor}
-                  />
+                  <View
+                    style={{
+                      marginBottom: settings.headerBottomMargin || 24,
+                      alignItems:
+                        headerAlign === "center"
+                          ? "center"
+                          : headerAlign === "right"
+                            ? "flex-end"
+                            : "flex-start",
+                    }}
+                  >
+                    {/* Use vertical layout for sidebar if using DefaultHeader */}
+                    {config.headerComponent ? (
+                      <HeaderComponent
+                        basics={basics}
+                        settings={settings}
+                        fonts={fonts}
+                        getColor={getColor}
+                        fontSize={fontSize}
+                        align={headerAlign}
+                        headerTextColor={config.sidebarTextColor}
+                      />
+                    ) : (
+                      <DefaultHeader
+                        basics={basics}
+                        settings={settings}
+                        fonts={fonts}
+                        getColor={getColor}
+                        fontSize={fontSize}
+                        align={headerAlign}
+                        headerTextColor={config.sidebarTextColor}
+                        layout="vertical"
+                      />
+                    )}
+                  </View>
+                  {leftContent.map((id) => renderSection(id, sidebarColorFn))}
                 </View>
-                {leftContent.map((id) => renderSection(id, sidebarColorFn))}
               </View>
 
               {/* Main content - single or split into two columns */}
@@ -995,22 +1228,6 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     name: "Classic",
     layoutType: "single-column-centered",
     defaultThemeColor: "#000000",
-    leftColumnSections: [
-      "skills",
-      "education",
-      "languages",
-      "interests",
-      "awards",
-      "certificates",
-      "references",
-    ],
-    rightColumnSections: [
-      "summary",
-      "work",
-      "projects",
-      "custom",
-      "publications",
-    ],
     themeOverrides: {
       fontFamily: "Times-Roman",
       headerBottomMargin: 2,
@@ -1038,13 +1255,13 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     defaultThemeColor: "#8b5cf6",
     sidebarBackground: true,
     sidebarBackgroundColor: "#f4f4f0",
-    leftColumnSections: ["summary", "certificates", "languages", "interests"],
+    sidebarPaddingRight: 32,
+    leftColumnSections: ["summary", "certificates", "languages", "interests", "awards",],
     rightColumnSections: [
       "work",
       "education",
       "skills",
       "projects",
-      "awards",
       "publications",
       "references",
       "custom",
@@ -1086,24 +1303,37 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     name: "Classic Slate",
     layoutType: "two-column-equal",
     defaultThemeColor: "#334155",
+    leftColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "references",
+      "custom",
+    ],
+    rightColumnSections: [
+      "skills",
+      "education",
+      "certificates",
+      "publications",
+      "awards",
+      "languages",
+      "interests",
+    ],
   },
 
   multicolumn: {
     id: "multicolumn",
     name: "Multicolumn",
-    layoutType: "two-column-sidebar-left",
+    layoutType: "three-column",
     defaultThemeColor: "#0284c7",
     leftColumnSections: ["skills", "languages", "interests"],
+    middleColumnSections: ["summary", "work", "projects", "custom"],
     rightColumnSections: [
-      "summary",
-      "work",
-      "projects",
       "education",
       "certificates",
       "awards",
       "publications",
       "references",
-      "custom",
     ],
   },
 
@@ -1119,6 +1349,22 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     name: "Stylish",
     layoutType: "two-column-sidebar-left",
     defaultThemeColor: "#ec4899",
+    leftColumnSections: [
+      "work",
+      "education",
+      "projects",
+      "skills",
+      "languages",
+      "certificates",
+    ],
+    rightColumnSections: [
+      "summary",
+      "interests",
+      "awards",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
 
   timeline: {
@@ -1134,22 +1380,68 @@ export const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
     layoutType: "creative-sidebar",
     defaultThemeColor: "#0d9488",
     sidebarBackground: false,
-    leftColumnSections: ["skills", "education", "awards", "certificates", "interests", "languages"],
-    rightColumnSections: ["summary", "work", "projects", "publications", "references", "custom"],
+    leftColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "publications",
+      "references",
+    ],
+    rightColumnSections: [
+      "skills",
+      "education",
+      "awards",
+      "certificates",
+      "interests",
+      "languages",
+      "custom",
+    ],
   },
 
   developer: {
     id: "developer",
     name: "Developer",
-    layoutType: "single-column",
+    layoutType: "creative-sidebar", // Sidebar on left (35%)
     defaultThemeColor: "#22c55e",
+    sidebarBackground: false,
+    // Sidebar content
+    leftColumnSections: [
+      "skills",
+      "education",
+      "languages",
+      "interests",
+      "awards",
+    ],
+    // Main content
+    rightColumnSections: [
+      "summary",
+      "work",
+      "projects",
+      "certificates",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
 
   developer2: {
     id: "developer2",
     name: "Developer 2",
-    layoutType: "two-column-sidebar-left",
+    layoutType: "creative-sidebar", // Full-height sidebar with split main content
     defaultThemeColor: "#3b82f6",
+    leftColumnSections: [], // Just the header (vertical name)
+    middleColumnSections: ["education", "work", "projects"],
+    rightColumnSections: [
+      "summary",
+      "skills",
+      "certificates",
+      "languages",
+      "interests",
+      "awards",
+      "publications",
+      "references",
+      "custom",
+    ],
   },
 };
 

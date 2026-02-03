@@ -39,7 +39,7 @@ const CLICHES = new Set([
   'dynamic', 'proactive', 'perfectionist', 'people person'
 ]);
 
-export const calculateATSScore = (resume: Resume): ATSScoreResult => {
+export const calculateATSScore = (resume: Resume, jobDescription?: string): ATSScoreResult => {
   const checks: ATSCheck[] = [];
   const feedback: string[] = [];
 
@@ -220,6 +220,74 @@ export const calculateATSScore = (resume: Resume): ATSScoreResult => {
       ? 'Skills section is well-populated.' 
       : 'List at least 5 relevant skills.',
   });
+  
+  // 8. KEYWORD MATCHING (Optional, 20 pts bonus/incorporation)
+  if (jobDescription) {
+    const commonStopWords = new Set(['and', 'the', 'is', 'in', 'at', 'of', 'to', 'for', 'with', 'a', 'an', 'on', 'by']);
+    const jdWords = jobDescription.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+    const significantJdWords = jdWords.filter(w => !commonStopWords.has(w));
+    
+    // Count frequencies
+    const keywordCounts: Record<string, number> = {};
+    significantJdWords.forEach(w => keywordCounts[w] = (keywordCounts[w] || 0) + 1);
+    
+    // Get top 20 keywords
+    const topKeywords = Object.entries(keywordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([word]) => word);
+      
+    // Check overlap
+    const resumeText = JSON.stringify(resume).toLowerCase();
+    const matchedKeywords = topKeywords.filter(w => resumeText.includes(w));
+    const matchRatio = topKeywords.length > 0 ? matchedKeywords.length / topKeywords.length : 0;
+    
+    // Add logic for score
+    const keywordMatchPassed = matchRatio >= 0.5; // Match 50% of top keywords
+    const matchScore = Math.min(20, Math.ceil(matchRatio * 20));
+    
+    checks.push({
+        id: 'keyword-match',
+        name: 'Job Description Match',
+        category: 'content',
+        passed: keywordMatchPassed,
+        score: matchScore,
+        maxScore: 20,
+        message: keywordMatchPassed
+           ? 'Good keyword overlap with the job description.'
+           : 'Try to include more keywords from the job description.',
+        details: [`Matched: ${matchedKeywords.length}/${topKeywords.length} top keywords.`]
+    });
+  }
+
+  // 9. PARSING: Section Headings (5 pts)
+  // Check if standard sections exist (e.g. Work Experience, Education, Skills)
+  // In our builder, these are fixed keys, but user might leave them empty.
+  // We can check if populated sections have some content.
+  // Actually, let's check if the user has renamed sections improperly?
+  // Our db/resume model doesn't easily support custom section renaming in a way that breaks ATS 
+  // unless they use the "custom" array.
+  
+  // Let's verify standard sections are present if they have data
+  const hasWork = resume.work.length > 0;
+  const hasEducation = resume.education.length > 0;
+  const hasSkillsData = resume.skills.length > 0;
+  
+  // A simple heuristic: A good resume usually has all three.
+  const allStandardSections = hasWork && hasEducation && hasSkillsData;
+  
+  checks.push({
+      id: 'parsing-standard-sections',
+      name: 'Standard Sections',
+      category: 'formatting',
+      passed: allStandardSections,
+      score: allStandardSections ? 5 : 0,
+      maxScore: 5,
+      message: allStandardSections
+          ? 'Standard sections (Work, Education, Skills) are present.'
+          : 'Ensure you have Work, Education, and Skills sections for better ATS parsing.',
+  });
+
 
   // Calculate Totals
   const currentScore = checks.reduce((acc, check) => acc + check.score, 0);

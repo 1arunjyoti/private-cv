@@ -25,6 +25,7 @@ import { ProjectsSettings } from "./design/sections/ProjectsSettings";
 import { PublicationsSettings } from "./design/sections/PublicationsSettings";
 import { ReferencesSettings } from "./design/sections/ReferencesSettings";
 import { SectionHeadingSettings } from "./design/sections/SectionHeadingSettings";
+import { SectionTitlesSettings } from "./design/sections/SectionTitlesSettings";
 import { SkillsSettings } from "./design/sections/SkillsSettings";
 import { ThemeSettings } from "./design/sections/ThemeSettings";
 import { TypographySettings } from "./design/sections/TypographySettings";
@@ -39,8 +40,9 @@ export function DesignSettings() {
 
   // Collapsible state
   const [openSections, setOpenSections] = useState({
-    layout: true,
+    layout: false,
     header: false,
+    sectionTitles: false,
     spacing: false,
     entryLayout: false,
     sectionHeadings: false,
@@ -171,6 +173,7 @@ export function DesignSettings() {
             updateSetting={updateSetting}
             isOpen={openSections.layout}
             onToggle={() => toggleSection("layout")}
+            templateId={currentResume.meta.templateId}
           />
 
           <HeaderSettings
@@ -194,6 +197,14 @@ export function DesignSettings() {
             updateThemeColor={updateThemeColor}
             isOpen={openSections.themeColor}
             onToggle={() => toggleSection("themeColor")}
+          />
+
+          <SectionTitlesSettings
+            layoutSettings={layoutSettings}
+            updateSetting={updateSetting}
+            isOpen={openSections.sectionTitles}
+            onToggle={() => toggleSection("sectionTitles")}
+            customSections={currentResume.custom || []}
           />
 
           <SectionHeadingSettings

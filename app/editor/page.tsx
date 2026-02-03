@@ -51,13 +51,13 @@ import {
   Menu,
   RotateCcw,
   Wand2,
-  Palette,
   ChevronDown,
   PenLine,
   FileUp,
   Info,
   FileJson,
   LayoutTemplate,
+  Paintbrush,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -76,6 +76,9 @@ import { ResetConfirmDialog } from "@/components/ResetConfirmDialog";
 import { ATSScore } from "@/components/editor/ATSScore";
 import { DisclaimerDialog } from "@/components/DisclaimerDialog";
 import { Separator } from "@/components/ui/separator";
+import { ImportDialog } from "@/components/ImportDialog";
+import { ImportReview } from "@/components/ImportReview";
+import { importService, type ImportResult, type ParsedResumeData } from "@/lib/import";
 
 // Moved outside component to prevent recreation on every render
 const EDITOR_TABS = [
@@ -118,6 +121,9 @@ function EditorContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("basics");
   const [view, setView] = useState<"content" | "customize">("content");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importReviewOpen, setImportReviewOpen] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   // Load or create resume on mount
   useEffect(() => {
@@ -154,8 +160,31 @@ function EditorContent() {
     URL.revokeObjectURL(url);
   }, [currentResume]);
 
-  const handleImportJSON = useCallback(() => {
-    fileInputRef.current?.click();
+
+  const handleImportResume = useCallback(() => {
+    setImportDialogOpen(true);
+  }, []);
+
+  const handleImportComplete = useCallback((result: ImportResult) => {
+    setImportResult(result);
+    setImportDialogOpen(false);
+    setImportReviewOpen(true);
+  }, []);
+
+  const handleImportConfirm = useCallback(
+    (data: ParsedResumeData) => {
+      if (!currentResume) return;
+      const merged = importService.mergeWithResume(currentResume, data);
+      updateCurrentResume(merged);
+      setImportReviewOpen(false);
+      setImportResult(null);
+    },
+    [currentResume, updateCurrentResume]
+  );
+
+  const handleImportCancel = useCallback(() => {
+    setImportReviewOpen(false);
+    setImportResult(null);
   }, []);
 
   const handleFileChange = useCallback(
@@ -249,6 +278,23 @@ function EditorContent() {
         className="hidden"
         onChange={handleFileChange}
       />
+      
+      {/* Import Dialogs */}
+      <ImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={handleImportComplete}
+      />
+      
+      {importResult && (
+        <ImportReview
+          open={importReviewOpen}
+          onOpenChange={setImportReviewOpen}
+          importResult={importResult}
+          onConfirm={handleImportConfirm}
+          onCancel={handleImportCancel}
+        />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -306,7 +352,7 @@ function EditorContent() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Palette className="h-4 w-4" />
+                <Paintbrush className="h-4 w-4" />
                 Customize
               </Button>
             </div>
@@ -336,12 +382,12 @@ function EditorContent() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleImportJSON}>
-                    <FileDown className="h-4 w-4" />
-                    Import JSON
+                  <DropdownMenuItem onClick={handleImportResume}>
+                    <FileUp className="h-4 w-4" />
+                    Import Resume (PDF/DOCX/JSON)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportJSON}>
-                    <FileUp className="h-4 w-4" />
+                    <FileDown className="h-4 w-4" />
                     Export JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -376,7 +422,7 @@ function EditorContent() {
                 }
               >
                 {view === "content" ? (
-                  <Palette className="h-5 w-5" />
+                  <Paintbrush className="h-5 w-5" />
                 ) : (
                   <PenLine className="h-5 w-5" />
                 )}
@@ -423,17 +469,17 @@ function EditorContent() {
                         <Button
                           variant="outline"
                           className="justify-start text-foreground h-10 bg-background"
-                          onClick={handleImportJSON}
+                          onClick={handleImportResume}
                         >
-                          <FileDown className="h-4 w-4" />
-                          Import JSON
+                          <FileUp className="h-4 w-4" />
+                          Import Resume (PDF/DOCX/JSON)
                         </Button>
                         <Button
                           variant="outline"
                           className="justify-start text-foreground h-10 bg-background"
                           onClick={handleExportJSON}
                         >
-                          <FileUp className="h-4 w-4" />
+                          <FileDown className="h-4 w-4" />
                           Export JSON
                         </Button>
                       </div>
@@ -477,7 +523,7 @@ function EditorContent() {
                           )}
                           onClick={() => setView("customize")}
                         >
-                          <Palette className="h-3.5 w-3.5 mr-2" />
+                          <Paintbrush className="h-3.5 w-3.5 mr-2" />
                           Customize
                         </Button>
                       </div>

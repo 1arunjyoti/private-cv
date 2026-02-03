@@ -65,70 +65,59 @@ Standardized JSON structure compliant with JSON Resume (where possible) but adap
 
 ### Phase 1: Foundation & Storage (Week 1)
 
-- [ ] Initialize Next.js project with Tailwind.
-- [ ] Install and configure **shadcn/ui** components.
-- [ ] Set up **Dexie.js** database schema for `resumes` and `settings`.
-- [ ] Create `useResumeStore` connected to Dexie for async loading/saving.
-- [ ] Configure PWA manifest and service workers (next-pwa).
+- [x] Initialize Next.js project with Tailwind.
+- [x] Install and configure **shadcn/ui** components.
+- [x] Set up **Dexie.js** database schema for `resumes` and `settings`.
+- [x] Create `useResumeStore` connected to Dexie for async loading/saving.
+- [x] Configure PWA manifest and service workers (next-pwa).
 
 ### Phase 2: The Editor & Web Workers (Week 2)
 
-- [ ] Build the Form components (Basics, Work, Education).
-- [ ] Implement image upload handling (storing `Blob` directly to IndexedDB).
-- [ ] **Technical Core:** Set up the PDF Generation Web Worker.
-- [ ] Implement message passing system: `UI -> Worker (Data) -> UI (PDF Blob URL)`.
+- [x] Build the Form components (Basics, Work, Education).
+- [x] Implement image upload handling (storing `Blob` directly to IndexedDB).
+- [x] **Technical Core:** Set up the PDF Generation Web Worker.
+- [x] Implement message passing system: `UI -> Worker (Data) -> UI (PDF Blob URL)`.
 
 ### Phase 3: Templates & ATS Compliance (Week 3)
 
-- [ ] Implement **Template 1: "The ATS Scanner"** (Single column, standard headers, serif/sans-serif fonts).
-- [ ] Implement **Template 2: "The Creative"** (Two columns, colors).
-- [ ] Add "Job Description Matcher" (Simple client-side keyword highlighter).
-- [ ] Implement Export (PDF) and Backup (JSON) features.
+- [x] Implement **Template 1: "The ATS Scanner"** (Single column, standard headers, serif/sans-serif fonts).
+- [x] Implement **Template 2: "The Creative"** (Two columns, colors).
+- [x] Add "Job Description Matcher" (Simple client-side keyword highlighter).
+- [x] Implement Export (PDF) and Backup (JSON) features.
 
 ### Phase 4: Polish & Launch (Week 4)
 
-- [ ] Add "Install App" PWA install flow.
-- [ ] Add "Offline Mode" indicators.
+- [x] Add "Install App" PWA install flow.
+- [x] Add "Offline Mode" indicators.
 - [ ] Set up **GitHub Actions** for automated deployment (CI/CD).
 - [ ] Final performance audit (Lighthouse score 100).
-- [ ] Unit tests for the Data Layer and Worker logic.
+- [x] Unit tests for the Data Layer and Worker logic.
 
-## 5. Directory Structure
+### Profile photo handling
 
-```text
-/root
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── editor/
-├── components/
-│   ├── forms/           # Input groups
-│   ├── preview/         # PDF Worker Wrapper
-│   └── templates/       # React-PDF Document definitions
-├── db/
-│   └── index.ts         # Dexie.js schema definition
-├── workers/
-│   └── pdf.worker.ts    # PDF Generation logic
-├── store/
-│   └── useStore.ts      # Zustand
-└── utils/
-    └── export.ts        # File saving helpers
-```
+- [x] Implement image upload functionality.
+- [x] User selects an image from the file system (using the file input).
+- [x] Image is compressed to a maximum of 500KB.
+- [x] Image shows on the preview.
+- [x] Image is attached to the downloaded resume file.
 
-## 6. Key Solutions & Strategies
+## Additional Completed Features
 
-### High-Performance PDF Rendering
+- [x] Multiple resume templates (Classic, Modern, Minimal, Professional, Creative, Executive, Tech, Elegant, Bold, Compact)
+- [x] Design customization (colors, fonts, spacing, section visibility)
+- [x] ATS Score analyzer with keyword matching
+- [x] Import functionality (PDF, DOCX, JSON formats)
+- [x] Export to PDF and DOCX formats
+- [x] Rich text editor for experience highlights
+- [x] Drag-and-drop section reordering
+- [x] Dark mode support
+- [x] Responsive design for mobile/tablet/desktop
 
-Instead of rendering the PDF on the main thread (blocking interaction), we serialize the form data and send it to a Web Worker. The worker generates the PDF blob and posts it back. This keeps the UI responsive at 60fps even while generating complex documents.
+## Future features
 
-### Unlimited Storage
-
-By using IndexedDB (via Dexie.js), we bypass the 5MB LocalStorage limit. Users can store dozens of resumes with high-quality profile photos without hitting quota errors.
-
-### ATS optimization
-
-We provide dedicated "ATS Safe" templates that enforce:
-
-- No columns / tables.
-- Standard headings.
-- Machine-readable fonts.
+- [ ] Photo background removal
+- [ ] Header background color customizer
+- [ ] Reorder sections between columns
+- [ ] PDF import improvements (better text extraction for external PDFs)
+- [ ] Multi-language support
+- [ ] Resume analytics dashboard
