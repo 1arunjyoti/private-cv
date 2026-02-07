@@ -352,3 +352,6 @@ export const importService = new ImportService();
 
 // Re-export types
 export type { ImportResult, ImportFormat, ParsedResumeData } from './types';
+export type { ResumeFormat, FormatClassification, FormatTraits } from './format-classifier';
+export { preprocessResumeText } from './preprocess';
+export { classifyResumeFormat } from './format-classifier';

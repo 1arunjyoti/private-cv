@@ -21,6 +21,7 @@ import {
   Briefcase,
   GraduationCap,
   Wrench,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Resume } from "@/db";
@@ -142,6 +143,10 @@ export function LinkedInImport({ resume, className, trigger, open: controlledOpe
             Paste your LinkedIn profile text or portfolio content. AI will parse it into
             structured resume fields.
           </DialogDescription>
+          <div className="flex items-start gap-2 p-2.5 mt-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-300"><span className="font-medium">Requires AI:</span> This feature needs an AI provider configured in Settings.</p>
+          </div>
         </DialogHeader>
 
         {!parsedData ? (

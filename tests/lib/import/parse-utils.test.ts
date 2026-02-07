@@ -12,6 +12,9 @@ import {
   parseCertificates,
   parseLanguages,
   calculateConfidence,
+  normalizeDate,
+  extractDates,
+  extractCompanyAndPosition,
 } from '@/lib/import/parse-utils';
 
 describe('Parse Utils', () => {
@@ -147,6 +150,24 @@ describe('Parse Utils', () => {
       const result = extractName(text);
       expect(result).toBe('John Doe');
     });
+
+    it('should extract name from long header line with email and phone', () => {
+      const text = 'ALEX JOHNSON Senior Full-Stack Developer alex.johnson@example.com | +1 (555) 123-4567 | San Francisco';
+      const result = extractName(text);
+      expect(result).toBe('Alex Johnson');
+    });
+
+    it('should extract first/last name from line longer than 60 chars', () => {
+      const text = 'JOHN DOE experienced software engineer with 10 years john.doe@email.com phone: 555-1234';
+      const result = extractName(text);
+      expect(result).toBe('John Doe');
+    });
+
+    it('should handle Title Case names in long lines', () => {
+      const text = 'Sarah Michelle Parker product designer sarah.parker@example.com | portfolio.com';
+      const result = extractName(text);
+      expect(result).toBe('Sarah Michelle Parker');
+    });
   });
 
   describe('extractTitle', () => {
@@ -191,6 +212,24 @@ describe('Parse Utils', () => {
       const text = 'John Doe\njohn@example.com\n(555) 123-4567';
       const result = extractTitle(text);
       expect(result).toBeUndefined();
+    });
+
+    it('should extract title from long header line with contact info', () => {
+      const text = 'Name\nSenior Full-Stack Developer | email@example.com | phone | location';
+      const result = extractTitle(text);
+      expect(result).toContain('Developer');
+    });
+
+    it('should extract title before pipe separator in long line', () => {
+      const text = 'Alex Johnson\nProduct Manager | alex@company.com | linkedin.com/alex';
+      const result = extractTitle(text);
+      expect(result).toBe('Product Manager');
+    });
+
+    it('should extract title from line with multiple keywords', () => {
+      const text = 'Name\nSenior Software Engineer and Team Lead | contact info goes here';
+      const result = extractTitle(text);
+      expect(result).toContain('Engineer');
     });
   });
 
@@ -376,6 +415,103 @@ Building great products
       const result = parseWorkExperience(content);
       expect(result.length).toBeGreaterThan(0);
     });
+
+    it('should split entries separated by a single blank line', () => {
+      const content = `
+Software Engineer at Google
+January 2020 - Present
+• Built scalable services
+
+Data Analyst at Facebook
+March 2018 - December 2019
+• Analyzed user data
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(2);
+      expect(result[0].company).toContain('Google');
+      expect(result[1].company).toContain('Facebook');
+    });
+
+    it('should split entries with inline dates', () => {
+      const content = `
+Software Engineer | Google | Jan 2020 - Present
+• Led project development
+• Mentored junior engineers
+
+Data Analyst | Facebook | Mar 2018 - Dec 2019
+• Built dashboards
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(2);
+      expect(result[0].highlights?.length).toBeGreaterThanOrEqual(2);
+      expect(result[1].highlights?.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should handle company on line 1 and position on line 2', () => {
+      const content = `
+Google
+Software Engineer
+January 2020 - Present
+• Built APIs
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(1);
+      expect(result[0].position).toContain('Engineer');
+      expect(result[0].company).toContain('Google');
+    });
+
+    it('should strip inline dates from position/company extraction', () => {
+      const content = `
+Senior Developer at Tech Corp | Jan 2020 - Present
+• Did amazing things
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(1);
+      expect(result[0].position).toContain('Developer');
+      expect(result[0].company).toContain('Tech Corp');
+      // Position/company should NOT contain date text
+      expect(result[0].position).not.toMatch(/2020/);
+      expect(result[0].company).not.toMatch(/2020/);
+    });
+
+    it('should handle entries where company line starts with bullet', () => {
+      const content = `
+• TechCorp Inc. - Mar 2021 - Present
+Senior Full-Stack Developer
+Leading development of flagship product
+• Built microservices architecture
+• Mentored junior developers
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(1);
+      expect(result[0].company).toContain('TechCorp');
+      expect(result[0].position).toContain('Developer');
+      expect(result[0].highlights?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should parse work entry with company and inline date on same bullet line', () => {
+      const content = `
+• Google LLC Mar 2020 - Present
+Software Engineer
+• Improved search performance
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(1);
+      expect(result[0].company).toContain('Google');
+      expect(result[0].startDate).toBeDefined();
+    });
+
+    it('should extract company/position from line with no separator after date removal', () => {
+      const content = `
+TechCorp Inc. Senior Developer Leading projects
+Jan 2020 - Present
+• Achievement 1
+      `;
+      const result = parseWorkExperience(content);
+      expect(result.length).toBe(1);
+      expect(result[0].company).toContain('TechCorp');
+      expect(result[0].position).toContain('Developer');
+    });
   });
 
   describe('parseEducation', () => {
@@ -436,6 +572,32 @@ Stanford University
     it('should handle empty content', () => {
       const result = parseEducation('');
       expect(result).toEqual([]);
+    });
+
+    it('should detect institution without keyword when degree is on another line', () => {
+      const content = `
+MIT
+BS Computer Science
+2018 - 2022
+      `;
+      const result = parseEducation(content);
+      expect(result.length).toBe(1);
+      expect(result[0].institution).toContain('MIT');
+      expect(result[0].studyType).toBeDefined();
+    });
+
+    it('should split multiple education entries by blank lines', () => {
+      const content = `
+Stanford University
+Master of Science in Data Science
+2020 - 2022
+
+UC Berkeley
+Bachelor of Arts in Mathematics
+2016 - 2020
+      `;
+      const result = parseEducation(content);
+      expect(result.length).toBe(2);
     });
   });
 
@@ -685,6 +847,341 @@ Développeur at Compagnie
 • Développé applications
       `;
       expect(() => parseWorkExperience(content)).not.toThrow();
+    });
+  });
+
+  // ===================================================================
+  // New: Semantic section detection
+  // ===================================================================
+  describe('detectSections (semantic)', () => {
+    it('should detect sections with minor typos via fuzzy matching', () => {
+      const text = `
+John Doe
+
+Experiance
+Developer at Company
+2020 - Present
+
+Educaton
+BS Computer Science
+University
+      `;
+      const sections = detectSections(text);
+      expect(sections.some(s => s.name === 'work')).toBe(true);
+      expect(sections.some(s => s.name === 'education')).toBe(true);
+    });
+
+    it('should detect ALL CAPS headings with extra spaces', () => {
+      const text = `
+WORK  EXPERIENCE
+Developer at Company
+2020 - Present
+
+TECHNICAL  SKILLS
+JavaScript, Python
+      `;
+      const sections = detectSections(text);
+      expect(sections.some(s => s.name === 'work')).toBe(true);
+      expect(sections.some(s => s.name === 'skills')).toBe(true);
+    });
+
+    it('should detect sections preceded by blank lines', () => {
+      const text = `John Doe
+
+Professional Background
+Developer at Company
+2020 - Present
+
+Academic Credentials
+BS CS
+      `;
+      const sections = detectSections(text);
+      // "Professional Background" should map to work
+      expect(sections.some(s => s.name === 'work')).toBe(true);
+    });
+
+    it('should not falsely detect bullet lines as headings', () => {
+      const text = `
+Experience
+
+• Built something at Company A
+• Led team at Company B
+- Managed projects
+      `;
+      const sections = detectSections(text);
+      // Only "Experience" should be a section
+      expect(sections.length).toBe(1);
+      expect(sections[0].name).toBe('work');
+    });
+
+    it('should detect headings with colon suffix', () => {
+      const text = `
+Work Experience:
+Developer at Company
+2020 - Present
+
+Skills:
+JavaScript, Python
+      `;
+      const sections = detectSections(text);
+      expect(sections.some(s => s.name === 'work')).toBe(true);
+      expect(sections.some(s => s.name === 'skills')).toBe(true);
+    });
+  });
+
+  // ===================================================================
+  // New: Enhanced date normalization
+  // ===================================================================
+  describe('normalizeDate', () => {
+    it('should normalize "January 2020" to "2020-01"', () => {
+      expect(normalizeDate('January 2020')).toBe('2020-01');
+    });
+
+    it('should normalize "Jan 2020" to "2020-01"', () => {
+      expect(normalizeDate('Jan 2020')).toBe('2020-01');
+    });
+
+    it('should normalize "01/2020" to "2020-01"', () => {
+      expect(normalizeDate('01/2020')).toBe('2020-01');
+    });
+
+    it('should normalize "1/2020" to "2020-01"', () => {
+      expect(normalizeDate('1/2020')).toBe('2020-01');
+    });
+
+    it('should normalize "12.2019" (European) to "2019-12"', () => {
+      expect(normalizeDate('12.2019')).toBe('2019-12');
+    });
+
+    it('should normalize ISO format "2020-01-15"', () => {
+      expect(normalizeDate('2020-01-15')).toBe('2020-01');
+    });
+
+    it('should normalize ISO "2020-01"', () => {
+      expect(normalizeDate('2020-01')).toBe('2020-01');
+    });
+
+    it('should normalize standalone year "2020"', () => {
+      expect(normalizeDate('2020')).toBe('2020');
+    });
+
+    it('should normalize "Present" to empty string', () => {
+      expect(normalizeDate('Present')).toBe('');
+      expect(normalizeDate('current')).toBe('');
+      expect(normalizeDate('Ongoing')).toBe('');
+      expect(normalizeDate('Now')).toBe('');
+    });
+
+    it('should handle "Sept 2020" abbreviated month', () => {
+      expect(normalizeDate('Sept 2020')).toBe('2020-09');
+    });
+
+    it('should handle "Jan. 2020" with period', () => {
+      expect(normalizeDate('Jan. 2020')).toBe('2020-01');
+    });
+
+    it('should handle "May, 2020" with comma', () => {
+      expect(normalizeDate('May, 2020')).toBe('2020-05');
+    });
+  });
+
+  describe('extractDates (enhanced)', () => {
+    it('should extract "January 2020 - Present"', () => {
+      const result = extractDates('January 2020 - Present');
+      expect(result.startDate).toBe('2020-01');
+      expect(result.endDate).toBe('');
+    });
+
+    it('should extract "Jan 2020 - Dec 2023"', () => {
+      const result = extractDates('Jan 2020 - Dec 2023');
+      expect(result.startDate).toBe('2020-01');
+      expect(result.endDate).toBe('2023-12');
+    });
+
+    it('should extract "2020 - 2023"', () => {
+      const result = extractDates('2020 - 2023');
+      expect(result.startDate).toBe('2020');
+      expect(result.endDate).toBe('2023');
+    });
+
+    it('should extract "2020 - Present"', () => {
+      const result = extractDates('2020 - Present');
+      expect(result.startDate).toBe('2020');
+      expect(result.endDate).toBe('');
+    });
+
+    it('should handle en-dash and em-dash', () => {
+      const result1 = extractDates('Jan 2020 \u2013 Dec 2023');
+      expect(result1.startDate).toBe('2020-01');
+      expect(result1.endDate).toBe('2023-12');
+
+      const result2 = extractDates('Jan 2020 \u2014 Dec 2023');
+      expect(result2.startDate).toBe('2020-01');
+      expect(result2.endDate).toBe('2023-12');
+    });
+
+    it('should extract two separate month-year tokens', () => {
+      const result = extractDates('Started March 2019, ended July 2022');
+      expect(result.startDate).toBe('2019-03');
+      expect(result.endDate).toBe('2022-07');
+    });
+  });
+
+  // ===================================================================
+  // New: Enhanced entity extraction
+  // ===================================================================
+  describe('extractCompanyAndPosition', () => {
+    it('should parse "Position at Company"', () => {
+      const result = extractCompanyAndPosition('Software Engineer at Google');
+      expect(result.position).toBe('Software Engineer');
+      expect(result.company).toBe('Google');
+    });
+
+    it('should parse "Position | Company"', () => {
+      const result = extractCompanyAndPosition('Senior Developer | Microsoft Corp.');
+      expect(result.position).toContain('Developer');
+      expect(result.company).toContain('Microsoft');
+    });
+
+    it('should parse "Position - Company"', () => {
+      const result = extractCompanyAndPosition('Data Analyst - Amazon Inc.');
+      expect(result.position).toContain('Analyst');
+      expect(result.company).toContain('Amazon');
+    });
+
+    it('should parse "Company, Position"', () => {
+      const result = extractCompanyAndPosition('Facebook Inc., Software Engineer');
+      expect(result.company).toContain('Facebook');
+      expect(result.position).toContain('Engineer');
+    });
+
+    it('should use position keywords to disambiguate', () => {
+      // "Developer" is a position keyword, so should be detected as position
+      const result = extractCompanyAndPosition('Developer - Acme Corp.');
+      expect(result.position).toContain('Developer');
+      expect(result.company).toContain('Acme');
+    });
+
+    it('should use company suffixes to disambiguate', () => {
+      const result = extractCompanyAndPosition('Widgets LLC - Product Lead');
+      expect(result.company).toContain('Widgets LLC');
+      expect(result.position).toContain('Product Lead');
+    });
+
+    it('should handle no separator – treat as position if keyword matches', () => {
+      const result = extractCompanyAndPosition('Senior Software Engineer');
+      expect(result.position).toBe('Senior Software Engineer');
+    });
+
+    it('should use nextLine as company when position is on first line', () => {
+      const result = extractCompanyAndPosition('Senior Developer', 'Tech Startup');
+      expect(result.position).toContain('Developer');
+      expect(result.company).toBe('Tech Startup');
+    });
+
+    it('should use nextLine with position keyword to swap company/position', () => {
+      // "Google" alone has no keyword match, but "Software Engineer" on
+      // nextLine has position keywords → company=Google, position=Software Engineer
+      const result = extractCompanyAndPosition('Google', 'Software Engineer');
+      expect(result.company).toBe('Google');
+      expect(result.position).toBe('Software Engineer');
+    });
+
+    it('should use smartAssign for ambiguous two-line entries', () => {
+      // Neither line has strong signals – smartAssign decides
+      const result = extractCompanyAndPosition('Acme', 'Marketing');
+      expect(result.company).toBeDefined();
+      expect(result.position).toBeDefined();
+    });
+
+    it('should handle empty line', () => {
+      const result = extractCompanyAndPosition('');
+      expect(result.company).toBeUndefined();
+      expect(result.position).toBeUndefined();
+    });
+  });
+
+  // ===================================================================
+  // New: Improved skills parsing with categories
+  // ===================================================================
+  describe('parseSkills (improved categories)', () => {
+    it('should group skills under categories from "Category: skill1, skill2" format', () => {
+      const content = `
+Programming Languages: JavaScript, Python, Java
+Frameworks: React, Angular, Vue
+Databases: PostgreSQL, MongoDB
+      `;
+      const result = parseSkills(content);
+      const progLang = result.find(s => s.name === 'Programming Languages');
+      expect(progLang).toBeDefined();
+      expect(progLang?.keywords).toContain('JavaScript');
+      expect(progLang?.keywords).toContain('Python');
+    });
+
+    it('should handle skills listed on separate lines under a category', () => {
+      const content = `
+Programming Languages:
+JavaScript, Python, Java
+
+Frameworks:
+React, Angular, Vue
+      `;
+      const result = parseSkills(content);
+      expect(result.some(s => s.name === 'Programming Languages')).toBe(true);
+      expect(result.some(s => s.name === 'Frameworks')).toBe(true);
+    });
+  });
+
+  // ===================================================================
+  // New: Improved confidence calculation
+  // ===================================================================
+  describe('calculateConfidence (improved)', () => {
+    it('should give bonus for validated date formats', () => {
+      const data1 = {
+        work: [{ company: 'A', position: 'Dev', startDate: '2020-01' }],
+      };
+      const data2 = {
+        work: [{ company: 'A', position: 'Dev', startDate: 'sometime' }],
+      };
+      const c1 = calculateConfidence(data1);
+      const c2 = calculateConfidence(data2);
+      expect(c1.sections.work).toBeGreaterThan(c2.sections.work!);
+    });
+
+    it('should give bonus for skills with categories', () => {
+      const withCats = {
+        skills: [{ name: 'Languages', keywords: ['JS', 'Python'] }],
+      };
+      const withoutCats = {
+        skills: [{ name: 'JavaScript', keywords: [] }],
+      };
+      const c1 = calculateConfidence(withCats);
+      const c2 = calculateConfidence(withoutCats);
+      expect(c1.sections.skills).toBeGreaterThan(c2.sections.skills!);
+    });
+
+    it('should calculate project confidence', () => {
+      const data = {
+        projects: [{ name: 'My Project', description: 'A cool project', url: 'https://example.com' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.projects).toBe(100);
+    });
+
+    it('should calculate certificate confidence', () => {
+      const data = {
+        certificates: [{ name: 'AWS Certified', issuer: 'Amazon', date: '2023-01' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.certificates).toBe(100);
+    });
+
+    it('should calculate language confidence', () => {
+      const data = {
+        languages: [{ language: 'English', fluency: 'Native' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.languages).toBe(100);
     });
   });
 });

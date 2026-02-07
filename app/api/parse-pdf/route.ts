@@ -1,11 +1,124 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractText } from 'unpdf';
+import { getDocumentProxy } from 'unpdf';
+
+// ---------------------------------------------------------------------------
+// Position-aware text extraction
+// ---------------------------------------------------------------------------
+
+interface TextItem {
+  str: string;
+  transform: number[];
+  width: number;
+  height: number;
+  hasEOL?: boolean;
+}
+
+/**
+ * Extract text from a single PDF page using position data to detect line breaks.
+ *
+ * unpdf's built-in `extractText` with `mergePages: true` crushes ALL whitespace
+ * (including newlines) into single spaces.  Even with `mergePages: false` it only
+ * adds `\n` when an item has `hasEOL === true`, which many PDFs do not set.
+ *
+ * This function detects line changes by comparing the y-coordinate of successive
+ * text items and inserts `\n` when items move to a new vertical position.
+ */
+function extractPageText(items: TextItem[]): string {
+  if (items.length === 0) return '';
+
+  // Group items into lines based on y-coordinate proximity
+  const lines: { y: number; height: number; items: { x: number; str: string; width: number }[] }[] = [];
+
+  for (const item of items) {
+    if (item.str == null) continue;
+
+    const x = item.transform[4];
+    const y = item.transform[5];
+    const h = item.height || 10;
+
+    // Try to find an existing line that matches this y-coordinate
+    let matched = false;
+    for (const line of lines) {
+      // Items are on the same line if their y-coordinates are within half
+      // the line height of each other.
+      if (Math.abs(line.y - y) < Math.max(line.height, h) * 0.5) {
+        line.items.push({ x, str: item.str, width: item.width });
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      lines.push({ y, height: h, items: [{ x, str: item.str, width: item.width }] });
+    }
+  }
+
+  // Sort lines top-to-bottom (PDF y-axis goes upward, so descending y = top first)
+  lines.sort((a, b) => b.y - a.y);
+
+  const textLines: string[] = [];
+
+  for (const line of lines) {
+    // Sort items left-to-right within the line
+    line.items.sort((a, b) => a.x - b.x);
+
+    let lineText = '';
+    let prevEnd = 0; // x-coordinate where the previous item ended
+
+    for (let i = 0; i < line.items.length; i++) {
+      const item = line.items[i];
+      if (!item.str) continue;
+
+      if (lineText) {
+        // Estimate average character width from this item
+        const avgCharW = item.str.length > 0 ? item.width / item.str.length : 5;
+        const gap = item.x - prevEnd;
+
+        if (gap > avgCharW * 3) {
+          // Large gap → likely multi-column separator, use wide space
+          lineText += '    ';
+        } else if (!lineText.endsWith(' ') && !item.str.startsWith(' ')) {
+          lineText += ' ';
+        }
+      }
+
+      lineText += item.str;
+      prevEnd = item.x + item.width;
+    }
+
+    textLines.push(lineText);
+  }
+
+  return textLines.join('\n');
+}
+
+/**
+ * Extract all text from a PDF with proper line-break preservation.
+ */
+async function extractTextWithPositions(
+  arrayBuffer: ArrayBuffer,
+): Promise<{ text: string; totalPages: number }> {
+  const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer));
+  const pages: string[] = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = extractPageText(content.items as TextItem[]);
+    pages.push(pageText.trim());
+  }
+
+  return { text: pages.join('\n\n'), totalPages: pdf.numPages };
+}
+
+// ---------------------------------------------------------------------------
+// Normalize & helpers
+// ---------------------------------------------------------------------------
 
 /**
  * Normalize extracted PDF text to handle common issues:
  * - Remove excessive whitespace
  * - Fix broken words (hy-phen-ation)
- * - Merge lines that are part of the same paragraph
  * - Handle unicode issues
  */
 function normalizeText(text: string): string {
@@ -25,11 +138,11 @@ function normalizeText(text: string): string {
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     // Fix hyphenation at end of lines (word- \nrest -> wordrest)
     .replace(/(\w)-\s*\n\s*(\w)/g, '$1$2')
-    // Normalize multiple spaces to single space
-    .replace(/[ \t]+/g, ' ')
     // Normalize multiple newlines to max 2
     .replace(/\n{3,}/g, '\n\n')
-    // Trim whitespace from each line
+    // Trim leading/trailing whitespace from each line but PRESERVE interior
+    // gaps – multi-column PDFs use wide gaps to separate columns and the
+    // client-side preprocessor needs them intact for column reordering.
     .split('\n')
     .map(line => line.trim())
     .join('\n')
@@ -89,10 +202,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let result;
+    let result: { text: string; totalPages: number };
     try {
-      // Use unpdf to extract text
-      result = await extractText(arrayBuffer, { mergePages: true });
+      // Use position-aware extraction to preserve line breaks.
+      // unpdf's extractText with mergePages:true collapses ALL whitespace
+      // (including newlines) into single spaces, so we extract manually.
+      result = await extractTextWithPositions(arrayBuffer);
     } catch (parseError) {
       console.error('PDF parsing error:', parseError);
       return NextResponse.json(

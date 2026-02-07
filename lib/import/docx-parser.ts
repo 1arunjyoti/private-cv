@@ -1,5 +1,8 @@
 import mammoth from 'mammoth';
 import type { ImportResult, ResumeParser, ParsedResumeData } from './types';
+import { preprocessResumeText } from './preprocess';
+import { classifyResumeFormat } from './format-classifier';
+import type { FormatClassification } from './format-classifier';
 import {
   detectSections,
   extractContactInfo,
@@ -86,8 +89,15 @@ export class DOCXParser implements ResumeParser {
         };
       }
       
-      // Parse the extracted text
-      const data = this.parseText(rawText, html, warnings);
+      // Parse the extracted text (DOCX - no multi-column reorder needed)
+      const processedText = preprocessResumeText(rawText, { multiColumn: false });
+      const formatInfo = classifyResumeFormat(processedText);
+      
+      if (formatInfo.format === 'creative' && formatInfo.confidence < 40) {
+        warnings.push('This resume uses a non-standard layout. Some sections may not be detected correctly.');
+      }
+
+      const data = this.parseText(processedText, html, warnings, formatInfo);
       
       // Calculate confidence scores
       const confidence = calculateConfidence(data);
@@ -120,7 +130,7 @@ export class DOCXParser implements ResumeParser {
   /**
    * Parse extracted text into resume data structure
    */
-  private parseText(text: string, html: string, warnings: string[]): ParsedResumeData {
+  private parseText(text: string, html: string, warnings: string[], formatInfo?: FormatClassification): ParsedResumeData {
     const data: ParsedResumeData = {
       basics: {
         profiles: []
@@ -139,7 +149,7 @@ export class DOCXParser implements ResumeParser {
     };
     
     // Get the header section (text before any section heading)
-    const lines = text.split('\n').filter(l => l.trim());
+    const lines = text.split('\n');
     let headerEndIndex = lines.length;
     
     // Find where the first section starts

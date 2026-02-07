@@ -1,4 +1,7 @@
 import type { ImportResult, ResumeParser, ParsedResumeData } from './types';
+import { preprocessResumeText } from './preprocess';
+import { classifyResumeFormat } from './format-classifier';
+import type { FormatClassification } from './format-classifier';
 import {
   detectSections,
   extractContactInfo,
@@ -84,8 +87,15 @@ export class PDFParser implements ResumeParser {
         };
       }
       
-      // Parse the extracted text
-      const data = this.parseText(rawText, warnings);
+      // Parse the extracted text (with preprocessing for PDFs)
+      const processedText = preprocessResumeText(rawText, { multiColumn: true });
+      const formatInfo = classifyResumeFormat(processedText);
+      
+      if (formatInfo.format === 'creative' && formatInfo.confidence < 40) {
+        warnings.push('This resume uses a non-standard layout. Some sections may not be detected correctly.');
+      }
+      
+      const data = this.parseText(processedText, warnings, formatInfo);
       
       // Calculate confidence scores
       const confidence = calculateConfidence(data);
@@ -117,7 +127,7 @@ export class PDFParser implements ResumeParser {
   /**
    * Parse extracted text into resume data structure
    */
-  private parseText(text: string, warnings: string[]): ParsedResumeData {
+  private parseText(text: string, warnings: string[], formatInfo?: FormatClassification): ParsedResumeData {
     const data: ParsedResumeData = {
       basics: {
         profiles: []

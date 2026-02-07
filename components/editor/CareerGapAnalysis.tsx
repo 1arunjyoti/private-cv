@@ -225,6 +225,10 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
           <DialogDescription>
             Analyze your resume for employment gaps, missing elements, and career progression.
           </DialogDescription>
+          <div className="flex items-start gap-2 p-2.5 mt-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-300"><span className="font-medium">Requires AI:</span> This feature needs an AI provider configured in Settings.</p>
+          </div>
         </DialogHeader>
 
         {/* Action bar */}

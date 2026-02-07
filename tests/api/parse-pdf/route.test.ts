@@ -2,12 +2,44 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '@/app/api/parse-pdf/route';
 import { NextRequest } from 'next/server';
 
-// Mock unpdf
+// Mock unpdf – now we mock getDocumentProxy (not extractText)
+const mockGetDocumentProxy = vi.fn();
 vi.mock('unpdf', () => ({
-  extractText: vi.fn(),
+  getDocumentProxy: (...args: unknown[]) => mockGetDocumentProxy(...args),
 }));
 
-import { extractText } from 'unpdf';
+/**
+ * Helper: build a fake PDFDocumentProxy that returns the given lines per page.
+ * Each page is described by an array of strings – one string per "line" in the PDF.
+ */
+function buildMockPdf(pages: string[][]): {
+  numPages: number;
+  getPage: (n: number) => Promise<{ getTextContent: () => Promise<{ items: unknown[] }> }>;
+} {
+  return {
+    numPages: pages.length,
+    getPage: async (pageNum: number) => ({
+      getTextContent: async () => {
+        const lines = pages[pageNum - 1] ?? [];
+        // Lay out items with a decreasing y so that extractPageText groups
+        // them properly (one item per line, y spaced 20 pts apart).
+        const items = lines.map((str, idx) => ({
+          str,
+          transform: [1, 0, 0, 1, 0, 800 - idx * 20], // x=0, y descends
+          width: str.length * 6,
+          height: 12,
+          hasEOL: false,
+        }));
+        return { items };
+      },
+    }),
+  };
+}
+
+/** Shorthand: build a single-page mock PDF */
+function mockSinglePage(lines: string[]) {
+  mockGetDocumentProxy.mockResolvedValueOnce(buildMockPdf([lines]));
+}
 
 /**
  * Helper to create a mock NextRequest with FormData
@@ -94,10 +126,7 @@ describe('POST /api/parse-pdf', () => {
 
   describe('Successful Parsing', () => {
     it('should extract text from valid PDF', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'John Doe\nSoftware Engineer\njohn@example.com',
-        totalPages: 1,
-      });
+      mockSinglePage(['John Doe', 'Software Engineer', 'john@example.com']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -111,27 +140,29 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should normalize extracted text', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'John   Doe\n\n\n\nSoftware Engineer',
-        totalPages: 1,
-      });
+      mockSinglePage(['John   Doe', '', '', '', 'Software Engineer']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
       const response = await POST(request);
       const data = await response.json();
 
-      // Multiple spaces normalized to single space
-      expect(data.text).not.toContain('   ');
-      // Multiple newlines normalized to max 2
+      // Interior spaces are intentionally preserved for multi-column
+      // detection downstream; only leading/trailing whitespace per line
+      // is trimmed by the API route.
+      expect(data.text).toContain('John   Doe');
+      // Multiple blank lines normalized to max 2
       expect(data.text).not.toContain('\n\n\n');
     });
 
     it('should handle multi-page PDFs', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'Page 1 content\nPage 2 content\nPage 3 content',
-        totalPages: 3,
-      });
+      mockGetDocumentProxy.mockResolvedValueOnce(
+        buildMockPdf([
+          ['Page 1 content'],
+          ['Page 2 content'],
+          ['Page 3 content'],
+        ]),
+      );
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -143,10 +174,7 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should handle special characters correctly', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'José García\n• Skill 1\n• Skill 2',
-        totalPages: 1,
-      });
+      mockSinglePage(['José García', '• Skill 1', '• Skill 2']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -158,10 +186,9 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should normalize unicode characters', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: '\u201CSmart quotes\u201D and \u2019apostrophes\u2019 and \u2010hyphens',
-        totalPages: 1,
-      });
+      mockSinglePage([
+        '\u201CSmart quotes\u201D and \u2019apostrophes\u2019 and \u2010hyphens',
+      ]);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -174,10 +201,8 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should fix word hyphenation at line breaks', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'Soft-\nware Engineer',
-        totalPages: 1,
-      });
+      // Hyphen at end of one line, continuation on the next
+      mockSinglePage(['Soft-', 'ware Engineer']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -191,10 +216,7 @@ describe('POST /api/parse-pdf', () => {
 
   describe('Scanned PDF Detection', () => {
     it('should detect empty/scanned PDF', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: '',
-        totalPages: 1,
-      });
+      mockSinglePage(['']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -206,26 +228,22 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should detect PDF with very little text per page', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'Some text',
-        totalPages: 5,
-      });
+      mockGetDocumentProxy.mockResolvedValueOnce(
+        buildMockPdf([['Some text'], [], [], [], []]),
+      );
 
       const file = createPDFFile();
       const request = createMockRequest(file);
       const response = await POST(request);
       const data = await response.json();
 
-      // Less than 100 chars per page (9 chars / 5 pages = ~2 chars/page)
+      // Less than 100 chars per page
       expect(data.warning).toContain('image-based');
     });
 
     it('should not warn for PDF with adequate text', async () => {
-      const longText = 'This is a resume with plenty of text content. '.repeat(10);
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: longText,
-        totalPages: 1,
-      });
+      const longLine = 'This is a resume with plenty of text content. '.repeat(10);
+      mockSinglePage([longLine]);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -238,7 +256,7 @@ describe('POST /api/parse-pdf', () => {
 
   describe('Error Handling', () => {
     it('should return 422 for corrupted PDF', async () => {
-      vi.mocked(extractText).mockRejectedValueOnce(
+      mockGetDocumentProxy.mockRejectedValueOnce(
         new Error('Invalid PDF structure')
       );
 
@@ -253,7 +271,7 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should return 422 for encrypted PDF', async () => {
-      vi.mocked(extractText).mockRejectedValueOnce(
+      mockGetDocumentProxy.mockRejectedValueOnce(
         new Error('PDF is encrypted')
       );
 
@@ -280,7 +298,7 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should handle non-Error thrown values', async () => {
-      vi.mocked(extractText).mockRejectedValueOnce('String error');
+      mockGetDocumentProxy.mockRejectedValueOnce('String error');
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -294,10 +312,7 @@ describe('POST /api/parse-pdf', () => {
 
   describe('Edge Cases', () => {
     it('should handle PDF file with uppercase extension', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'Content',
-        totalPages: 1,
-      });
+      mockSinglePage(['Content that is long enough to pass the scanned check here.']);
 
       const pdfHeader = '%PDF-1.4\n';
       const blob = new Blob([pdfHeader + 'content'], { type: 'application/pdf' });
@@ -310,11 +325,10 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should handle very large PDF', async () => {
-      const largeText = 'A'.repeat(100000);
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: largeText,
-        totalPages: 50,
-      });
+      const largeLine = 'A'.repeat(100000);
+      mockGetDocumentProxy.mockResolvedValueOnce(
+        buildMockPdf(Array.from({ length: 50 }, () => [largeLine.slice(0, 2000)])),
+      );
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -326,10 +340,7 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should handle PDF with null characters', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'John\x00Doe\x00Engineer',
-        totalPages: 1,
-      });
+      mockSinglePage(['John\x00Doe\x00Engineer and more text to satisfy length check.']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -340,25 +351,8 @@ describe('POST /api/parse-pdf', () => {
       expect(data.text).not.toContain('\x00');
     });
 
-    it('should handle undefined totalPages', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: 'Some content here',
-      } as { text: string; totalPages: number });
-
-      const file = createPDFFile();
-      const request = createMockRequest(file);
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(data.success).toBe(true);
-      expect(data.numPages).toBe(1); // Default to 1
-    });
-
     it('should handle whitespace-only PDF', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: '   \n\t  \n   ',
-        totalPages: 1,
-      });
+      mockSinglePage(['   ', '\t  ', '   ']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);
@@ -370,10 +364,7 @@ describe('POST /api/parse-pdf', () => {
     });
 
     it('should handle bullet point variations', async () => {
-      vi.mocked(extractText).mockResolvedValueOnce({
-        text: '\u2022 Item 1\n\u25CF Item 2\n\u25CB Item 3',
-        totalPages: 1,
-      });
+      mockSinglePage(['\u2022 Item 1', '\u25CF Item 2', '\u25CB Item 3']);
 
       const file = createPDFFile();
       const request = createMockRequest(file);

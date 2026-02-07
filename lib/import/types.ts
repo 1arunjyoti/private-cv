@@ -131,3 +131,9 @@ export const DATE_PATTERNS = {
   dateRange: /(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*\d{4}\s*[-–—]\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*\d{4}|Present|Current)/gi,
   present: /present|current|ongoing|now/gi
 };
+
+// Re-export preprocessing and classification utilities
+export { preprocessResumeText, reorderMultiColumnText } from './preprocess';
+export type { PreprocessOptions } from './preprocess';
+export { classifyResumeFormat } from './format-classifier';
+export type { ResumeFormat, FormatClassification, FormatTraits } from './format-classifier';
