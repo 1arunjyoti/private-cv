@@ -351,12 +351,14 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                 showFullUrl={settings.linkShowFullUrl}
                 urlBold={settings.projectsUrlBold}
                 urlItalic={settings.projectsUrlItalic}
+                sectionLinkStyle={settings.sectionLinkStyle}
               />
             )}
 
             {/* URL (if not shown in header) */}
             {/* URL (if not shown in header) */}
             {proj.url &&
+              !settings.sectionLinkStyle &&
               !settings.linkShowIcon &&
               !settings.linkShowFullUrl &&
               settings.entryLayoutStyle === 1 && (

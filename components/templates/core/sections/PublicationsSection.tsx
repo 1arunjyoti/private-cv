@@ -119,6 +119,15 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
     return "";
   };
 
+  // Resolve effective link style
+  const effectiveLinkStyle =
+    settings.sectionLinkStyle ||
+    (settings.linkShowFullUrl
+      ? "inline"
+      : settings.linkShowIcon
+        ? "icon"
+        : "icon");
+
   return (
     <View style={styles.container}>
       {(settings.publicationsHeadingVisible ?? true) && (
@@ -147,9 +156,24 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
             <View style={styles.headerRow}>
               <View style={styles.nameRow}>
                 {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-                <Text style={styles.name}>{pub.name}</Text>
+
+                {/* Title (Link if underline style) */}
+                {pub.url && effectiveLinkStyle === "underline" ? (
+                  <Link src={pub.url} style={{ textDecoration: "none" }}>
+                    <Text
+                      style={[styles.name, { textDecoration: "underline" }]}
+                    >
+                      {pub.name}
+                    </Text>
+                  </Link>
+                ) : (
+                  <Text style={styles.name}>{pub.name}</Text>
+                )}
+
+                {/* Inline URL or Icon */}
                 {pub.url &&
-                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
+                  (effectiveLinkStyle === "inline" ||
+                    effectiveLinkStyle === "icon") && (
                     <Link src={pub.url} style={{ textDecoration: "none" }}>
                       <Text
                         style={{
@@ -164,11 +188,9 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
                             : "normal",
                         }}
                       >
-                        {settings.linkShowFullUrl
+                        {effectiveLinkStyle === "inline"
                           ? `  ${pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                          : settings.linkShowIcon
-                            ? " 🔗"
-                            : ""}
+                          : " 🔗"}
                       </Text>
                     </Link>
                   )}
@@ -182,7 +204,8 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
               <Text style={styles.publisher}>{pub.publisher}</Text>
             )}
 
-            {pub.url && !settings.linkShowIcon && !settings.linkShowFullUrl && (
+            {/* Newline/Below URL */}
+            {pub.url && effectiveLinkStyle === "newline" && (
               <Link src={pub.url}>
                 <Text style={styles.url}>
                   {pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
@@ -197,8 +220,8 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
                 fonts={fonts}
                 lineHeight={lineHeight}
                 linkColor={linkColor}
-                showLinkIcon={settings.linkShowIcon}
-                showFullUrl={settings.linkShowFullUrl}
+                showLinkIcon={effectiveLinkStyle === "icon"}
+                showFullUrl={effectiveLinkStyle === "inline"}
                 style={styles.summary}
               />
             )}

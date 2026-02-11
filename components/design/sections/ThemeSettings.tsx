@@ -25,7 +25,7 @@ export function ThemeSettings({
 }: ThemeSettingsProps) {
   return (
     <SettingsSection
-      title="Accent Color"
+      title="Accent Color & Link Style"
       icon={Palette}
       isOpen={isOpen}
       onToggle={onToggle}
@@ -105,46 +105,30 @@ export function ThemeSettings({
           </div>
         </div>
 
-        {/* Link Display Options */}
+        {/* Section Link Style */}
         <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Link Display
+            Section Link Style
           </Label>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="linkShowIcon"
-                checked={layoutSettings.linkShowIcon || false}
-                onChange={(e) =>
-                  updateSetting("linkShowIcon", e.target.checked)
-                }
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label
-                htmlFor="linkShowIcon"
-                className="text-xs text-foreground cursor-pointer select-none"
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: "newline", label: "Below Name" },
+              { value: "inline", label: "Inline" },
+              { value: "underline", label: "Underline Name" },
+              { value: "icon", label: "Icon Only" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting("sectionLinkStyle", option.value)}
+                className={`flex items-center justify-center p-2 rounded-md border transition-all text-xs font-medium ${
+                  (layoutSettings.sectionLinkStyle || "inline") === option.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
               >
-                Show link icon (🔗)
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="linkShowFullUrl"
-                checked={layoutSettings.linkShowFullUrl || false}
-                onChange={(e) =>
-                  updateSetting("linkShowFullUrl", e.target.checked)
-                }
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label
-                htmlFor="linkShowFullUrl"
-                className="text-xs text-foreground cursor-pointer select-none"
-              >
-                Show full URL
-              </label>
-            </div>
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

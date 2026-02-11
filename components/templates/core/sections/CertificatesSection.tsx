@@ -121,6 +121,15 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
     return "";
   };
 
+  // Resolve effective link style
+  const effectiveLinkStyle =
+    settings.sectionLinkStyle ||
+    (settings.linkShowFullUrl
+      ? "inline"
+      : settings.linkShowIcon
+        ? "icon"
+        : "icon");
+
   return (
     <View style={styles.container}>
       {(settings.certificatesHeadingVisible ?? true) && (
@@ -149,9 +158,24 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
             <View style={styles.headerRow}>
               <View style={styles.nameRow}>
                 {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-                <Text style={styles.name}>{cert.name}</Text>
+
+                {/* Name (Link if underline style) */}
+                {cert.url && effectiveLinkStyle === "underline" ? (
+                  <Link src={cert.url} style={{ textDecoration: "none" }}>
+                    <Text
+                      style={[styles.name, { textDecoration: "underline" }]}
+                    >
+                      {cert.name}
+                    </Text>
+                  </Link>
+                ) : (
+                  <Text style={styles.name}>{cert.name}</Text>
+                )}
+
+                {/* Inline URL or Icon */}
                 {cert.url &&
-                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
+                  (effectiveLinkStyle === "inline" ||
+                    effectiveLinkStyle === "icon") && (
                     <Link src={cert.url} style={{ textDecoration: "none" }}>
                       <Text
                         style={{
@@ -166,11 +190,9 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                             : "normal",
                         }}
                       >
-                        {settings.linkShowFullUrl
+                        {effectiveLinkStyle === "inline"
                           ? `  ${cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                          : settings.linkShowIcon
-                            ? " 🔗"
-                            : ""}
+                          : " 🔗"}
                       </Text>
                     </Link>
                   )}
@@ -182,15 +204,14 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
 
             {cert.issuer && <Text style={styles.issuer}>{cert.issuer}</Text>}
 
-            {cert.url &&
-              !settings.linkShowIcon &&
-              !settings.linkShowFullUrl && (
-                <Link src={cert.url}>
-                  <Text style={styles.url}>
-                    {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </Text>
-                </Link>
-              )}
+            {/* Newline/Below URL */}
+            {cert.url && effectiveLinkStyle === "newline" && (
+              <Link src={cert.url}>
+                <Text style={styles.url}>
+                  {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                </Text>
+              </Link>
+            )}
 
             {cert.summary && (
               <RichText
@@ -199,8 +220,8 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                 fonts={fonts}
                 lineHeight={lineHeight}
                 linkColor={linkColor}
-                showLinkIcon={settings.linkShowIcon}
-                showFullUrl={settings.linkShowFullUrl}
+                showLinkIcon={effectiveLinkStyle === "icon"}
+                showFullUrl={effectiveLinkStyle === "inline"}
                 style={styles.summary}
               />
             )}

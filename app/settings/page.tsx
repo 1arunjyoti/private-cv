@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LLM_PROVIDERS, getProvider } from "@/lib/llm/providers";
 import { buildSummaryPrompt } from "@/lib/llm/prompts";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ArrowLeft, Settings, ChevronDown } from "lucide-react";
+import { ArrowLeft, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 
@@ -150,9 +150,9 @@ export default function SettingsPage() {
                 onClick={() => setPrivacyNoticeOpen(!privacyNoticeOpen)}
                 className="h-6 w-6 p-0"
               >
-                <ChevronDown
+                <ChevronUp
                   className={`h-4 w-4 text-amber-900 dark:text-amber-100 transition-transform ${
-                    privacyNoticeOpen ? "" : "-rotate-90"
+                    privacyNoticeOpen ? "" : "rotate-180"
                   }`}
                 />
               </Button>

@@ -72,8 +72,7 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({
       width: dimension,
       height: dimension,
       ...(borderRadius > 0 ? { borderRadius } : {}), // Only set borderRadius if > 0
-      borderWidth: border ? borderWidth : 0,
-      borderColor: border ? borderColor : "transparent",
+      ...(border ? { borderWidth, borderColor } : {}),
       objectFit: "cover",
       ...style,
     },

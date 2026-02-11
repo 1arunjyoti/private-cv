@@ -119,6 +119,15 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
     return "";
   };
 
+  // Resolve effective link style
+  const effectiveLinkStyle =
+    settings.sectionLinkStyle ||
+    (settings.linkShowFullUrl
+      ? "inline"
+      : settings.linkShowIcon
+        ? "icon"
+        : "icon");
+
   return (
     <View style={styles.container}>
       {custom.map((section) => (
@@ -149,9 +158,24 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
                 <View style={styles.headerRow}>
                   <View style={styles.nameRow}>
                     {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-                    <Text style={styles.name}>{item.name}</Text>
+
+                    {/* Name (Link if underline style) */}
+                    {item.url && effectiveLinkStyle === "underline" ? (
+                      <Link src={item.url} style={{ textDecoration: "none" }}>
+                        <Text
+                          style={[styles.name, { textDecoration: "underline" }]}
+                        >
+                          {item.name}
+                        </Text>
+                      </Link>
+                    ) : (
+                      <Text style={styles.name}>{item.name}</Text>
+                    )}
+
+                    {/* Inline URL or Icon */}
                     {item.url &&
-                      (settings.linkShowIcon || settings.linkShowFullUrl) && (
+                      (effectiveLinkStyle === "inline" ||
+                        effectiveLinkStyle === "icon") && (
                         <Link src={item.url} style={{ textDecoration: "none" }}>
                           <Text
                             style={{
@@ -166,11 +190,9 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
                                 : "normal",
                             }}
                           >
-                            {settings.linkShowFullUrl
+                            {effectiveLinkStyle === "inline"
                               ? `  ${item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                              : settings.linkShowIcon
-                                ? " 🔗"
-                                : ""}
+                              : " 🔗"}
                           </Text>
                         </Link>
                       )}
@@ -182,17 +204,14 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
                   <Text style={styles.description}>{item.description}</Text>
                 )}
 
-                {item.url &&
-                  !settings.linkShowIcon &&
-                  !settings.linkShowFullUrl && (
-                    <Link src={item.url}>
-                      <Text style={styles.url}>
-                        {item.url
-                          .replace(/^https?:\/\//, "")
-                          .replace(/\/$/, "")}
-                      </Text>
-                    </Link>
-                  )}
+                {/* Newline/Below URL */}
+                {item.url && effectiveLinkStyle === "newline" && (
+                  <Link src={item.url}>
+                    <Text style={styles.url}>
+                      {item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </Text>
+                  </Link>
+                )}
 
                 {item.summary && (
                   <RichText
@@ -201,8 +220,8 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
                     fonts={fonts}
                     lineHeight={lineHeight}
                     linkColor={linkColor}
-                    showLinkIcon={settings.linkShowIcon}
-                    showFullUrl={settings.linkShowFullUrl}
+                    showLinkIcon={effectiveLinkStyle === "icon"}
+                    showFullUrl={effectiveLinkStyle === "inline"}
                     style={styles.summary}
                   />
                 )}

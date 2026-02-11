@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
+import { View, Text, Link, StyleSheet, Svg, Path } from "@react-pdf/renderer";
 import type { EntryLayoutStyle, FontConfig, GetColorFn } from "../types";
 
 export interface EntryHeaderProps {
@@ -57,6 +57,8 @@ export interface EntryHeaderProps {
   /** URL styling */
   urlBold?: boolean;
   urlItalic?: boolean;
+  /** Section Link Style (overrides legacy showUrl/showFullUrl) */
+  sectionLinkStyle?: "icon" | "inline" | "newline" | "underline";
 }
 
 export const EntryHeader: React.FC<EntryHeaderProps> = ({
@@ -80,16 +82,25 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
   dateColor,
   listStyle = "none",
   index = 0,
-  showUrl = false,
+  // showUrl = false, // Removed unused prop
   showLinkIcon = false,
   showFullUrl = false,
   urlBold = false,
   urlItalic = false,
+  sectionLinkStyle,
 }) => {
   const linkColor = getColor("links", "#1a1a1a");
   const resolvedTitleColor = titleColor || getColor("title", "#1a1a1a");
   const resolvedSubtitleColor = subtitleColor || getColor("subtext", "#444444");
   const resolvedDateColor = dateColor || getColor("meta", "#666666");
+
+  // Resolve effective link style
+  // detailed logic: if sectionLinkStyle is present, use it.
+  // if not, fall back to legacy props (showFullUrl -> inline, showLinkIcon -> icon, else -> icon/none?)
+  // Actually, for backward compat, let's derive a style if not provided.
+  const effectiveLinkStyle =
+    sectionLinkStyle ||
+    (showFullUrl ? "inline" : showLinkIcon ? "icon" : "icon"); // Default to icon if url is present
 
   const styles = StyleSheet.create({
     container: {
@@ -122,6 +133,8 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
       fontWeight: titleBold ? "bold" : "normal",
       fontStyle: titleItalic ? "italic" : "normal",
       color: resolvedTitleColor,
+      textDecoration:
+        effectiveLinkStyle === "underline" && url ? "underline" : "none",
     },
     subtitle: {
       fontSize,
@@ -157,6 +170,12 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
       marginLeft: 4,
       textDecoration: "none",
     },
+    urlNewline: {
+      fontSize: fontSize - 1,
+      color: linkColor,
+      marginTop: 1,
+      textDecoration: "none",
+    },
     separator: {
       fontSize,
       color: getColor("text", "#666666"),
@@ -172,22 +191,55 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
 
   const listPrefix = getListPrefix();
 
-  // Determine display text and style for URL
-  const urlDisplayText =
-    showFullUrl && url
-      ? url.replace(/^https?:\/\//, "").replace(/\/$/, "")
-      : showLinkIcon
-        ? "🔗"
-        : "↗";
+  // URL Display Logic
+  const renderUrl = () => {
+    if (!url) return null;
+    if (effectiveLinkStyle === "underline") return null; // Title is link
 
-  const defaultUrlStyle = {
-    fontSize: fontSize - 1,
-    color: linkColor,
-    marginLeft: 4,
-    textDecoration: "none",
-    fontWeight: urlBold ? "bold" : "normal",
-    fontStyle: urlItalic ? "italic" : "normal",
-  } as const;
+    const content =
+      effectiveLinkStyle === "inline" || effectiveLinkStyle === "newline" ? (
+        <Text>{url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</Text>
+      ) : effectiveLinkStyle === "icon" ? (
+        <Svg
+          viewBox="0 0 24 24"
+          style={{ width: fontSize, height: fontSize }}
+          stroke={linkColor}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <Path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <Path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </Svg>
+      ) : (
+        <Text>↗</Text>
+      );
+
+    const style =
+      effectiveLinkStyle === "newline"
+        ? styles.urlNewline
+        : {
+            ...styles.url,
+            fontWeight: urlBold ? ("bold" as const) : ("normal" as const),
+            fontStyle: urlItalic ? ("italic" as const) : ("normal" as const),
+          };
+
+    return (
+      <Link src={url} style={style}>
+        {content}
+      </Link>
+    );
+  };
+
+  /* Title Element (refactored from nested component to standard JSX) */
+  const titleElement =
+    url && effectiveLinkStyle === "underline" ? (
+      <Link src={url} style={{ textDecoration: "none" }}>
+        <Text style={styles.title}>{title}</Text>
+      </Link>
+    ) : (
+      <Text style={styles.title}>{title}</Text>
+    );
 
   // Layout Style 1: Title + Date on line 1, Subtitle on line 2
   if (layoutStyle === 1) {
@@ -196,15 +248,17 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
         <View style={styles.row}>
           <View style={styles.leftGroup}>
             {listPrefix && <Text style={styles.listPrefix}>{listPrefix}</Text>}
-            <Text style={styles.title}>{title}</Text>
-            {showUrl && url && (
-              <Link src={url} style={defaultUrlStyle}>
-                <Text style={defaultUrlStyle}>{urlDisplayText}</Text>
-              </Link>
-            )}
+            {titleElement}
+            {(effectiveLinkStyle === "inline" ||
+              effectiveLinkStyle === "icon") &&
+              renderUrl()}
           </View>
           {dateRange && <Text style={styles.date}>{dateRange}</Text>}
         </View>
+
+        {/* Newline URL */}
+        {effectiveLinkStyle === "newline" && url && renderUrl()}
+
         {subtitle && (
           <View style={{ marginTop: 1 }}>
             <Text style={styles.subtitle}>
@@ -224,7 +278,7 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
         <View style={styles.row}>
           <View style={styles.leftGroup}>
             {listPrefix && <Text style={styles.listPrefix}>{listPrefix}</Text>}
-            <Text style={styles.title}>{title}</Text>
+            {titleElement}
             {subtitle && (
               <>
                 <Text style={styles.separator}>|</Text>
@@ -237,14 +291,14 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
                 <Text style={styles.location}>{location}</Text>
               </>
             )}
-            {showUrl && url && (
-              <Link src={url} style={defaultUrlStyle}>
-                <Text style={defaultUrlStyle}>{urlDisplayText}</Text>
-              </Link>
-            )}
+            {(effectiveLinkStyle === "inline" ||
+              effectiveLinkStyle === "icon") &&
+              renderUrl()}
           </View>
           {dateRange && <Text style={styles.date}>{dateRange}</Text>}
         </View>
+        {/* Newline URL */}
+        {effectiveLinkStyle === "newline" && url && renderUrl()}
       </View>
     );
   }
@@ -255,19 +309,12 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
       <View style={styles.container}>
         <View style={styles.leftGroup}>
           {listPrefix && <Text style={styles.listPrefix}>{listPrefix}</Text>}
-          <Text style={styles.title}>{title}</Text>
-          {showUrl && url && (
-            <Link src={url} style={styles.url}>
-              <Text style={styles.url}>
-                {showFullUrl
-                  ? `  ${url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                  : showLinkIcon
-                    ? " 🔗"
-                    : " ↗"}
-              </Text>
-            </Link>
-          )}
+          {titleElement}
+          {(effectiveLinkStyle === "inline" || effectiveLinkStyle === "icon") &&
+            renderUrl()}
         </View>
+        {/* Newline URL */}
+        {effectiveLinkStyle === "newline" && url && renderUrl()}
         <View style={[styles.row, { marginTop: 1 }]}>
           <Text style={styles.subtitle}>
             {subtitle}
@@ -285,13 +332,14 @@ export const EntryHeader: React.FC<EntryHeaderProps> = ({
       <View style={styles.container}>
         <View style={styles.leftGroup}>
           {listPrefix && <Text style={styles.listPrefix}>{listPrefix}</Text>}
-          <Text style={styles.title}>{title}</Text>
-          {showUrl && url && (
-            <Link src={url} style={styles.url}>
-              <Text style={styles.url}>↗</Text>
-            </Link>
-          )}
+          {titleElement}
+          {(effectiveLinkStyle === "inline" || effectiveLinkStyle === "icon") &&
+            renderUrl()}
         </View>
+        {/* Newline URL */}
+        {effectiveLinkStyle === "newline" && url && (
+          <View style={{ marginTop: 1 }}>{renderUrl()}</View>
+        )}
         {subtitle && (
           <Text style={[styles.subtitle, { marginTop: 1 }]}>{subtitle}</Text>
         )}

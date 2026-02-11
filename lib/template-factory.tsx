@@ -282,7 +282,7 @@ const DefaultHeader: React.FC<
                   : 100
               }
               shape={settings.profilePhotoShape || "circle"}
-              border
+              border={settings.profilePhotoBorder ?? false}
               borderColor={getColor("decorations", "#000000")}
               borderWidth={2}
             />
@@ -340,7 +340,7 @@ const DefaultHeader: React.FC<
         src={basics.image}
         customSize={photoSize}
         shape={photoShape}
-        border
+        border={settings.profilePhotoBorder ?? false}
         borderColor={getColor("decorations", "#000000")}
         borderWidth={1}
       />

@@ -89,6 +89,7 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   referencesHeadingVisible: true,
   customHeadingVisible: true,
   sectionDisplayStyle: "plain",
+  profilePhotoBorder: false,
 };
 
 // ============================================================================

@@ -1,14 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PDFPreview } from "@/components/preview/PDFPreview";
 import type { Resume } from "@/db";
 import { useResumeStore } from "@/store/useResumeStore";
+import { createMockLayoutSettings } from "../../utils/factories";
 
 // Mock dependencies
 vi.mock("@/store/useResumeStore");
 vi.mock("@/lib/docx-generator", () => ({
-  generateDocx: vi.fn().mockResolvedValue(new Blob(["docx"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" })),
+  generateDocx: vi.fn().mockResolvedValue(
+    new Blob(["docx"], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }),
+  ),
 }));
 
 vi.mock("@/lib/pdf-utils", () => ({
@@ -18,10 +24,18 @@ vi.mock("@/lib/pdf-utils", () => ({
 
 // Mock dynamic imports for templates
 vi.mock("@/components/templates/FactoryTemplates", () => ({
-  generatePDF: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
-  generateClassicPDF: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
-  generateProfessionalPDF: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
-  generateModernPDF: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
+  generatePDF: vi
+    .fn()
+    .mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
+  generateClassicPDF: vi
+    .fn()
+    .mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
+  generateProfessionalPDF: vi
+    .fn()
+    .mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
+  generateModernPDF: vi
+    .fn()
+    .mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
 }));
 
 vi.mock("@/lib/template-defaults", () => ({
@@ -33,7 +47,7 @@ vi.mock("@/lib/template-defaults", () => ({
 vi.mock("next/dynamic", () => ({
   default: (fn: () => Promise<{ PDFImageViewer: React.ComponentType }>) => {
     return function MockDynamicComponent(props: unknown) {
-      return <div data-testid="pdf-image-viewer" {...props} />;
+      return <div data-testid="pdf-image-viewer" {...(props as any)} />;
     };
   },
 }));
@@ -49,7 +63,13 @@ const createMockResume = (overrides?: Partial<Resume>): Resume => ({
     phone: "123-456-7890",
     url: "",
     summary: "",
-    location: { address: "", city: "", countryCode: "", region: "", postalCode: "" },
+    location: {
+      address: "",
+      city: "",
+      country: "",
+      region: "",
+      postalCode: "",
+    },
     profiles: [],
     image: "",
   },
@@ -68,29 +88,29 @@ const createMockResume = (overrides?: Partial<Resume>): Resume => ({
     title: "My Resume",
     templateId: "ats",
     themeColor: "#000000",
-    version: 1,
+
     lastModified: new Date().toISOString(),
-    layoutSettings: {},
+    layoutSettings: createMockLayoutSettings({}),
   },
-  ...overrides,
+  ...(overrides || {}),
 });
 
 describe("PDFPreview", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useResumeStore).mockReturnValue(mockUpdateCurrentResume);
-    
+
     // Mock URL.createObjectURL and revokeObjectURL
     global.URL.createObjectURL = vi.fn().mockReturnValue("blob:mock-url");
     global.URL.revokeObjectURL = vi.fn();
-    
+
     // Mock window properties for mobile detection
     Object.defineProperty(window, "innerWidth", {
       writable: true,
       configurable: true,
       value: 1024,
     });
-    
+
     Object.defineProperty(navigator, "userAgent", {
       writable: true,
       configurable: true,
@@ -108,14 +128,18 @@ describe("PDFPreview", () => {
       render(<PDFPreview resume={resume} />);
 
       expect(screen.getByText("PDF Preview")).toBeInTheDocument();
-      expect(screen.getByText(/Select a template and generate your resume/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Select a template and generate your resume/i),
+      ).toBeInTheDocument();
     });
 
     it("should render Generate PDF button initially", () => {
       const resume = createMockResume();
       render(<PDFPreview resume={resume} />);
 
-      expect(screen.getByRole("button", { name: /Generate PDF/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Generate PDF/i }),
+      ).toBeInTheDocument();
     });
 
     it("should render template selector", () => {
@@ -130,9 +154,11 @@ describe("PDFPreview", () => {
     it("should show loading spinner when generating PDF", async () => {
       const resume = createMockResume();
       render(<PDFPreview resume={resume} />);
-      
+
       // Component renders with generate button
-      expect(screen.getByRole("button", { name: /Generate PDF/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Generate PDF/i }),
+      ).toBeInTheDocument();
     });
 
     it("should change button text to Regenerate after generation", async () => {
@@ -140,20 +166,29 @@ describe("PDFPreview", () => {
       render(<PDFPreview resume={resume} />);
 
       // Wait for auto-generation (debounced 2s)
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: /Regenerate/i })).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(
+            screen.getByRole("button", { name: /Regenerate/i }),
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("should auto-generate PDF on mount", async () => {
       const resume = createMockResume();
-      const { generatePDF } = await import("@/components/templates/FactoryTemplates");
-      
+      const { generatePDF } =
+        await import("@/components/templates/FactoryTemplates");
+
       render(<PDFPreview resume={resume} />);
 
-      await waitFor(() => {
-        expect(generatePDF).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(generatePDF).toHaveBeenCalled();
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -161,13 +196,18 @@ describe("PDFPreview", () => {
     it("should display error message when PDF generation fails", async () => {
       const user = userEvent.setup();
       const resume = createMockResume();
-      
-      const { generatePDF } = await import("@/components/templates/FactoryTemplates");
-      vi.mocked(generatePDF).mockRejectedValueOnce(new Error("Generation failed"));
+
+      const { generatePDF } =
+        await import("@/components/templates/FactoryTemplates");
+      vi.mocked(generatePDF).mockRejectedValueOnce(
+        new Error("Generation failed"),
+      );
 
       render(<PDFPreview resume={resume} />);
-      
-      const generateButton = screen.getByRole("button", { name: /Generate PDF/i });
+
+      const generateButton = screen.getByRole("button", {
+        name: /Generate PDF/i,
+      });
       await user.click(generateButton);
 
       await waitFor(() => {
@@ -178,15 +218,20 @@ describe("PDFPreview", () => {
     it("should clear error on successful regeneration", async () => {
       const user = userEvent.setup();
       const resume = createMockResume();
-      
-      const { generatePDF } = await import("@/components/templates/FactoryTemplates");
-      
+
+      const { generatePDF } =
+        await import("@/components/templates/FactoryTemplates");
+
       // First call fails
-      vi.mocked(generatePDF).mockRejectedValueOnce(new Error("Generation failed"));
+      vi.mocked(generatePDF).mockRejectedValueOnce(
+        new Error("Generation failed"),
+      );
 
       render(<PDFPreview resume={resume} />);
-      
-      const generateButton = screen.getByRole("button", { name: /Generate PDF/i });
+
+      const generateButton = screen.getByRole("button", {
+        name: /Generate PDF/i,
+      });
       await user.click(generateButton);
 
       await waitFor(() => {
@@ -194,11 +239,15 @@ describe("PDFPreview", () => {
       });
 
       // Second call succeeds
-      vi.mocked(generatePDF).mockResolvedValueOnce(new Blob(["pdf"], { type: "application/pdf" }));
+      vi.mocked(generatePDF).mockResolvedValueOnce(
+        new Blob(["pdf"], { type: "application/pdf" }),
+      );
       await user.click(generateButton);
 
       await waitFor(() => {
-        expect(screen.queryByText(/Failed to generate PDF/i)).not.toBeInTheDocument();
+        expect(
+          screen.queryByText(/Failed to generate PDF/i),
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -215,14 +264,18 @@ describe("PDFPreview", () => {
 
     it("should have generate button that triggers PDF creation", async () => {
       const resume = createMockResume();
-      const { generatePDF } = await import("@/components/templates/FactoryTemplates");
-      
+      const { generatePDF } =
+        await import("@/components/templates/FactoryTemplates");
+
       render(<PDFPreview resume={resume} />);
 
       // Should auto-generate on mount
-      await waitFor(() => {
-        expect(generatePDF).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(generatePDF).toHaveBeenCalled();
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("should create object URL for PDF", async () => {
@@ -230,9 +283,12 @@ describe("PDFPreview", () => {
       render(<PDFPreview resume={resume} />);
 
       // Wait for PDF generation and URL creation
-      await waitFor(() => {
-        expect(global.URL.createObjectURL).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(global.URL.createObjectURL).toHaveBeenCalled();
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -257,10 +313,13 @@ describe("PDFPreview", () => {
       render(<PDFPreview resume={resume} />);
 
       // Wait for PDF generation and iframe creation
-      await waitFor(() => {
-        const iframe = document.querySelector("iframe");
-        expect(iframe).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const iframe = document.querySelector("iframe");
+          expect(iframe).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -269,18 +328,28 @@ describe("PDFPreview", () => {
       const resume = createMockResume();
       render(<PDFPreview resume={resume} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: /Download/i })).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(
+            screen.getByRole("button", { name: /Download/i }),
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("should show download button after PDF generation", async () => {
       const resume = createMockResume();
       render(<PDFPreview resume={resume} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: /Download/i })).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(
+            screen.getByRole("button", { name: /Download/i }),
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
     });
 
     it("should have generateDocx function available", async () => {
@@ -300,7 +369,8 @@ describe("PDFPreview", () => {
       Object.defineProperty(navigator, "userAgent", {
         writable: true,
         configurable: true,
-        value: "Mozilla/5.0 (Android 10; Mobile; rv:68.0) Gecko/68.0 Firefox/68.0",
+        value:
+          "Mozilla/5.0 (Android 10; Mobile; rv:68.0) Gecko/68.0 Firefox/68.0",
       });
 
       const resume = createMockResume();
@@ -330,9 +400,12 @@ describe("PDFPreview", () => {
       const resume = createMockResume();
       render(<PDFPreview resume={resume} />);
 
-      await waitFor(() => {
-        expect(global.URL.createObjectURL).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(global.URL.createObjectURL).toHaveBeenCalled();
+        },
+        { timeout: 3000 },
+      );
     });
   });
 });

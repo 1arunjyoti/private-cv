@@ -387,7 +387,10 @@ function EditorContent() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setAtsScoreOpen(true)} className="mb-1">
+                  <DropdownMenuItem
+                    onClick={() => setAtsScoreOpen(true)}
+                    className="mb-1"
+                  >
                     <Target className="h-4 w-4" />
                     Check ATS Score
                     <span className=" text-xs px-2 py-0.5 rounded-full bg-muted-foreground/10">

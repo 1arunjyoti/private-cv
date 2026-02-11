@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Heading } from "lucide-react";
 import { SettingsSection } from "../SettingsSection";
 import { SpacingControl } from "../SpacingControl";
@@ -187,6 +188,20 @@ export function HeaderSettings({
           step={5}
           onChange={(val) => updateSetting("profilePhotoSize", val)}
         />
+
+        {/* Border Toggle */}
+        <div className="flex items-center space-x-2 pt-2">
+          <Switch
+            id="photo-border"
+            checked={layoutSettings.profilePhotoBorder || false}
+            onCheckedChange={(checked) =>
+              updateSetting("profilePhotoBorder", checked)
+            }
+          />
+          <Label htmlFor="photo-border" className="text-xs font-medium">
+            Show border around photo
+          </Label>
+        </div>
       </div>
 
       <Separator />

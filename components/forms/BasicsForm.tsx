@@ -20,6 +20,7 @@ import {
 } from "@/lib/llm/prompts";
 import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { removeBackground } from "@/lib/image-processing";
 
 // Moved outside component to prevent recreation on every render
 const SOCIAL_NETWORKS = [
@@ -44,7 +45,9 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
   const [imageSizeKB, setImageSizeKB] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedSummary, setGeneratedSummary] = useState("");
+
   const [llmError, setLlmError] = useState<string | null>(null);
+  const [isRemovingBackground, setIsRemovingBackground] = useState(false);
 
   const providerId = useLLMSettingsStore((state) => state.providerId);
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
@@ -98,6 +101,33 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     setImageSizeKB(null);
     setImageError(null);
   }, [updateField]);
+
+  const handleRemoveBackground = useCallback(async () => {
+    if (!data.image) return;
+    setIsRemovingBackground(true);
+    setImageError(null);
+
+    try {
+      // Convert base64/URL to Blob for processing
+      const response = await fetch(data.image);
+      const blob = await response.blob();
+
+      const processedBlob = await removeBackground(blob);
+      const processedFile = new File([processedBlob], "profile-nobg.png", {
+        type: "image/png",
+      });
+
+      // Re-compress/process using existing logic to ensure consistency
+      const result = await compressImage(processedFile, 500);
+      setImageSizeKB(result.sizeKB);
+      updateField("image", result.dataUrl);
+    } catch (err) {
+      console.error(err);
+      setImageError("Failed to remove background. Please try again.");
+    } finally {
+      setIsRemovingBackground(false);
+    }
+  }, [data.image, updateField]);
 
   const updateLocation = useCallback(
     (field: "city" | "country", value: string) => {
@@ -236,12 +266,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     } finally {
       setIsGenerating(false);
     }
-  }, [
-    apiKeys,
-    buildSummaryInput,
-    consent,
-    providerId,
-  ]);
+  }, [apiKeys, buildSummaryInput, consent, providerId]);
 
   const handleImproveSummary = useCallback(async () => {
     setLlmError(null);
@@ -336,13 +361,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     } finally {
       setIsGenerating(false);
     }
-  }, [
-    apiKeys,
-    consent,
-    data.summary,
-    providerId,
-    redaction.stripContactInfo,
-  ]);
+  }, [apiKeys, consent, data.summary, providerId, redaction.stripContactInfo]);
 
   const handleApplySummary = useCallback(() => {
     if (!generatedSummary) return;
@@ -516,11 +535,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
                   {generatedSummary}
                 </p>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleApplySummary}
-                  >
+                  <Button type="button" size="sm" onClick={handleApplySummary}>
                     Apply
                   </Button>
                   <Button
@@ -587,15 +602,31 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
                     Size: {imageSizeKB}KB
                   </p>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Change Photo
-                </Button>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isRemovingBackground}
+                  >
+                    Change Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveBackground}
+                    disabled={isRemovingBackground}
+                  >
+                    {isRemovingBackground ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5 mr-2" />
+                    )}
+                    Remove Background
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
@@ -627,10 +658,16 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
             <p className="text-sm text-destructive">{imageError}</p>
           )}
 
-          <p className="text-xs text-muted-foreground">
-            Photo will be automatically compressed to optimize file size. Only
-            templates that support profile photos will display it.
-          </p>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>
+              Photo will be automatically compressed to optimize file size. Only
+              templates that support profile photos will display it.
+            </p>
+            <p className="text-amber-600 dark:text-amber-400">
+              Note: JPEG images do not support transparency. Background removal
+              will automatically convert images to PNG.
+            </p>
+          </div>
         </div>
       </CollapsibleSection>
 

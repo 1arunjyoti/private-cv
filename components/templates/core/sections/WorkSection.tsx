@@ -349,6 +349,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                 showFullUrl={settings.linkShowFullUrl}
                 urlBold={settings.experienceWebsiteBold}
                 urlItalic={settings.experienceWebsiteItalic}
+                sectionLinkStyle={settings.sectionLinkStyle}
               />
             )}
 

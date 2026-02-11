@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi } from "vitest";
 import type { LayoutSettings } from "@/components/design/types";
 import type { Resume } from "@/db";
@@ -145,7 +146,7 @@ describe("Template Factory Types", () => {
 describe("basicsToContactItems helper logic", () => {
   const basicsToContactItems = (
     basics: Partial<Resume["basics"]>,
-    showFullUrl: boolean = false
+    showFullUrl: boolean = false,
   ) => {
     const items: Array<{
       type: string;
@@ -204,7 +205,7 @@ describe("basicsToContactItems helper logic", () => {
 
   it("should handle email", () => {
     const items = basicsToContactItems({ email: "test@example.com" });
-    
+
     expect(items).toHaveLength(1);
     expect(items[0].type).toBe("email");
     expect(items[0].value).toBe("test@example.com");
@@ -213,7 +214,7 @@ describe("basicsToContactItems helper logic", () => {
 
   it("should handle phone", () => {
     const items = basicsToContactItems({ phone: "+1-555-123-4567" });
-    
+
     expect(items).toHaveLength(1);
     expect(items[0].type).toBe("phone");
     expect(items[0].value).toBe("+1-555-123-4567");
@@ -222,9 +223,15 @@ describe("basicsToContactItems helper logic", () => {
 
   it("should handle location with city and country", () => {
     const items = basicsToContactItems({
-      location: { city: "New York", country: "USA" },
+      location: {
+        city: "New York",
+        country: "USA",
+        address: "",
+        region: "",
+        postalCode: "",
+      },
     });
-    
+
     expect(items).toHaveLength(1);
     expect(items[0].type).toBe("location");
     expect(items[0].value).toBe("New York, USA");
@@ -232,19 +239,22 @@ describe("basicsToContactItems helper logic", () => {
 
   it("should handle location with only city", () => {
     const items = basicsToContactItems({
-      location: { city: "San Francisco" },
+      location: {
+        city: "San Francisco",
+        country: "",
+        address: "",
+        region: "",
+        postalCode: "",
+      },
     });
-    
+
     expect(items).toHaveLength(1);
     expect(items[0].value).toBe("San Francisco");
   });
 
   it("should handle URL and strip protocol when showFullUrl is false", () => {
-    const items = basicsToContactItems(
-      { url: "https://example.com/" },
-      false
-    );
-    
+    const items = basicsToContactItems({ url: "https://example.com/" }, false);
+
     expect(items).toHaveLength(1);
     expect(items[0].type).toBe("url");
     expect(items[0].value).toBe("example.com");
@@ -252,22 +262,27 @@ describe("basicsToContactItems helper logic", () => {
   });
 
   it("should keep full URL when showFullUrl is true", () => {
-    const items = basicsToContactItems(
-      { url: "https://example.com/" },
-      true
-    );
-    
+    const items = basicsToContactItems({ url: "https://example.com/" }, true);
+
     expect(items[0].value).toBe("https://example.com/");
   });
 
   it("should handle profiles", () => {
     const items = basicsToContactItems({
       profiles: [
-        { network: "LinkedIn", username: "johndoe", url: "https://linkedin.com/in/johndoe" },
-        { network: "GitHub", username: "johndoe", url: "https://github.com/johndoe" },
+        {
+          network: "LinkedIn",
+          username: "johndoe",
+          url: "https://linkedin.com/in/johndoe",
+        },
+        {
+          network: "GitHub",
+          username: "johndoe",
+          url: "https://github.com/johndoe",
+        },
       ],
     });
-    
+
     expect(items).toHaveLength(2);
     expect(items[0].type).toBe("profile");
     expect(items[0].value).toBe("johndoe");
@@ -277,10 +292,10 @@ describe("basicsToContactItems helper logic", () => {
   it("should handle profile without username", () => {
     const items = basicsToContactItems({
       profiles: [
-        { network: "Portfolio", url: "https://portfolio.com" },
+        { network: "Portfolio", url: "https://portfolio.com", username: "" },
       ],
     });
-    
+
     expect(items).toHaveLength(1);
     expect(items[0].value).toBe("Portfolio");
     expect(items[0].label).toBe("Portfolio");
@@ -290,20 +305,36 @@ describe("basicsToContactItems helper logic", () => {
     const items = basicsToContactItems({
       email: "test@example.com",
       phone: "+1-555-123-4567",
-      location: { city: "New York", country: "USA" },
+      location: {
+        city: "New York",
+        country: "USA",
+        address: "",
+        region: "",
+        postalCode: "",
+      },
       url: "https://example.com",
       profiles: [
-        { network: "LinkedIn", username: "johndoe", url: "https://linkedin.com/in/johndoe" },
+        {
+          network: "LinkedIn",
+          username: "johndoe",
+          url: "https://linkedin.com/in/johndoe",
+        },
       ],
     });
-    
+
     expect(items).toHaveLength(5);
-    expect(items.map(i => i.type)).toEqual(["email", "phone", "location", "url", "profile"]);
+    expect(items.map((i) => i.type)).toEqual([
+      "email",
+      "phone",
+      "location",
+      "url",
+      "profile",
+    ]);
   });
 
   it("should handle empty basics", () => {
     const items = basicsToContactItems({});
-    
+
     expect(items).toHaveLength(0);
   });
 
@@ -313,7 +344,7 @@ describe("basicsToContactItems helper logic", () => {
         { network: "LinkedIn", username: "johndoe" } as any, // No URL
       ],
     });
-    
+
     expect(items).toHaveLength(0);
   });
 });
@@ -368,18 +399,18 @@ describe("Section ordering", () => {
   it("should be able to filter sections for left column", () => {
     const leftColumnSections = ["skills", "languages", "interests"];
     const filteredSections = allSections.filter((s) =>
-      leftColumnSections.includes(s)
+      leftColumnSections.includes(s),
     );
-    
+
     expect(filteredSections).toEqual(["skills", "languages", "interests"]);
   });
 
   it("should be able to filter sections for right column", () => {
     const leftColumnSections = ["skills", "languages", "interests"];
     const rightColumnSections = allSections.filter(
-      (s) => !leftColumnSections.includes(s)
+      (s) => !leftColumnSections.includes(s),
     );
-    
+
     expect(rightColumnSections).toContain("work");
     expect(rightColumnSections).toContain("education");
     expect(rightColumnSections).not.toContain("skills");
@@ -388,7 +419,7 @@ describe("Section ordering", () => {
   it("should support custom section ordering", () => {
     const customOrder = ["summary", "skills", "work", "education"];
     const orderedSections = customOrder.filter((s) => allSections.includes(s));
-    
+
     expect(orderedSections).toEqual(customOrder);
   });
 });
@@ -449,7 +480,12 @@ describe("Style calculations", () => {
 
     const nameStyle = {
       fontSize: settings.nameFontSize || 28,
-      fontWeight: settings.nameBold !== undefined ? (settings.nameBold ? "bold" : "normal") : "bold",
+      fontWeight:
+        settings.nameBold !== undefined
+          ? settings.nameBold
+            ? "bold"
+            : "normal"
+          : "bold",
       lineHeight: settings.nameLineHeight || 1.2,
     };
 
@@ -462,14 +498,14 @@ describe("Style calculations", () => {
 describe("Profile photo configuration", () => {
   it("should support different photo positions", () => {
     const positions = ["left", "right"];
-    
+
     expect(positions).toContain("left");
     expect(positions).toContain("right");
   });
 
   it("should support different photo shapes", () => {
     const shapes = ["circle", "square", "rounded"];
-    
+
     expect(shapes).toContain("circle");
     expect(shapes).toContain("square");
     expect(shapes).toContain("rounded");
@@ -506,7 +542,7 @@ describe("Column width calculations", () => {
     const leftColumnWidth = 30;
     const columnGap = 5;
     const rightColumnWidth = 100 - leftColumnWidth - columnGap;
-    
+
     expect(rightColumnWidth).toBe(65);
   });
 
@@ -514,7 +550,7 @@ describe("Column width calculations", () => {
     const columnGap = 5;
     const leftWidth = (100 - columnGap) / 2;
     const rightWidth = (100 - columnGap) / 2;
-    
+
     expect(leftWidth).toBe(rightWidth);
   });
 
@@ -522,8 +558,8 @@ describe("Column width calculations", () => {
     const leftWidth = 25;
     const middleWidth = 40;
     const columnGap = 5;
-    const rightWidth = 100 - leftWidth - middleWidth - (columnGap * 2);
-    
-    expect(leftWidth + middleWidth + rightWidth + (columnGap * 2)).toBe(100);
+    const rightWidth = 100 - leftWidth - middleWidth - columnGap * 2;
+
+    expect(leftWidth + middleWidth + rightWidth + columnGap * 2).toBe(100);
   });
 });

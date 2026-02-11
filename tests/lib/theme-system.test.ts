@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { deepMerge, BASE_THEME, TYPOGRAPHY_PRESETS, HEADING_PRESETS, LAYOUT_PRESETS, ENTRY_PRESETS } from "@/lib/theme-system";
 
@@ -7,7 +8,7 @@ describe("deepMerge", () => {
       const obj1 = { a: 1, b: 2 };
       const obj2 = { c: 3 };
       
-      const result = deepMerge(obj1, obj2);
+      const result = deepMerge<{ a: number; b: number; c: number }>(obj1, obj2);
       
       expect(result).toEqual({ a: 1, b: 2, c: 3 });
     });
@@ -26,7 +27,7 @@ describe("deepMerge", () => {
       const obj2 = { b: 2 };
       const obj3 = { c: 3 };
       
-      const result = deepMerge(obj1, obj2, obj3);
+      const result = deepMerge<{ a: number; b: number; c: number }>(obj1, obj2, obj3);
       
       expect(result).toEqual({ a: 1, b: 2, c: 3 });
     });
@@ -59,7 +60,7 @@ describe("deepMerge", () => {
         nested: { y: 3, z: 4 } 
       };
       
-      const result = deepMerge(obj1, obj2);
+      const result = deepMerge<any>(obj1, obj2);
       
       expect(result).toEqual({
         a: 1,
@@ -83,7 +84,7 @@ describe("deepMerge", () => {
         },
       };
       
-      const result = deepMerge(obj1, obj2);
+      const result = deepMerge<any>(obj1, obj2);
       
       expect(result.level1.level2.level3).toEqual({ a: 1, b: 2 });
     });
@@ -96,7 +97,7 @@ describe("deepMerge", () => {
         config: { fontSize: 14 },
       };
       
-      const result = deepMerge(obj1, obj2);
+      const result = deepMerge<any>(obj1, obj2);
       
       expect(result.config.fontSize).toBe(14);
       expect(result.config.fontFamily).toBe("Arial");
@@ -145,7 +146,7 @@ describe("deepMerge", () => {
       const obj1 = { name: "John" };
       const obj2 = { title: "Developer" };
       
-      const result = deepMerge(obj1, obj2);
+      const result = deepMerge<any>(obj1, obj2);
       
       expect(typeof result.name).toBe("string");
       expect(typeof result.title).toBe("string");
@@ -154,7 +155,7 @@ describe("deepMerge", () => {
     it("should preserve number values", () => {
       const obj1 = { fontSize: 12, lineHeight: 1.5 };
       
-      const result = deepMerge(obj1);
+      const result = deepMerge<any>(obj1);
       
       expect(typeof result.fontSize).toBe("number");
       expect(typeof result.lineHeight).toBe("number");
@@ -163,7 +164,7 @@ describe("deepMerge", () => {
     it("should preserve boolean values", () => {
       const obj1 = { enabled: true, visible: false };
       
-      const result = deepMerge(obj1);
+      const result = deepMerge<any>(obj1);
       
       expect(result.enabled).toBe(true);
       expect(result.visible).toBe(false);
@@ -173,7 +174,7 @@ describe("deepMerge", () => {
       const obj1 = { value: "test" };
       const obj2 = { value: null };
       
-      const result = deepMerge(obj1, obj2 as { value: string | null });
+      const result = deepMerge<any>(obj1, obj2 as { value: string | null });
       
       // Note: null is not considered undefined, so it should be preserved
       expect(result.value).toBeNull();
@@ -182,7 +183,7 @@ describe("deepMerge", () => {
 
   describe("edge cases", () => {
     it("should handle no arguments", () => {
-      const result = deepMerge();
+      const result = deepMerge<any>();
       
       expect(result).toEqual({});
     });
@@ -190,7 +191,7 @@ describe("deepMerge", () => {
     it("should handle single argument", () => {
       const obj = { a: 1 };
       
-      const result = deepMerge(obj);
+      const result = deepMerge<any>(obj);
       
       expect(result).toEqual({ a: 1 });
     });
@@ -199,7 +200,7 @@ describe("deepMerge", () => {
       const obj1 = { a: 1, nested: { b: 2 } };
       const obj2 = { nested: { c: 3 } };
       
-      deepMerge(obj1, obj2);
+      deepMerge<any>(obj1, obj2);
       
       expect(obj1.nested).toEqual({ b: 2 });
       expect("c" in obj1.nested).toBe(false);
@@ -209,7 +210,7 @@ describe("deepMerge", () => {
       const obj1 = { a: 1, b: undefined };
       const obj2 = { a: undefined, c: 3 };
       
-      const result = deepMerge(obj1 as { a: number; b?: number }, obj2 as { a?: number; c: number });
+      const result = deepMerge<any>(obj1 as { a: number; b?: number }, obj2 as { a?: number; c: number });
       
       // undefined values should not override defined values
       expect(result.a).toBe(1);
@@ -294,7 +295,7 @@ describe("TYPOGRAPHY_PRESETS", () => {
   });
 
   it("should have reasonable font sizes", () => {
-    Object.values(TYPOGRAPHY_PRESETS).forEach((preset) => {
+    Object.values(TYPOGRAPHY_PRESETS).forEach((preset: any) => {
       expect(preset.nameFontSize).toBeGreaterThan(10);
       expect(preset.nameFontSize).toBeLessThan(50);
       expect(preset.contactFontSize).toBeGreaterThan(6);

@@ -200,12 +200,14 @@ export interface LayoutSettings {
   contactSeparator: 'pipe' | 'dash' | 'comma';
   contactLinkUnderline: boolean; // Whether to underline links in contact info
   // Link Display Options
-  linkShowIcon: boolean;       // Show link icon (🔗) before links
-  linkShowFullUrl: boolean;    // Show full URL instead of link text
+  linkShowIcon: boolean;       // Show link icon (🔗) before links (Legacy/Global fallback)
+  linkShowFullUrl: boolean;    // Show full URL instead of link text (Legacy/Global fallback)
+  sectionLinkStyle: 'icon' | 'inline' | 'newline' | 'underline'; // New standardized style
   // Profile Photo Options
   profilePhotoPosition: 'left' | 'right'; // Position in horizontal header
   profilePhotoShape: 'circle' | 'rounded' | 'square'; // Shape of profile photo
   profilePhotoSize: number; // Size in points (40-150)
+  profilePhotoBorder: boolean; // Whether to show a border around the profile photo
   // Skills
   skillsDisplayStyle: 'grid' | 'level' | 'compact' | 'bubble' | 'boxed';
   skillsLevelStyle: 0 | 1 | 2 | 3 | 4;
