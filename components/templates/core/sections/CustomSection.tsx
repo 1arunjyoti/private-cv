@@ -206,7 +206,7 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
 
                 {/* Newline/Below URL */}
                 {item.url && effectiveLinkStyle === "newline" && (
-                  <Link src={item.url}>
+                  <Link src={item.url} style={styles.url}>
                     <Text style={styles.url}>
                       {item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                     </Text>

@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { FolderGit2 } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -27,7 +28,7 @@ export function ProjectsSettings({
     >
       <div className="space-y-6">
         {/* Project List Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Project List Style
           </Label>
@@ -52,10 +53,10 @@ export function ProjectsSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Project Name Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Project Name
           </Label>
@@ -91,10 +92,10 @@ export function ProjectsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Date Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Start & End Date
           </Label>
@@ -130,10 +131,10 @@ export function ProjectsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Technologies Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Technologies Used
           </Label>
@@ -169,10 +170,10 @@ export function ProjectsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Key Features List Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Key Features (List Style)
           </Label>
@@ -200,10 +201,10 @@ export function ProjectsSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Key Features Text Style */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Key Features (Text Style)
           </Label>
@@ -239,7 +240,7 @@ export function ProjectsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

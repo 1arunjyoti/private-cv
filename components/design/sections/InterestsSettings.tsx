@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Heart } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -26,7 +27,7 @@ export function InterestsSettings({
       onToggle={onToggle}
     >
       <div className="space-y-4">
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             List Style
           </Label>
@@ -52,9 +53,9 @@ export function InterestsSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Interest Name
           </Label>
@@ -90,9 +91,9 @@ export function InterestsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Keywords
           </Label>
@@ -128,7 +129,7 @@ export function InterestsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

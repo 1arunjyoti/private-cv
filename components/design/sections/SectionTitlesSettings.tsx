@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { SettingsSection } from "../SettingsSection";
 import { LayoutSettings, LayoutSettingValue } from "../types";
 import { CustomSection } from "@/db";
+import { SubSectionCard } from "../SubSectionCard";
 
 interface SectionTitlesSettingsProps {
   layoutSettings: LayoutSettings;
@@ -52,60 +53,64 @@ export function SectionTitlesSettings({
       onToggle={onToggle}
     >
       <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground ml-1">
           Customize the headings for each section of your resume. Leave empty to
           use the default title.
         </p>
 
-        <div className="space-y-3">
-          {SECTIONS.map((section) => (
-            <div key={section.id} className="grid gap-1.5">
-              <Label
-                htmlFor={`title-${section.id}`}
-                className="text-xs font-medium text-muted-foreground flex justify-between"
-              >
-                <span>{section.label}</span>
-                <span className="text-[10px] opacity-70">
-                  Default: {section.default}
-                </span>
-              </Label>
-              <Input
-                id={`title-${section.id}`}
-                placeholder={section.default}
-                value={titles[section.id] || ""}
-                onChange={(e) => handleTitleChange(section.id, e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-          ))}
+        <SubSectionCard className="space-y-4">
+          <div className="space-y-3">
+            {SECTIONS.map((section) => (
+              <div key={section.id} className="grid gap-1.5">
+                <Label
+                  htmlFor={`title-${section.id}`}
+                  className="text-xs font-medium text-muted-foreground flex justify-between"
+                >
+                  <span>{section.label}</span>
+                  <span className="text-[10px] opacity-70">
+                    Default: {section.default}
+                  </span>
+                </Label>
+                <Input
+                  id={`title-${section.id}`}
+                  placeholder={section.default}
+                  value={titles[section.id] || ""}
+                  onChange={(e) =>
+                    handleTitleChange(section.id, e.target.value)
+                  }
+                  className="h-8 text-xs"
+                />
+              </div>
+            ))}
 
-          {customSections.length > 0 && (
-            <>
-              {customSections.map((section) => (
-                <div key={section.id} className="grid gap-1.5">
-                  <Label
-                    htmlFor={`title-${section.id}`}
-                    className="text-xs font-medium text-muted-foreground flex justify-between"
-                  >
-                    <span>{section.name}</span>
-                    <span className="text-[10px] opacity-70">
-                      Custom Section
-                    </span>
-                  </Label>
-                  <Input
-                    id={`title-${section.id}`}
-                    placeholder={section.name}
-                    value={titles[section.id] || ""}
-                    onChange={(e) =>
-                      handleTitleChange(section.id, e.target.value)
-                    }
-                    className="h-8 text-xs"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+            {customSections.length > 0 && (
+              <>
+                {customSections.map((section) => (
+                  <div key={section.id} className="grid gap-1.5">
+                    <Label
+                      htmlFor={`title-${section.id}`}
+                      className="text-xs font-medium text-muted-foreground flex justify-between"
+                    >
+                      <span>{section.name}</span>
+                      <span className="text-[10px] opacity-70">
+                        Custom Section
+                      </span>
+                    </Label>
+                    <Input
+                      id={`title-${section.id}`}
+                      placeholder={section.name}
+                      value={titles[section.id] || ""}
+                      onChange={(e) =>
+                        handleTitleChange(section.id, e.target.value)
+                      }
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

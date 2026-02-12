@@ -1,8 +1,9 @@
 import { Label } from "@/components/ui/label";
 import { THEME_COLORS } from "@/lib/constants";
-import { Palette } from "lucide-react";
+import { Palette, Plus } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -31,7 +32,7 @@ export function ThemeSettings({
       onToggle={onToggle}
     >
       <div className="space-y-4">
-        <div className="flex gap-4">
+        <SubSectionCard className="flex flex-row flex-wrap gap-4 items-center space-y-0">
           {THEME_COLORS.map((color) => (
             <button
               key={color.value}
@@ -49,17 +50,38 @@ export function ThemeSettings({
               )}
             </button>
           ))}
-          <div className="col-span-1 relative flex items-center justify-center">
+
+          <div
+            className={`relative flex items-center justify-center w-8 h-8 rounded-full border transition-all ${
+              !THEME_COLORS.some((c) => c.value === currentThemeColor)
+                ? "ring-2 ring-offset-2 ring-primary scale-110 border-transparent"
+                : "border-border border-dashed hover:scale-105 hover:border-primary/50"
+            }`}
+            style={{
+              backgroundColor: !THEME_COLORS.some(
+                (c) => c.value === currentThemeColor,
+              )
+                ? currentThemeColor
+                : "transparent",
+            }}
+            title="Custom Color"
+          >
+            {THEME_COLORS.some((c) => c.value === currentThemeColor) && (
+              <Plus className="w-4 h-4 text-muted-foreground" />
+            )}
+            {!THEME_COLORS.some((c) => c.value === currentThemeColor) && (
+              <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
+            )}
             <input
               type="color"
               value={currentThemeColor || "#000000"}
               onChange={(e) => updateThemeColor(e.target.value)}
-              className="w-8 h-8 rounded-full cursor-pointer opacity-0 absolute top-0 left-0 z-10"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
+        <SubSectionCard className="space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Apply Color To
           </Label>
@@ -103,10 +125,10 @@ export function ThemeSettings({
               );
             })}
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Section Link Style */}
-        <div className="bg-muted/30 p-3 rounded-lg border space-y-3">
+        <SubSectionCard className="space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Section Link Style
           </Label>
@@ -130,7 +152,7 @@ export function ThemeSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

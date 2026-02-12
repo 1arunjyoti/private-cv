@@ -366,7 +366,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                 }
                 showLinkIcon={settings.linkShowIcon}
                 showFullUrl={settings.linkShowFullUrl}
-                urlBold={settings.educationInstitutionBold}
+                urlBold={false}
                 sectionLinkStyle={settings.sectionLinkStyle}
               />
             )}

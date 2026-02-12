@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Navbar } from "@/components/ui/Navbar";
+import { Footer } from "@/components/ui/Footer";
 import {
-  FileText,
   Download,
   ArrowRight,
   FileJson,
@@ -15,56 +14,17 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export default function HowToUsePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
-        <div className="landing-container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex flex-1 items-center justify-start">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-transform hover:scale-110">
-                <FileText className="h-5 w-5" />
-              </div>
-              <span className="font-bold text-xl tracking-tight">
-                PrivateCV
-              </span>
-            </Link>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <Link
-              href="/"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/templates"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Templates
-            </Link>
-          </nav>
-
-          <div className="flex flex-1 items-center justify-end gap-4">
-            <ThemeToggle />
-            <Link href="/templates">
-              <Button
-                size="sm"
-                className="shadow-sm font-semibold cursor-pointer"
-              >
-                Get Started
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden py-20 md:py-28 bg-linear-to-b from-background to-muted/50">
+        <section className="relative overflow-hidden pt-28 pb-20 md:pt-32 md:pb-28 bg-linear-to-b from-background to-muted/50">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--color-primary),transparent_25%)] opacity-5" />
           <div className="landing-container mx-auto px-4 md:px-6 relative z-10 text-center">
             <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium border-primary/20 bg-primary/10 text-primary mb-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
@@ -441,31 +401,7 @@ export default function HowToUsePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-6 bg-background">
-        <div className="landing-container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-sm text-muted-foreground text-center md:text-left">
-            © {new Date().getFullYear()} PrivateCV. Open Source & Privacy-First.
-          </div>
-          <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Home
-            </Link>
-            <Link
-              href="https://github.com/1arunjyoti/resume-builder"
-              className="hover:text-foreground transition-colors"
-              target="_blank"
-            >
-              GitHub
-            </Link>
-            <Link
-              href="/privacy"
-              className="hover:text-foreground transition-colors"
-            >
-              Privacy
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

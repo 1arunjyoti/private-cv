@@ -206,7 +206,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
 
             {/* Newline/Below URL */}
             {cert.url && effectiveLinkStyle === "newline" && (
-              <Link src={cert.url}>
+              <Link src={cert.url} style={styles.url}>
                 <Text style={styles.url}>
                   {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                 </Text>

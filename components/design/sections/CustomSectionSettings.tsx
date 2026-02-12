@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Wrench } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -26,7 +27,7 @@ export function CustomSectionSettings({
       onToggle={onToggle}
     >
       <div className="space-y-6">
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             List Style
           </Label>
@@ -54,9 +55,9 @@ export function CustomSectionSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Name
           </Label>
@@ -92,9 +93,9 @@ export function CustomSectionSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Subtitle
           </Label>
@@ -130,9 +131,9 @@ export function CustomSectionSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Date
           </Label>
@@ -168,9 +169,9 @@ export function CustomSectionSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             URL
           </Label>
@@ -206,7 +207,7 @@ export function CustomSectionSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

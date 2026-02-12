@@ -206,7 +206,7 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
 
             {/* Newline/Below URL */}
             {pub.url && effectiveLinkStyle === "newline" && (
-              <Link src={pub.url}>
+              <Link src={pub.url} style={styles.url}>
                 <Text style={styles.url}>
                   {pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                 </Text>

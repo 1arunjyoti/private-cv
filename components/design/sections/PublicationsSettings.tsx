@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { BookOpen } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -26,7 +27,7 @@ export function PublicationsSettings({
       onToggle={onToggle}
     >
       <div className="space-y-6">
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             List Style
           </Label>
@@ -54,9 +55,9 @@ export function PublicationsSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Publication Name
           </Label>
@@ -92,9 +93,9 @@ export function PublicationsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Publisher
           </Label>
@@ -130,9 +131,9 @@ export function PublicationsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             URL
           </Label>
@@ -168,9 +169,9 @@ export function PublicationsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Release Date
           </Label>
@@ -206,7 +207,7 @@ export function PublicationsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

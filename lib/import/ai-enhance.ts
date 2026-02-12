@@ -7,7 +7,7 @@ import type { ParsedResumeData } from "./types";
  */
 export function parseLLMImportOutput(output: string): ParsedResumeData {
   // Clean up LLM output
-  let cleaned = output.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const cleaned = output.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
   // Try direct parse
   let parsed: Record<string, unknown>;

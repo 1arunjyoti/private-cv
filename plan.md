@@ -115,7 +115,7 @@ Standardized JSON structure compliant with JSON Resume (where possible) but adap
 
 ## Future features
 
-- [ ] Photo background removal
+- [x] Photo background removal
 - [ ] Header background color customizer
 - [ ] Reorder sections between columns
 - [ ] PDF import improvements (better text extraction for external PDFs)

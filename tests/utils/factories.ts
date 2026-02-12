@@ -196,6 +196,7 @@ export const createMockLayoutSettings = (overrides?: Partial<LayoutSettings>): L
   certificatesDateItalic: false,
   certificatesUrlBold: false,
   certificatesUrlItalic: false,
+  sectionLinkStyle: 'inline',
   ...overrides,
 });
 

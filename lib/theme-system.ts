@@ -90,6 +90,7 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   customHeadingVisible: true,
   sectionDisplayStyle: "plain",
   profilePhotoBorder: false,
+  sectionLinkStyle: "icon",
 };
 
 // ============================================================================
@@ -638,6 +639,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       titleItalic: true,
       experiencePositionItalic: true,
       entrySubtitleStyle: "italic",
+      sectionLinkStyle: "inline",
     },
   },
   
