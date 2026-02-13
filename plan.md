@@ -115,9 +115,10 @@ Standardized JSON structure compliant with JSON Resume (where possible) but adap
 
 ## Future features
 
-- [ ] Photo background removal
-- [ ] Header background color customizer
-- [ ] Reorder sections between columns
+- [x] Photo background removal
+- [x] Header background color customizer
+- [x] Reorder sections between columns
 - [ ] PDF import improvements (better text extraction for external PDFs)
 - [ ] Multi-language support
-- [ ] Resume analytics dashboard
+- [x] Resume analytics dashboard
+- [x] User-Owned Cloud Sync (Bringer-Your-Own-Storage)

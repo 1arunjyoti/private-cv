@@ -8,7 +8,7 @@
 import React from "react";
 import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
 import type { Education, LayoutSettings } from "@/db";
-import { formatDate } from "@/lib/template-utils";
+import { formatDate, formatDateRange } from "@/lib/template-utils";
 import {
   SectionHeading,
   BulletList,
@@ -125,7 +125,9 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
 
       {/* Education Entries */}
       {education.map((edu, index) => {
-        const dateRange = `${formatDate(edu.startDate)} – ${formatDate(edu.endDate)}`;
+        const startDate = formatDate(edu.startDate);
+        const endDate = formatDate(edu.endDate);
+        const dateRange = formatDateRange(edu.startDate, edu.endDate);
 
         // Build degree string
         let degreeStr = edu.studyType || "";
@@ -167,7 +169,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange ? dateRange.split("–")[0].trim() : ""}
+                    {startDate || endDate}
                   </Text>
                   <Text
                     style={{
@@ -189,9 +191,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange && dateRange.includes("–")
-                      ? " - " + dateRange.split("–")[1].trim()
-                      : ""}
+                    {startDate && endDate ? ` - ${endDate}` : ""}
                   </Text>
                   {edu.score && (
                     <Text
@@ -243,7 +243,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       zIndex: 10,
                     }}
                   />
-                  {(index < education.length - 1 || true) && (
+                  {index < education.length - 1 && (
                     <View
                       style={{
                         position: "absolute",
@@ -366,30 +366,8 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                 }
                 showLinkIcon={settings.linkShowIcon}
                 showFullUrl={settings.linkShowFullUrl}
-                urlBold={settings.educationInstitutionBold} // Education doesn't have a separate URL bold setting, usually grouped with institution or uses a specific one? Checking defaults.. Education usually lacks specific URL bold setting in defaults. But I should check if I missed it.
-                // Wait, Education doesn't have `educationUrlBold` in settings usually. It uses `educationInstitutionBold` for the title.
-                // Let's check `LayoutSettings` definition again.
-                // Actually, looking at `db/index.ts` earlier, Education has degree, area, date, gpa, courses. No specific URL setting?
-                // If it's the specific URL setting the user is asking about, it might be relevant for sections that HAVE it.
-                // For Education, it might fall back to standard link style or inherit.
-                // If the user said "you removed the url bold, italic function", they likely refer to sections where they HAD detailed control.
-                // Let's look at `db/index.ts` again if needed.
-                // But for now, let's assume Education might not have it.
-                // However, I should check `WorkSection` used `experienceWebsiteBold`.
-                // `ProjectsSection` used `projectsUrlBold`.
-                // `Certificates` has `certificatesUrlBold`.
-                // `Publications` has `publicationsUrlBold`.
-                // `Custom` has `customSectionUrlBold`.
-                // `Education` does NOT seem to have `educationUrlBold` in the viewed file `db/index.ts` lines 230-243.
-                // So for Education, maybe I shouldn't add it or it wasn't there before.
-                // I will skip adding it to Education for now unless I find a matching setting.
-                // Wait, I am currently editing `ProjectsSection` and `EducationSection`.
-                // Let's hold off on EducationSection if I'm unsure.
-                // I will just update ProjectsSection in this tool call.
-                // Actually I cannot "skip" a file in `multi_replace` or `replace` if I already started.
-                // But I am making individual calls.
-                // So I will just update ProjectsSection here.
-                // Setting `urlBold` to undefined simply defaults to normal, which is fine.
+                urlBold={false}
+                sectionLinkStyle={settings.sectionLinkStyle}
               />
             )}
 
@@ -403,8 +381,10 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
               </Text>
             )}
 
-            {/* URL if not shown in header */}
+            {/* URL if not shown in header */
+            /* If sectionLinkStyle is set, EntryHeader handles it. We only fallback if NO style is set AND legacy flags are off */}
             {edu.url &&
+              !settings.sectionLinkStyle &&
               !settings.linkShowIcon &&
               !settings.linkShowFullUrl &&
               settings.entryLayoutStyle !== 2 && (

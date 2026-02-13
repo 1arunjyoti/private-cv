@@ -39,7 +39,7 @@ export interface DetectedSection {
 }
 
 // Supported import formats
-export type ImportFormat = 'json' | 'pdf' | 'docx';
+export type ImportFormat = 'json' | 'pdf' | 'docx' | 'zip' | 'csv';
 
 // File type detection result
 export interface FileTypeResult {

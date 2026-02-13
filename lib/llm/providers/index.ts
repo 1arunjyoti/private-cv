@@ -1,27 +1,13 @@
-import type { LLMProvider, LLMProviderId } from "@/lib/llm/types";
 import { googleProvider } from "@/lib/llm/providers/google";
+import { openaiProvider } from "@/lib/llm/providers/openai";
+import { anthropicProvider } from "@/lib/llm/providers/anthropic";
 import { localProvider } from "@/lib/llm/providers/local";
-
-const createStubProvider = (
-  id: LLMProviderId,
-  label: string,
-): LLMProvider => ({
-  id,
-  label,
-  status: "coming-soon",
-  requiresApiKey: true,
-  async validateKey() {
-    throw new Error(`${label} provider is not implemented yet.`);
-  },
-  async generateText() {
-    throw new Error(`${label} provider is not implemented yet.`);
-  },
-});
+import type { LLMProvider, LLMProviderId } from "@/lib/llm/types";
 
 export const LLM_PROVIDERS: LLMProvider[] = [
   googleProvider,
-  createStubProvider("openai", "OpenAI"),
-  createStubProvider("anthropic", "Anthropic"),
+  openaiProvider,
+  anthropicProvider,
   localProvider,
 ];
 

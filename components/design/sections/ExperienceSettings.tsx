@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Briefcase } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -27,7 +28,7 @@ export function ExperienceSettings({
     >
       <div className="space-y-6">
         {/* Company Name */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Company Name
           </Label>
@@ -89,10 +90,10 @@ export function ExperienceSettings({
               </button>
             </div>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Position */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Position
           </Label>
@@ -128,10 +129,10 @@ export function ExperienceSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Website Link */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Company Website
           </Label>
@@ -167,10 +168,10 @@ export function ExperienceSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Date */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Start & End Date
           </Label>
@@ -206,10 +207,10 @@ export function ExperienceSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Key Achievements */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Key Achievements
           </Label>
@@ -274,7 +275,7 @@ export function ExperienceSettings({
               </button>
             </div>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

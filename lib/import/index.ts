@@ -7,6 +7,8 @@ import type {
 } from './types';
 import { pdfParser } from './pdf-parser';
 import { docxParser } from './docx-parser';
+import { linkedInCSVParser } from './linkedin-csv-parser';
+
 
 /**
  * Import Service
@@ -40,6 +42,18 @@ export class ImportService {
       return { format: 'json', mimeType: 'application/json', isValid: true };
     }
     
+    if (extension === 'json' || mimeType === 'application/json') {
+      return { format: 'json', mimeType: 'application/json', isValid: true };
+    }
+    
+    if (extension === 'zip' || mimeType === 'application/zip' || mimeType === 'application/x-zip-compressed') {
+        return { format: 'zip', mimeType: 'application/zip', isValid: true };
+    }
+
+    if (extension === 'csv' || mimeType === 'text/csv') {
+        return { format: 'csv', mimeType: 'text/csv', isValid: true };
+    }
+
     return { format: 'json', mimeType: '', isValid: false };
   }
 
@@ -65,6 +79,10 @@ export class ImportService {
         
       case 'docx':
         return docxParser.parse(file);
+
+      case 'zip':
+      case 'csv':
+         return linkedInCSVParser.parse(file);
         
       case 'json':
         return this.parseJSON(file);
@@ -355,3 +373,5 @@ export type { ImportResult, ImportFormat, ParsedResumeData } from './types';
 export type { ResumeFormat, FormatClassification, FormatTraits } from './format-classifier';
 export { preprocessResumeText } from './preprocess';
 export { classifyResumeFormat } from './format-classifier';
+export { linkedInCSVParser } from './linkedin-csv-parser';
+export { linkedInPDFParser } from './linkedin-pdf-parser';

@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  GripVertical,
+} from "lucide-react";
 import React from "react";
 
 interface SortableItemProps {
@@ -11,6 +17,10 @@ interface SortableItemProps {
   onMoveDown: () => void;
   isFirst: boolean;
   isLast: boolean;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
+  canMoveLeft?: boolean;
+  canMoveRight?: boolean;
 }
 
 export function SortableItem({
@@ -20,6 +30,10 @@ export function SortableItem({
   onMoveDown,
   isFirst,
   isLast,
+  onMoveLeft,
+  onMoveRight,
+  canMoveLeft,
+  canMoveRight,
 }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -48,6 +62,36 @@ export function SortableItem({
         <span className="text-sm font-medium">{label}</span>
       </div>
       <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        {canMoveLeft && onMoveLeft && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onMoveLeft();
+            }}
+            aria-label="Move section left"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {canMoveRight && onMoveRight && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onMoveRight();
+            }}
+            aria-label="Move section right"
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"

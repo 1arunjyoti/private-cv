@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Award } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -26,7 +27,7 @@ export function AwardsSettings({
       onToggle={onToggle}
     >
       <div className="space-y-6">
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             List Style
           </Label>
@@ -51,9 +52,9 @@ export function AwardsSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Award Title
           </Label>
@@ -89,9 +90,9 @@ export function AwardsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Awarder
           </Label>
@@ -127,9 +128,9 @@ export function AwardsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Date
           </Label>
@@ -162,7 +163,7 @@ export function AwardsSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

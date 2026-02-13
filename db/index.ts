@@ -148,6 +148,8 @@ export interface LayoutSettings {
   marginHorizontal: number; // 0-30mm
   marginVertical: number; // 0-30mm
   headerBottomMargin: number; // 0-50, default 20
+  headerBackgroundColor?: string; // Optional custom header background color
+  headerArtStyle?: 'none' | 'wave' | 'curve' | 'diagonal' | 'blob'; // Decorative header art style
   // Section Headings
   sectionHeadingStyle: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // 9 visual styles
   sectionHeadingAlign: 'left' | 'center' | 'right';
@@ -200,12 +202,14 @@ export interface LayoutSettings {
   contactSeparator: 'pipe' | 'dash' | 'comma';
   contactLinkUnderline: boolean; // Whether to underline links in contact info
   // Link Display Options
-  linkShowIcon: boolean;       // Show link icon (🔗) before links
-  linkShowFullUrl: boolean;    // Show full URL instead of link text
+  linkShowIcon: boolean;       // Show link icon (🔗) before links (Legacy/Global fallback)
+  linkShowFullUrl: boolean;    // Show full URL instead of link text (Legacy/Global fallback)
+  sectionLinkStyle: 'icon' | 'inline' | 'newline' | 'underline'; // New standardized style
   // Profile Photo Options
   profilePhotoPosition: 'left' | 'right'; // Position in horizontal header
   profilePhotoShape: 'circle' | 'rounded' | 'square'; // Shape of profile photo
   profilePhotoSize: number; // Size in points (40-150)
+  profilePhotoBorder: boolean; // Whether to show a border around the profile photo
   // Skills
   skillsDisplayStyle: 'grid' | 'level' | 'compact' | 'bubble' | 'boxed';
   skillsLevelStyle: 0 | 1 | 2 | 3 | 4;
@@ -341,6 +345,9 @@ export interface AppSettings {
   theme?: 'light' | 'dark' | 'system';
   defaultTemplateId?: string;
   value?: string;
+  // Cloud sync metadata keys are stored in settings table via persisted stores.
+  // Known ids: sync.provider, sync.remoteFileId, sync.remoteEtag, sync.lastSyncAt,
+  // sync.encryptionEnabled, sync.deviceId, sync.auth, cloud-sync-settings.
 }
 
 // Dexie database definition

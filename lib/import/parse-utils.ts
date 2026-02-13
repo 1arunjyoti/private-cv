@@ -413,7 +413,7 @@ export function extractTitle(text: string): string | undefined {
           // Extract just the title portion (words around the keyword)
           const words = beforeContact.split(/\s+/);
           // Find the keyword position
-          let keywordIdx = words.findIndex(w => pattern.test(w));
+          const keywordIdx = words.findIndex(w => pattern.test(w));
           if (keywordIdx >= 0) {
             // Include 0-3 words before and 0-3 words after the keyword
             const start = Math.max(0, keywordIdx - 3);
@@ -757,8 +757,8 @@ export function normalizeDate(raw: string): string {
  *   "12.2019 - 06.2021"
  *   two separate date tokens on different lines
  */
-export function extractDates(text: string): { startDate?: string; endDate?: string } {
-  const result: { startDate?: string; endDate?: string } = {};
+export function extractDates(text: string): { startDate?: string; endDate?: string; rawString?: string } {
+  const result: { startDate?: string; endDate?: string; rawString?: string } = {};
 
   // ---- 1) Full date range on one token ----
   // Month-Year — Month-Year / Present
@@ -771,6 +771,7 @@ export function extractDates(text: string): { startDate?: string; endDate?: stri
     if (parts.length >= 2) {
       result.startDate = normalizeDate(parts[0]);
       result.endDate = normalizeDate(parts.slice(1).join('-'));
+      result.rawString = monthRangeMatch[0];
     }
     return result;
   }
@@ -785,6 +786,7 @@ export function extractDates(text: string): { startDate?: string; endDate?: stri
     if (parts.length >= 2) {
       result.startDate = normalizeDate(parts[0]);
       result.endDate = normalizeDate(parts[1]);
+      result.rawString = numRange[0];
       return result;
     }
   }

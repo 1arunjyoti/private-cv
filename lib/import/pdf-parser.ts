@@ -23,38 +23,117 @@ import {
  */
 export class PDFParser implements ResumeParser {
   private apiWarning: string | null = null;
+  private readonly requestTimeoutMs = 30000;
+  private readonly maxRetries = 2;
+
+  private async parseApiResponse(response: Response): Promise<Record<string, unknown>> {
+    try {
+      const json = await response.json();
+      if (json && typeof json === 'object') {
+        return json as Record<string, unknown>;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  }
+
+  private buildApiErrorMessage(
+    result: Record<string, unknown>,
+    fallback: string,
+  ): string {
+    const error = typeof result.error === 'string' ? result.error : fallback;
+    const details = typeof result.details === 'string' ? ` ${result.details}` : '';
+    const suggestion = typeof result.suggestion === 'string' ? ` ${result.suggestion}` : '';
+    return `${error}${details}${suggestion}`.trim();
+  }
+
+  private isRetryableStatus(status: number): boolean {
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+  }
+
+  private isRetryableError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    if (error.name === 'AbortError') return true;
+
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('fetch failed') ||
+      message.includes('failed to fetch')
+    );
+  }
+
+  private async wait(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
   /**
    * Extract text content from a PDF file using server-side API
    */
   async extractText(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append('file', file);
+    let lastError: Error | null = null;
 
-    const response = await fetch('/api/parse-pdf', {
-      method: 'POST',
-      body: formData,
-    });
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const result = await response.json();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeoutMs);
 
-    if (!response.ok) {
-      const errorMsg = result.error || `Failed to parse PDF: ${response.statusText}`;
-      const details = result.details ? ` ${result.details}` : '';
-      const suggestion = result.suggestion ? ` ${result.suggestion}` : '';
-      throw new Error(`${errorMsg}${details}${suggestion}`);
+      try {
+        const response = await fetch('/api/parse-pdf', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+
+        const result = await this.parseApiResponse(response);
+
+        if (!response.ok) {
+          const error = new Error(
+            this.buildApiErrorMessage(result, `Failed to parse PDF: ${response.statusText}`),
+          );
+
+          if (attempt < this.maxRetries && this.isRetryableStatus(response.status)) {
+            lastError = error;
+            await this.wait(250 * (attempt + 1));
+            continue;
+          }
+
+          throw error;
+        }
+
+        if (result.success !== true) {
+          throw new Error(
+            this.buildApiErrorMessage(result, 'Failed to extract text from PDF'),
+          );
+        }
+
+        // Store any warnings from the API
+        if (typeof result.warning === 'string' && result.warning.trim()) {
+          this.apiWarning = result.warning;
+        }
+
+        return typeof result.text === 'string' ? result.text : '';
+      } catch (error) {
+        const normalizedError =
+          error instanceof Error ? error : new Error('Unexpected PDF parsing error');
+
+        if (attempt < this.maxRetries && this.isRetryableError(normalizedError)) {
+          lastError = normalizedError;
+          await this.wait(250 * (attempt + 1));
+          continue;
+        }
+
+        throw normalizedError;
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
-    
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to extract text from PDF');
-    }
 
-    // Store any warnings from the API
-    if (result.warning) {
-      this.apiWarning = result.warning;
-    }
-
-    return result.text || '';
+    throw lastError || new Error('Failed to extract text from PDF');
   }
 
   /**

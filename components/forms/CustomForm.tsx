@@ -10,26 +10,21 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface CustomFormProps {
   data: CustomSection[];
   onChange: (data: CustomSection[]) => void;
 }
 
+type CustomAIItemContext = {
+  section: CustomSection;
+  item: CustomSection["items"][number];
+};
+
 export function CustomForm({ data, onChange }: CustomFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -122,7 +117,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
   );
 
   const buildInput = useCallback(
-    (section: CustomSection, item: CustomSection["items"][number]) => {
+    ({ section, item }: CustomAIItemContext) => {
       const peerContext = section.items
         .filter((entry) => entry.id !== item.id)
         .slice(0, 3)
@@ -151,131 +146,20 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
     [redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
-  const handleGenerateSummary = useCallback(
-    async (section: CustomSection, item: CustomSection["items"][number]) => {
-      const result = ensureProvider("generation");
-      setLlmErrors((prev) => ({ ...prev, [item.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt(
-          section.name || "custom item",
-          buildInput(section, item),
-        );
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (section: CustomSection, item: CustomSection["items"][number]) => {
-      setLlmErrors((prev) => ({ ...prev, [item.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }));
-      if (!item.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [item.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(item.summary)
-          : item.summary;
-        const prompt = buildRewritePrompt(section.name || "custom item", raw, tone, buildInput(section, item));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (section: CustomSection, item: CustomSection["items"][number]) => {
-      setLlmErrors((prev) => ({ ...prev, [item.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }));
-      if (!item.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [item.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(item.summary)
-          : item.summary;
-        const prompt = buildGrammarPrompt(section.name || "custom item", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [item.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [item.id]: "✓ No grammar issues found." }));
-          return;
-        }
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [item.id]: grammarResult.text || "",
-        }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
-      }
-    },
-    [ensureProvider, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate,
+    handleImprove,
+    handleGrammar,
+    clearGenerated,
+  } = useSectionAIActions<CustomAIItemContext>({
+    section: ({ section }) => section.name || "custom item",
+    getId: ({ item }) => item.id,
+    buildInput,
+    getCurrentText: ({ item }) => item.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -465,9 +349,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              handleGenerateSummary(sec, item)
-                            }
+                            onClick={() => handleGenerate({ section: sec, item })}
                             disabled={isGenerating[item.id]}
                           >
                             {isGenerating[item.id] ? (
@@ -481,9 +363,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              handleImproveSummary(sec, item)
-                            }
+                            onClick={() => handleImprove({ section: sec, item })}
                             disabled={isGenerating[item.id]}
                           >
                             Improve
@@ -492,9 +372,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              handleGrammarSummary(sec, item)
-                            }
+                            onClick={() => handleGrammar({ section: sec, item })}
                             disabled={isGenerating[item.id]}
                           >
                             Grammar
@@ -534,10 +412,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                                   "summary",
                                   generatedSummaries[item.id],
                                 );
-                                setGeneratedSummaries((prev) => ({
-                                  ...prev,
-                                  [item.id]: "",
-                                }));
+                                clearGenerated(item.id);
                               }}
                             >
                               Apply
@@ -546,7 +421,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => handleGenerateSummary(sec, item)}
+                              onClick={() => handleGenerate({ section: sec, item })}
                               disabled={isGenerating[item.id]}
                             >
                               Regenerate
@@ -555,12 +430,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() =>
-                                setGeneratedSummaries((prev) => ({
-                                  ...prev,
-                                  [item.id]: "",
-                                }))
-                              }
+                              onClick={() => clearGenerated(item.id)}
                             >
                               Discard
                             </Button>

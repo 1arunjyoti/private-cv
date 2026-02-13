@@ -1,14 +1,22 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 // import { ScrollArea } from "@/components/ui/scroll-area";
 import { useResumeStore } from "@/store/useResumeStore";
 import {
   getTemplateDefaults,
   getTemplateThemeColor,
 } from "@/lib/template-defaults";
-import { RotateCcw, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { RotateCcw, ChevronsUpDown, AlertTriangle } from "lucide-react";
+import { useRef, useState } from "react";
 
 // Import new components
 import { AwardsSettings } from "./design/sections/AwardsSettings";
@@ -88,6 +96,8 @@ export function DesignSettings() {
   };
 
   const allExpanded = Object.values(openSections).every(Boolean);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const resetButtonRef = useRef<HTMLButtonElement | null>(null);
 
   if (!currentResume) return null;
 
@@ -111,6 +121,18 @@ export function DesignSettings() {
     });
   };
 
+  const updateSettings = (settings: Partial<LayoutSettings>) => {
+    updateCurrentResume({
+      meta: {
+        ...currentResume.meta,
+        layoutSettings: {
+          ...layoutSettings,
+          ...settings,
+        },
+      },
+    });
+  };
+
   const updateThemeColor = (color: string) => {
     updateCurrentResume({
       meta: {
@@ -121,25 +143,18 @@ export function DesignSettings() {
   };
 
   const resetToDefaults = () => {
-    if (
-      confirm(
-        `Reset all design settings to ${currentResume.meta.templateId.toUpperCase()} template defaults?`,
-      )
-    ) {
-      const templateDefaults = getTemplateDefaults(
-        currentResume.meta.templateId,
-      );
-      const themeColor = getTemplateThemeColor(currentResume.meta.templateId);
+    const templateDefaults = getTemplateDefaults(currentResume.meta.templateId);
+    const themeColor = getTemplateThemeColor(currentResume.meta.templateId);
 
-      updateCurrentResume({
-        meta: {
-          ...currentResume.meta,
-          themeColor,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          layoutSettings: templateDefaults as any,
-        },
-      });
-    }
+    updateCurrentResume({
+      meta: {
+        ...currentResume.meta,
+        themeColor,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        layoutSettings: templateDefaults as any,
+      },
+    });
+    setIsResetDialogOpen(false);
   };
 
   return (
@@ -158,7 +173,7 @@ export function DesignSettings() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={resetToDefaults}
+            onClick={() => setIsResetDialogOpen(true)}
             title="Reset to Defaults"
           >
             <RotateCcw className="h-4 w-4" />
@@ -166,11 +181,47 @@ export function DesignSettings() {
         </div>
       </div>
 
+      <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <DialogContent
+          className="sm:max-w-md"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            resetButtonRef.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Reset Design Settings?
+            </DialogTitle>
+            <DialogDescription>
+              This will reset all design settings to{" "}
+              <span className="font-medium">
+                {currentResume.meta.templateId.toUpperCase()}
+              </span>{" "}
+              template defaults.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsResetDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button ref={resetButtonRef} onClick={resetToDefaults}>
+              Reset to Defaults
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex-1 overflow-y-auto border-b lg:border-none">
         <div className="p-4 md:p-6 space-y-4 sm:pb-20">
           <PageLayoutSettings
             layoutSettings={layoutSettings}
             updateSetting={updateSetting}
+            updateSettings={updateSettings}
             isOpen={openSections.layout}
             onToggle={() => toggleSection("layout")}
             templateId={currentResume.meta.templateId}

@@ -116,7 +116,10 @@
 }
 
 @layer base {
-  html,
+  html {
+    height: 100%;
+    scrollbar-gutter: stable;
+  }
   body {
     height: 100%;
   }

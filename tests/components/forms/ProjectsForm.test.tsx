@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProjectsForm } from "@/components/forms/ProjectsForm";
 import type { Project } from "@/db";
@@ -210,12 +210,15 @@ describe("ProjectsForm", () => {
       const projects = [createProject({ highlights: [] })];
       render(<ProjectsForm data={projects} onChange={mockOnChange} />);
 
-      // Find the Add button next to "Key Features / Highlights" label
-      const highlightsSection = screen.getByText(/key features/i).closest("div");
-      const addButton = highlightsSection?.querySelector("button");
-      if (addButton) {
-        await user.click(addButton);
-      }
+      // Scope query to the highlights controls to avoid matching other "Add" buttons.
+      const highlightsLabel = screen.getByText(/key features \/ highlights/i);
+      const highlightsControls = highlightsLabel.closest("div");
+      expect(highlightsControls).toBeTruthy();
+      const addButton = within(highlightsControls as HTMLElement).getByRole(
+        "button",
+        { name: /^Add$/i },
+      );
+      await user.click(addButton);
 
       expect(mockOnChange).toHaveBeenCalledWith([
         expect.objectContaining({

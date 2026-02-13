@@ -31,6 +31,19 @@ export function formatDate(dateStr: string): string {
 }
 
 /**
+ * Format a date range string for display in resume sections.
+ * @param startDateStr - Start date string
+ * @param endDateStr - End date string
+ * @returns Formatted range (e.g., "Jan 2024 – Present"), empty string if both are missing
+ */
+export function formatDateRange(startDateStr: string, endDateStr: string): string {
+  const startDate = formatDate(startDateStr);
+  const endDate = formatDate(endDateStr);
+  if (!startDate && !endDate) return "";
+  return `${startDate}${startDate && endDate ? " – " : ""}${endDate}`;
+}
+
+/**
  * Map of profile image sizes (in points)
  * Used consistently across all templates
  */

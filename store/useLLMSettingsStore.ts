@@ -28,6 +28,9 @@ const DEFAULT_SETTINGS: LLMSettings = {
     stripContactInfo: true,
   },
   tone: "neutral",
+  googleModel: "gemini-3-flash-preview",
+  openaiModel: "gpt-5-mini",
+  anthropicModel: "claude-haiku-4-5-20251001",
   localEndpoint: "http://localhost:1234",
   localModel: "google/gemma-3-4b",
   localApiType: "lmstudio",
@@ -41,6 +44,9 @@ interface LLMSettingsState extends LLMSettings {
   setConsent: (key: keyof LLMSettings["consent"], value: boolean) => void;
   setRedaction: (key: keyof LLMSettings["redaction"], value: boolean) => void;
   setTone: (tone: LLMTone) => void;
+  setGoogleModel: (model: string) => void;
+  setOpenAIModel: (model: string) => void;
+  setAnthropicModel: (model: string) => void;
   setLocalEndpoint: (endpoint: string) => void;
   setLocalModel: (model: string) => void;
   setLocalApiType: (apiType: LocalApiType) => void;
@@ -95,6 +101,9 @@ export const useLLMSettingsStore = create<LLMSettingsState>()(
           },
         })),
       setTone: (tone) => set({ tone }),
+      setGoogleModel: (googleModel) => set({ googleModel }),
+      setOpenAIModel: (openaiModel) => set({ openaiModel }),
+      setAnthropicModel: (anthropicModel) => set({ anthropicModel }),
       setLocalEndpoint: (endpoint) => set({ localEndpoint: endpoint }),
       setLocalModel: (model) => set({ localModel: model }),
       setLocalApiType: (apiType) => set({ localApiType: apiType }),
@@ -110,6 +119,9 @@ export const useLLMSettingsStore = create<LLMSettingsState>()(
         consent: state.consent,
         redaction: state.redaction,
         tone: state.tone,
+        googleModel: state.googleModel,
+        openaiModel: state.openaiModel,
+        anthropicModel: state.anthropicModel,
         localEndpoint: state.localEndpoint,
         localModel: state.localModel,
         localApiType: state.localApiType,

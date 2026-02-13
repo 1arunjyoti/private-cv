@@ -10,14 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface AwardsFormProps {
   data: Award[];
@@ -25,11 +19,7 @@ interface AwardsFormProps {
 }
 
 export function AwardsForm({ data, onChange }: AwardsFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -91,128 +81,20 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
-  const handleGenerateSummary = useCallback(
-    async (award: Award) => {
-      const result = ensureProvider("generation");
-      setLlmErrors((prev) => ({ ...prev, [award.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [award.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [award.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("award", buildInput(award));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [award.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [award.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (award: Award) => {
-      setLlmErrors((prev) => ({ ...prev, [award.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [award.id]: "" }));
-      if (!award.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [award.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [award.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(award.summary)
-          : award.summary;
-        const prompt = buildRewritePrompt("award", raw, tone, buildInput(award));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [award.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [award.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (award: Award) => {
-      setLlmErrors((prev) => ({ ...prev, [award.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [award.id]: "" }));
-      if (!award.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [award.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [award.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(award.summary)
-          : award.summary;
-        const prompt = buildGrammarPrompt("award", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [award.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [award.id]: "✓ No grammar issues found." }));
-          return;
-        }
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [award.id]: grammarResult.text || "",
-        }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [award.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [award.id]: false }));
-      }
-    },
-    [ensureProvider, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Award>({
+    section: "award",
+    getId: (award) => award.id,
+    buildInput,
+    getCurrentText: (award) => award.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -353,7 +235,7 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
                       size="sm"
                       onClick={() => {
                         updateAward(item.id, "summary", generatedSummaries[item.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }));
+                        clearGenerated(item.id);
                       }}
                     >
                       Apply
@@ -372,7 +254,7 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }))
+                        clearGenerated(item.id)
                       }
                     >
                       Discard

@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClientProviders } from "@/components/ClientProviders";
-import { Analytics } from "@vercel/analytics/next";
 import { AnalyticsNotice } from "@/components/AnalyticsNotice";
+import { ClarityAnalytics } from "@/components/ClarityAnalytics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -109,7 +109,7 @@ export default function RootLayout({
       >
         <ClientProviders>{children}</ClientProviders>
         <AnalyticsNotice />
-        <Analytics />
+        <ClarityAnalytics />
       </body>
     </html>
   );

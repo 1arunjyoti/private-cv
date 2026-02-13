@@ -61,7 +61,7 @@ export const Developer2Header: React.FC<HeaderProps> = ({
             src={basics.image}
             customSize={photoSize}
             shape={photoShape}
-            border
+            border={settings.profilePhotoBorder ?? false}
             borderColor={getColor("decorations", "#3b82f6")}
             borderWidth={2}
           />

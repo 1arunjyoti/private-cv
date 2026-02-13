@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '@/app/api/parse-pdf/route';
+import { resetPdfParseRateLimitForTests } from '@/app/api/parse-pdf/rate-limit';
 import { NextRequest } from 'next/server';
 
 // Mock unpdf – now we mock getDocumentProxy (not extractText)
@@ -44,7 +45,10 @@ function mockSinglePage(lines: string[]) {
 /**
  * Helper to create a mock NextRequest with FormData
  */
-function createMockRequest(file: File | null): NextRequest {
+function createMockRequest(
+  file: File | null,
+  headers: Record<string, string> = {},
+): NextRequest {
   const formData = new FormData();
   if (file) {
     formData.append('file', file);
@@ -52,6 +56,7 @@ function createMockRequest(file: File | null): NextRequest {
 
   return {
     formData: () => Promise.resolve(formData),
+    headers: new Headers(headers),
   } as unknown as NextRequest;
 }
 
@@ -77,6 +82,7 @@ function createInvalidPDFFile(name: string = 'fake.pdf'): File {
 describe('POST /api/parse-pdf', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetPdfParseRateLimitForTests();
   });
 
   describe('Input Validation', () => {
@@ -121,6 +127,67 @@ describe('POST /api/parse-pdf', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid PDF file');
+    });
+
+    it('should return 413 when file exceeds max size', async () => {
+      const previousMax = process.env.PDF_PARSE_MAX_FILE_SIZE_BYTES;
+      process.env.PDF_PARSE_MAX_FILE_SIZE_BYTES = '12';
+
+      try {
+        const oversized = createPDFFile('A'.repeat(100));
+        const request = createMockRequest(oversized);
+        const response = await POST(request);
+        const data = await response.json();
+
+        expect(response.status).toBe(413);
+        expect(data.error).toContain('too large');
+      } finally {
+        if (previousMax === undefined) {
+          delete process.env.PDF_PARSE_MAX_FILE_SIZE_BYTES;
+        } else {
+          process.env.PDF_PARSE_MAX_FILE_SIZE_BYTES = previousMax;
+        }
+      }
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('should return 429 when request limit is exceeded for same IP', async () => {
+      const previousMax = process.env.PDF_PARSE_RATE_LIMIT_MAX_REQUESTS;
+      const previousWindow = process.env.PDF_PARSE_RATE_LIMIT_WINDOW_MS;
+      process.env.PDF_PARSE_RATE_LIMIT_MAX_REQUESTS = '2';
+      process.env.PDF_PARSE_RATE_LIMIT_WINDOW_MS = '60000';
+
+      try {
+        mockGetDocumentProxy.mockResolvedValue(
+          buildMockPdf([['This line has enough characters to avoid scan warning. '.repeat(3)]]),
+        );
+
+        const file = createPDFFile();
+        const headers = { 'x-forwarded-for': '203.0.113.10' };
+
+        const first = await POST(createMockRequest(file, headers));
+        const second = await POST(createMockRequest(file, headers));
+        const third = await POST(createMockRequest(file, headers));
+        const payload = await third.json();
+
+        expect(first.status).toBe(200);
+        expect(second.status).toBe(200);
+        expect(third.status).toBe(429);
+        expect(third.headers.get('Retry-After')).toBeTruthy();
+        expect(payload.error).toContain('Too many PDF parse requests');
+      } finally {
+        if (previousMax === undefined) {
+          delete process.env.PDF_PARSE_RATE_LIMIT_MAX_REQUESTS;
+        } else {
+          process.env.PDF_PARSE_RATE_LIMIT_MAX_REQUESTS = previousMax;
+        }
+        if (previousWindow === undefined) {
+          delete process.env.PDF_PARSE_RATE_LIMIT_WINDOW_MS;
+        } else {
+          process.env.PDF_PARSE_RATE_LIMIT_WINDOW_MS = previousWindow;
+        }
+      }
     });
   });
 

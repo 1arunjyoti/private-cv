@@ -387,19 +387,8 @@ describe("PDFImageViewer", () => {
   });
 
   describe("PDF.js library loading", () => {
-    it("should load PDF.js from CDN if not present", async () => {
-      delete (window as { pdfjsLib?: unknown }).pdfjsLib;
-
+    it("should use available PDF.js library from window when present", async () => {
       render(<PDFImageViewer url="test.pdf" />);
-
-      // Simulate library loading
-      Object.defineProperty(window, "pdfjsLib", {
-        writable: true,
-        configurable: true,
-        value: mockPdfjsLib,
-      });
-
-      window.dispatchEvent(new Event("pdfjsReady"));
 
       await waitFor(() => {
         expect(mockGetDocument).toHaveBeenCalled();

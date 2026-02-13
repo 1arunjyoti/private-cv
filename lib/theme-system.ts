@@ -68,6 +68,8 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   bulletMargin: 1,
   useBullets: true,
   headerBottomMargin: 12,
+  headerBackgroundColor: "",
+  headerArtStyle: "none",
   
   // Color targets
   themeColorTarget: ["headings", "links", "icons", "decorations"],
@@ -89,6 +91,8 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   referencesHeadingVisible: true,
   customHeadingVisible: true,
   sectionDisplayStyle: "plain",
+  profilePhotoBorder: false,
+  sectionLinkStyle: "icon",
 };
 
 // ============================================================================
@@ -637,6 +641,7 @@ export const TEMPLATE_THEMES: Record<string, ThemeConfig> = {
       titleItalic: true,
       experiencePositionItalic: true,
       entrySubtitleStyle: "italic",
+      sectionLinkStyle: "inline",
     },
   },
   

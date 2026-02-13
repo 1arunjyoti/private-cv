@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Award } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -26,7 +27,7 @@ export function CertificatesSettings({
       onToggle={onToggle}
     >
       <div className="space-y-4">
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Display Format
           </Label>
@@ -45,9 +46,9 @@ export function CertificatesSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             List Style (Certificate Names)
           </Label>
@@ -75,9 +76,9 @@ export function CertificatesSettings({
               </button>
             ))}
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Certificate Name
           </Label>
@@ -113,9 +114,9 @@ export function CertificatesSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Issuer
           </Label>
@@ -151,9 +152,9 @@ export function CertificatesSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Date
           </Label>
@@ -189,9 +190,9 @@ export function CertificatesSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             URL
           </Label>
@@ -227,7 +228,7 @@ export function CertificatesSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

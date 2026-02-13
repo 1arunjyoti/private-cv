@@ -10,14 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface PublicationsFormProps {
   data: Publication[];
@@ -25,11 +19,7 @@ interface PublicationsFormProps {
 }
 
 export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -90,128 +80,20 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
-  const handleGenerateSummary = useCallback(
-    async (pub: Publication) => {
-      const result = ensureProvider("generation");
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("publication", buildInput(pub));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (pub: Publication) => {
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if (!pub.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [pub.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(pub.summary)
-          : pub.summary;
-        const prompt = buildRewritePrompt("publication", raw, tone, buildInput(pub));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (pub: Publication) => {
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if (!pub.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [pub.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(pub.summary)
-          : pub.summary;
-        const prompt = buildGrammarPrompt("publication", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [pub.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [pub.id]: "✓ No grammar issues found." }));
-          return;
-        }
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [pub.id]: grammarResult.text || "",
-        }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-      }
-    },
-    [ensureProvider, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Publication>({
+    section: "publication",
+    getId: (pub) => pub.id,
+    buildInput,
+    getCurrentText: (pub) => pub.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -375,7 +257,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                       size="sm"
                       onClick={() => {
                         updatePublication(pub.id, "summary", generatedSummaries[pub.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
+                        clearGenerated(pub.id);
                       }}
                     >
                       Apply
@@ -394,7 +276,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }))
+                        clearGenerated(pub.id)
                       }
                     >
                       Discard

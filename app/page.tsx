@@ -1,33 +1,30 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import {
-  FileText,
-  EyeOff,
-  WifiOff,
-  Layout,
-  Download,
-  CheckCircle2,
   ArrowRight,
+  CheckCircle2,
+  Download,
+  EyeOff,
+  Layout,
+  WifiOff,
   Zap,
-  Menu,
 } from "lucide-react";
+import { Navbar } from "@/components/ui/Navbar";
+import { Footer } from "@/components/ui/Footer";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "PrivateCV - Privacy-First Resume Creator",
+  },
+  description:
+    "Build professional resumes offline with complete privacy. No data leaves your device. Free, open-source, and ATS-friendly.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function Home() {
-  const navLinks = [
-    { href: "#features", label: "Features" },
-    { href: "/templates", label: "Templates" },
-    { href: "/how-to-use", label: "How to Use" },
-  ];
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -36,18 +33,8 @@ export default function Home() {
     image: "https://privatecv.vercel.app/opengraph-image",
     operatingSystem: "Web Browser",
     applicationCategory: "BusinessApplication",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
     description:
       "A privacy-first, offline-capable resume builder that runs entirely in your browser. No data leaves your device.",
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "120",
-    },
     featureList:
       "Offline mode, ATS-friendly templates, PDF export, Privacy focused, No sign-up required",
   };
@@ -59,143 +46,11 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
-        <div className="landing-container mx-auto flex h-16 items-center px-4 md:px-6">
-          {/* Logo - Left */}
-          <div className="flex flex-1 items-center justify-start">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <FileText className="h-5 w-5" />
-              </div>
-              <span className="font-bold text-xl tracking-tight">
-                PrivateCV
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Nav - Center */}
-          <nav className="hidden md:flex flex-1 items-center justify-center gap-8 text-sm font-medium">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground transition-all hover:text-primary hover:scale-105"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Actions - Right */}
-          <div className="flex flex-1 items-center justify-end gap-4">
-            <ThemeToggle />
-            <Link href="/templates" className="hidden md:block">
-              <Button
-                size="sm"
-                className="font-semibold shadow-sm hover:shadow transition-all cursor-pointer"
-              >
-                Get Started
-              </Button>
-            </Link>
-
-            {/* Mobile Menu */}
-            <div className="md:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="w-[300px] sm:w-[350px] px-0 border-l flex flex-col bg-background/95 backdrop-blur-md"
-                >
-                  <div className="flex flex-col h-full">
-                    {/* Drawer Header */}
-                    <SheetHeader className="px-6 py-6 border-b text-left space-y-0">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-                          <FileText className="h-5 w-5" />
-                        </div>
-                        <div className="flex flex-col">
-                          <SheetTitle className="font-bold text-xl tracking-tight leading-none text-foreground">
-                            PrivateCV
-                          </SheetTitle>
-                          <SheetDescription className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1 font-semibold">
-                            Privacy-First
-                          </SheetDescription>
-                        </div>
-                      </div>
-                    </SheetHeader>
-
-                    {/* Navigation Links */}
-                    <div className="flex-1 overflow-y-auto py-6 px-4">
-                      <nav className="flex flex-col gap-2">
-                        {navLinks.map((link) => {
-                          const Icon =
-                            link.label === "Features"
-                              ? Layout
-                              : link.label === "Templates"
-                                ? FileText
-                                : Zap;
-                          return (
-                            <Link
-                              key={link.href}
-                              href={link.href}
-                              className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground group"
-                            >
-                              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              {link.label}
-                            </Link>
-                          );
-                        })}
-                      </nav>
-
-                      <div className="mt-8 px-4">
-                        <Link href="/templates" className="w-full">
-                          <Button
-                            className="w-full font-bold h-12 text-base shadow-lg hover:shadow-xl transition-all"
-                            size="lg"
-                          >
-                            Get Started Free
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Drawer Footer */}
-                    <div className="mt-auto p-6 border-t bg-muted/30">
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Build your professional resume without any tracking.
-                        Your data stays on your device.
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Link
-                          href="https://github.com/1arunjyoti/resume-builder"
-                          target="_blank"
-                          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                        >
-                          GitHub Repository
-                        </Link>
-                        <span className="text-[10px] text-muted-foreground/60">
-                          v1.0.0
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden py-16 md:py-24 lg:py-28 bg-linear-to-b from-background to-muted/50">
+        <section className="relative overflow-hidden pt-28 pb-16 md:pt-32 md:pb-24 lg:pt-36 lg:pb-28 bg-linear-to-b from-background to-muted/50">
           <div className="landing-container mx-auto px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-8 text-center">
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors focus:outline-none border-transparent bg-primary/10 text-primary hover:bg-primary/20">
@@ -232,7 +87,7 @@ export default function Home() {
                   </Button>
                 </Link>
               </div>
-              <div className="pt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-muted-foreground">
+              <div className="pt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span>Free Forever</span>
@@ -472,29 +327,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t py-6 bg-background">
-        <div className="landing-container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-sm text-muted-foreground text-center md:text-left">
-            © {new Date().getFullYear()} PrivateCV. Open Source & Privacy-First.
-          </div>
-          <div className="flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <Link
-              href="https://github.com/1arunjyoti/resume-builder"
-              className="hover:text-foreground transition-colors"
-              target="_blank"
-            >
-              GitHub
-            </Link>
-
-            <Link
-              href="/privacy"
-              className="hover:text-foreground transition-colors"
-            >
-              Privacy
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

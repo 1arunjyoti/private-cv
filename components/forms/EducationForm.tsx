@@ -17,14 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface EducationFormProps {
   data: Education[];
@@ -47,11 +41,7 @@ const getScoreValue = (score: string) => {
 };
 
 export function EducationForm({ data, onChange }: EducationFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -166,128 +156,20 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
-  const handleGenerateSummary = useCallback(
-    async (edu: Education) => {
-      const result = ensureProvider("generation");
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("education", buildInput(edu));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (edu: Education) => {
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      if (!edu.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [edu.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(edu.summary)
-          : edu.summary;
-        const prompt = buildRewritePrompt("education", raw, tone, buildInput(edu));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-      }
-    },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (edu: Education) => {
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      if (!edu.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [edu.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(edu.summary)
-          : edu.summary;
-        const prompt = buildGrammarPrompt("education", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [edu.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [edu.id]: "✓ No grammar issues found." }));
-          return;
-        }
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [edu.id]: grammarResult.text || "",
-        }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-      }
-    },
-    [ensureProvider, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Education>({
+    section: "education",
+    getId: (edu) => edu.id,
+    buildInput,
+    getCurrentText: (edu) => edu.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -526,7 +408,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                       size="sm"
                       onClick={() => {
                         updateEducation(edu.id, "summary", generatedSummaries[edu.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
+                        clearGenerated(edu.id);
                       }}
                     >
                       Apply
@@ -545,7 +427,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }))
+                        clearGenerated(edu.id)
                       }
                     >
                       Discard

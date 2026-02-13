@@ -136,6 +136,7 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
 
   // Ref to track usage to avoid re-dependency loop
   const pdfUrlRef = useRef<string | null>(null);
+  const generationRequestRef = useRef(0);
 
   // Initialize from resume meta, defaulting to 'ats'
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(
@@ -172,12 +173,18 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
   }, [resume.meta.templateId]);
 
   const handleGenerate = useCallback(async () => {
+    const requestId = ++generationRequestRef.current;
     setIsGenerating(true);
     setError(null);
 
     try {
       const blob = await generatePDFAsync(resume, selectedTemplate);
       const url = URL.createObjectURL(blob);
+
+      if (requestId !== generationRequestRef.current) {
+        URL.revokeObjectURL(url);
+        return;
+      }
 
       // Cleanup previous URL using ref
       if (pdfUrlRef.current) {
@@ -187,9 +194,11 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
       pdfUrlRef.current = url;
       setPdfUrl(url);
     } catch (err) {
+      if (requestId !== generationRequestRef.current) return;
       console.error("PDF generation error:", err);
       setError("Failed to generate PDF. Please try again.");
     } finally {
+      if (requestId !== generationRequestRef.current) return;
       setIsGenerating(false);
     }
   }, [resume, selectedTemplate]);
@@ -204,6 +213,7 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
   }, [resume, selectedTemplate, handleGenerate]);
 
   const handleTemplateChange = (id: TemplateType) => {
+    generationRequestRef.current += 1;
     setSelectedTemplate(id);
     // Reset preview
     setPdfUrl(null);
@@ -226,6 +236,16 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
       },
     });
   };
+
+  useEffect(() => {
+    return () => {
+      generationRequestRef.current += 1;
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+        pdfUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const handleDownload = useCallback(() => {
     if (!pdfUrl) return;
@@ -333,7 +353,7 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
               handleTemplateChange(value as TemplateType)
             }
           >
-            <SelectTrigger className="w-[180px] bg-background border-input shadow-sm">
+            <SelectTrigger className="w-45 bg-background border-input shadow-sm">
               <SelectValue placeholder="Select a template" />
             </SelectTrigger>
             <SelectContent>

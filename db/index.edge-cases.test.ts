@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { db } from '@/db';
 import { 
-  clearTestDatabase, 
   seedTestData, 
   getAllResumes, 
   getResumeById,
@@ -12,7 +12,7 @@ import {
   teardownTestDatabase,
 } from '@/tests/utils/db-helpers';
 import { createMockResume } from '@/tests/utils/factories';
-import { mockStandardResume, mockResumeCollection } from '@/tests/mocks/mockResumes';
+import { mockStandardResume } from '@/tests/mocks/mockResumes';
 
 describe('Database Edge Cases', () => {
   beforeEach(async () => {
@@ -228,6 +228,7 @@ describe('Database Edge Cases', () => {
           await db.resumes.add(resume1);
           await db.resumes.add(resume2);
         });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         // Transaction should rollback
       }

@@ -98,10 +98,10 @@ function compressToCanvas(
 }
 
 /**
- * Converts canvas to base64 at given JPEG quality
+ * Converts canvas to base64 with specified mime type and quality
  */
-function canvasToDataUrl(canvas: HTMLCanvasElement, quality: number): string {
-  return canvas.toDataURL('image/jpeg', quality);
+function canvasToDataUrl(canvas: HTMLCanvasElement, mimeType: string, quality: number): string {
+  return canvas.toDataURL(mimeType, quality);
 }
 
 /**
@@ -136,6 +136,7 @@ export async function compressImage(
   maxSizeKB: number = DEFAULT_MAX_SIZE_KB
 ): Promise<CompressImageResult> {
   const targetBytes = maxSizeKB * 1024;
+  const mimeType = file.type || 'image/jpeg';
 
   // Read and load the image
   const originalDataUrl = await readFileAsDataURL(file);
@@ -143,7 +144,7 @@ export async function compressImage(
 
   // Initial compression to canvas
   let canvas = compressToCanvas(img, 800);
-  let dataUrl = canvasToDataUrl(canvas, 0.9);
+  let dataUrl = canvasToDataUrl(canvas, mimeType, 0.9);
   let size = getBase64Size(dataUrl);
 
   // If already small enough at high quality, return
@@ -163,7 +164,7 @@ export async function compressImage(
 
   for (let i = 0; i < 8; i++) {
     const midQuality = (minQuality + maxQuality) / 2;
-    dataUrl = canvasToDataUrl(canvas, midQuality);
+    dataUrl = canvasToDataUrl(canvas, mimeType, midQuality);
     size = getBase64Size(dataUrl);
 
     if (size <= targetBytes) {
@@ -181,7 +182,7 @@ export async function compressImage(
     const dimensions = [600, 400, 300];
     for (const dim of dimensions) {
       canvas = compressToCanvas(img, dim);
-      dataUrl = canvasToDataUrl(canvas, 0.8);
+      dataUrl = canvasToDataUrl(canvas, mimeType, 0.8);
       size = getBase64Size(dataUrl);
       if (size <= targetBytes) {
         bestDataUrl = dataUrl;

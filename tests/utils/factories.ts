@@ -104,6 +104,7 @@ export const createMockLayoutSettings = (overrides?: Partial<LayoutSettings>): L
   profilePhotoPosition: 'right',
   profilePhotoShape: 'circle',
   profilePhotoSize: 80,
+  profilePhotoBorder: false,
   skillsDisplayStyle: 'grid',
   skillsLevelStyle: 0,
   skillsListStyle: 'bullet',
@@ -195,6 +196,7 @@ export const createMockLayoutSettings = (overrides?: Partial<LayoutSettings>): L
   certificatesDateItalic: false,
   certificatesUrlBold: false,
   certificatesUrlItalic: false,
+  sectionLinkStyle: 'inline',
   ...overrides,
 });
 

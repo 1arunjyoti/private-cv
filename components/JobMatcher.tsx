@@ -24,6 +24,11 @@ import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import { buildJobMatchAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 import { useResumeStore } from "@/store/useResumeStore";
+import {
+  validateJobMatchAnalysis,
+  type JobMatchAnalysisData,
+} from "@/lib/llm/analysis-validation";
+import { generateStructuredOutput } from "@/lib/llm/structured-output";
 
 interface JobMatcherProps {
   resume: Resume;
@@ -35,18 +40,6 @@ interface MatchResult {
   locations: string[];
 }
 
-interface LLMAnalysisResult {
-  overallFit: number;
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  keywords: string[];
-  matchedKeywords: string[];
-  missingKeywords: string[];
-  suggestions: string[];
-  tailoredSummary: string;
-}
-
 export function JobMatcher({ resume }: JobMatcherProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -55,7 +48,7 @@ export function JobMatcher({ resume }: JobMatcherProps) {
   const [llmSummary, setLlmSummary] = useState("");
   const [llmKeywords, setLlmKeywords] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-  const [llmAnalysis, setLlmAnalysis] = useState<LLMAnalysisResult | null>(null);
+  const [llmAnalysis, setLlmAnalysis] = useState<JobMatchAnalysisData | null>(null);
 
   const providerId = useLLMSettingsStore((state) => state.providerId);
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
@@ -192,81 +185,6 @@ export function JobMatcher({ resume }: JobMatcherProps) {
     return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
   }, [resume, redaction.stripContactInfo]);
 
-  const parseLLMOutput = useCallback((output: string) => {
-    const sanitizeJsonString = (text: string) => {
-      let result = "";
-      let inString = false;
-      let escaped = false;
-      for (let i = 0; i < text.length; i += 1) {
-        const char = text[i];
-        if (char === "\\" && inString && !escaped) {
-          escaped = true;
-          result += char;
-          continue;
-        }
-        if (char === "\"" && !escaped) {
-          inString = !inString;
-          result += char;
-          continue;
-        }
-        if (inString && (char === "\n" || char === "\r")) {
-          result += "\\n";
-        } else {
-          result += char;
-        }
-        escaped = false;
-      }
-      return result;
-    };
-
-    const trimmed = output.trim();
-    const tryParse = (text: string) => JSON.parse(text);
-
-    try {
-      return tryParse(sanitizeJsonString(trimmed));
-    } catch {
-      const codeBlockMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
-      if (codeBlockMatch?.[1]) {
-        try {
-          return tryParse(sanitizeJsonString(codeBlockMatch[1].trim()));
-        } catch {
-          // fall through
-        }
-      }
-
-      const start = trimmed.indexOf("{");
-      const end = trimmed.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        try {
-          return tryParse(
-            sanitizeJsonString(trimmed.slice(start, end + 1)),
-          );
-        } catch {
-          // fall through
-        }
-      }
-
-      const summaryMatch = trimmed.match(
-        /summary\s*:\s*([\s\S]*?)(?:keywords\s*:|$)/i,
-      );
-      const keywordsMatch = trimmed.match(/keywords?\s*:\s*([\s\S]*)/i);
-
-      const summary = summaryMatch?.[1]?.trim() || "";
-      const keywordsRaw = keywordsMatch?.[1]?.trim() || "";
-      const keywords = keywordsRaw
-        ? keywordsRaw
-            .split(/[\n,]/)
-            .map((line) => line.replace(/^[-•]\s*/, "").trim())
-            .filter(Boolean)
-        : [];
-
-      return {
-        summary: summary || trimmed,
-        keywords,
-      };
-    }
-  }, []);
-
   const handleLLMAnalyze = useCallback(async () => {
     setLlmError(null);
     setLlmSummary("");
@@ -295,34 +213,22 @@ export function JobMatcher({ resume }: JobMatcherProps) {
         ? redactContactInfo(jobDescription)
         : jobDescription;
       const resumeContext = buildResumeContext();
-      const output = await result.provider.generateText(result.apiKey, {
+      const structured = await generateStructuredOutput({
+        generateText: (prompt, temperature, maxTokens) =>
+          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
         prompt: buildJobMatchAnalysisPrompt(jd, resumeContext),
-        temperature: 0.4,
+        temperature: 0.2,
         maxTokens: 1024,
+        validator: validateJobMatchAnalysis,
+        schemaHint:
+          "{ overallFit:number(0-100), summary:string, strengths:string[], weaknesses:string[], keywords:string[], matchedKeywords:string[], missingKeywords:string[], suggestions:string[], tailoredSummary:string }",
+        repairAttempts: 1,
       });
-      const parsed = parseLLMOutput(output) as Partial<LLMAnalysisResult> & {
-        summary?: string;
-        keywords?: string[];
-      };
-
-      // Extract enhanced analysis if available
-      const analysis: LLMAnalysisResult = {
-        overallFit: typeof parsed.overallFit === "number" ? parsed.overallFit : 0,
-        summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
-        weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses.map(String) : [],
-        keywords: Array.isArray(parsed.keywords)
-          ? parsed.keywords.map((k) => String(k).trim()).filter(Boolean)
-          : extractKeywords(jobDescription),
-        matchedKeywords: Array.isArray(parsed.matchedKeywords)
-          ? parsed.matchedKeywords.map((k) => String(k).trim()).filter(Boolean)
-          : [],
-        missingKeywords: Array.isArray(parsed.missingKeywords)
-          ? parsed.missingKeywords.map((k) => String(k).trim()).filter(Boolean)
-          : [],
-        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.map(String) : [],
-        tailoredSummary: typeof parsed.tailoredSummary === "string" ? parsed.tailoredSummary.trim() : "",
-      };
+      if (!structured.ok) {
+        setLlmError(structured.error);
+        return;
+      }
+      const analysis = structured.data;
 
       setLlmAnalysis(analysis);
       setLlmSummary(analysis.tailoredSummary || analysis.summary);
@@ -338,7 +244,6 @@ export function JobMatcher({ resume }: JobMatcherProps) {
     buildResumeContext,
     consent,
     jobDescription,
-    parseLLMOutput,
     providerId,
     redaction.stripContactInfo,
   ]);

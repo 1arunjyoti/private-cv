@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { formatDate, getLevelScore, formatSectionTitle, mmToPt } from '@/lib/template-utils';
 
 describe('Template Utils', () => {

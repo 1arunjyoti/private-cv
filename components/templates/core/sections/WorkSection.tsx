@@ -14,7 +14,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Link } from "@react-pdf/renderer";
 import type { WorkExperience, LayoutSettings } from "@/db";
-import { formatDate } from "@/lib/template-utils";
+import { formatDate, formatDateRange } from "@/lib/template-utils";
 import {
   SectionHeading,
   BulletList,
@@ -106,7 +106,9 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
 
       {/* Work Entries */}
       {work.map((exp, index) => {
-        const dateRange = `${formatDate(exp.startDate)} – ${formatDate(exp.endDate)}`;
+        const startDate = formatDate(exp.startDate);
+        const endDate = formatDate(exp.endDate);
+        const dateRange = formatDateRange(exp.startDate, exp.endDate);
 
         return (
           <View key={exp.id} style={styles.entryBlock}>
@@ -142,7 +144,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange ? dateRange.split("–")[0].trim() : ""}
+                    {startDate || endDate}
                   </Text>
                   <Text
                     style={{
@@ -164,9 +166,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange && dateRange.includes("–")
-                      ? " - " + dateRange.split("–")[1].trim()
-                      : ""}
+                    {startDate && endDate ? ` - ${endDate}` : ""}
                   </Text>
                 </View>
 
@@ -190,7 +190,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                       zIndex: 10,
                     }}
                   />
-                  {(index < work.length - 1 || true) && ( // Always show line for now, maybe handle last item if needed
+                  {index < work.length - 1 && (
                     <View
                       style={{
                         position: "absolute",
@@ -349,6 +349,7 @@ export const WorkSection: React.FC<WorkSectionProps> = ({
                 showFullUrl={settings.linkShowFullUrl}
                 urlBold={settings.experienceWebsiteBold}
                 urlItalic={settings.experienceWebsiteItalic}
+                sectionLinkStyle={settings.sectionLinkStyle}
               />
             )}
 

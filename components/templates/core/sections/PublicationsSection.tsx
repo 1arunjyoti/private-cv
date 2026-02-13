@@ -3,10 +3,10 @@
  */
 
 import React from "react";
-import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
+import { View, StyleSheet } from "@react-pdf/renderer";
 import type { Publication, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
-import { SectionHeading, RichText } from "../primitives";
+import { SectionHeading, RichText, EntryHeader } from "../primitives";
 import type {
   FontConfig,
   GetColorFn,
@@ -113,11 +113,14 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
     },
   });
 
-  const getListPrefix = (index: number): string => {
-    if (listStyle === "bullet") return "•";
-    if (listStyle === "number") return `${index + 1}.`;
-    return "";
-  };
+  // Resolve effective link style
+  const effectiveLinkStyle =
+    settings.sectionLinkStyle ||
+    (settings.linkShowFullUrl
+      ? "inline"
+      : settings.linkShowIcon
+        ? "icon"
+        : "icon");
 
   return (
     <View style={styles.container}>
@@ -140,55 +143,29 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
       )}
 
       {publications.map((pub, index) => {
-        const prefix = getListPrefix(index);
-
         return (
           <View key={pub.id} style={styles.entryBlock}>
-            <View style={styles.headerRow}>
-              <View style={styles.nameRow}>
-                {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-                <Text style={styles.name}>{pub.name}</Text>
-                {pub.url &&
-                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
-                    <Link src={pub.url} style={{ textDecoration: "none" }}>
-                      <Text
-                        style={{
-                          fontSize: fontSize - 1,
-                          color: linkColor,
-                          marginLeft: 4,
-                          fontWeight: settings.publicationsUrlBold
-                            ? "bold"
-                            : "normal",
-                          fontStyle: settings.publicationsUrlItalic
-                            ? "italic"
-                            : "normal",
-                        }}
-                      >
-                        {settings.linkShowFullUrl
-                          ? `  ${pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                          : settings.linkShowIcon
-                            ? " 🔗"
-                            : ""}
-                      </Text>
-                    </Link>
-                  )}
-              </View>
-              {pub.releaseDate && (
-                <Text style={styles.date}>{formatDate(pub.releaseDate)}</Text>
-              )}
-            </View>
-
-            {pub.publisher && (
-              <Text style={styles.publisher}>{pub.publisher}</Text>
-            )}
-
-            {pub.url && !settings.linkShowIcon && !settings.linkShowFullUrl && (
-              <Link src={pub.url}>
-                <Text style={styles.url}>
-                  {pub.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </Text>
-              </Link>
-            )}
+            <EntryHeader
+              title={pub.name}
+              subtitle={pub.publisher}
+              dateRange={formatDate(pub.releaseDate)}
+              url={pub.url}
+              layoutStyle={1}
+              fontSize={fontSize}
+              fonts={fonts}
+              getColor={getColor}
+              titleBold={settings.publicationsNameBold}
+              titleItalic={settings.publicationsNameItalic}
+              subtitleBold={settings.publicationsPublisherBold}
+              subtitleItalic={settings.publicationsPublisherItalic}
+              dateBold={settings.publicationsDateBold}
+              dateItalic={settings.publicationsDateItalic}
+              urlBold={settings.publicationsUrlBold}
+              urlItalic={settings.publicationsUrlItalic}
+              listStyle={listStyle}
+              index={index}
+              sectionLinkStyle={settings.sectionLinkStyle}
+            />
 
             {pub.summary && (
               <RichText
@@ -197,8 +174,8 @@ export const PublicationsSection: React.FC<PublicationsSectionProps> = ({
                 fonts={fonts}
                 lineHeight={lineHeight}
                 linkColor={linkColor}
-                showLinkIcon={settings.linkShowIcon}
-                showFullUrl={settings.linkShowFullUrl}
+                showLinkIcon={effectiveLinkStyle === "icon"}
+                showFullUrl={effectiveLinkStyle === "inline"}
                 style={styles.summary}
               />
             )}

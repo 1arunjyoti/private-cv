@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap } from "lucide-react";
 import React from "react";
 import { SettingsSection } from "../SettingsSection";
+import { SubSectionCard } from "../SubSectionCard";
 
 import { LayoutSettings, LayoutSettingValue } from "../types";
 
@@ -27,7 +28,7 @@ export function EducationSettings({
     >
       <div className="space-y-6">
         {/* Institution Name */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Institution Name
           </Label>
@@ -89,10 +90,10 @@ export function EducationSettings({
               </button>
             </div>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Degree Type */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Degree Type
           </Label>
@@ -128,10 +129,10 @@ export function EducationSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Field of Study */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Field of Study
           </Label>
@@ -167,10 +168,10 @@ export function EducationSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Start & End Date */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Start & End Date
           </Label>
@@ -206,10 +207,10 @@ export function EducationSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* GPA */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             GPA / Score
           </Label>
@@ -245,10 +246,10 @@ export function EducationSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
 
         {/* Courses */}
-        <div className="space-y-3">
+        <SubSectionCard>
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Courses
           </Label>
@@ -284,7 +285,7 @@ export function EducationSettings({
               Italic
             </button>
           </div>
-        </div>
+        </SubSectionCard>
       </div>
     </SettingsSection>
   );

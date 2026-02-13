@@ -30,6 +30,8 @@ import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import { buildATSAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { validateATSAnalysis } from "@/lib/llm/analysis-validation";
+import { generateStructuredOutput } from "@/lib/llm/structured-output";
 
 interface AIATSAnalysis {
   score: number;
@@ -170,24 +172,6 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
     return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
   }, [resume, redaction.stripContactInfo]);
 
-  const parseLLMOutput = useCallback((output: string) => {
-    const trimmed = output.trim();
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      const codeBlockMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
-      if (codeBlockMatch?.[1]) {
-        try { return JSON.parse(codeBlockMatch[1].trim()); } catch { /* fall through */ }
-      }
-      const start = trimmed.indexOf("{");
-      const end = trimmed.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        try { return JSON.parse(trimmed.slice(start, end + 1)); } catch { /* fall through */ }
-      }
-      return null;
-    }
-  }, []);
-
   const handleAIAnalysis = useCallback(async () => {
     setAiError(null);
     setAiAnalysis(null);
@@ -209,34 +193,37 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
       const jd = jobDescription.trim()
         ? (redaction.stripContactInfo ? redactContactInfo(jobDescription) : jobDescription)
         : undefined;
-      const output = await result.provider.generateText(result.apiKey, {
+      const structured = await generateStructuredOutput({
+        generateText: (prompt, temperature, maxTokens) =>
+          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
         prompt: buildATSAnalysisPrompt(resumeText, jd),
-        temperature: 0.3,
+        temperature: 0.2,
         maxTokens: 1024,
+        validator: validateATSAnalysis,
+        schemaHint:
+          "{ score:number(0-100), strengths:string[], criticalIssues:string[], improvements:string[], keywordSuggestions:string[], formatIssues:string[], summaryFeedback:string, bulletFeedback:{original:string,improved:string,reason:string}[] }",
+        repairAttempts: 1,
       });
-      const parsed = parseLLMOutput(output);
-      if (!parsed) {
-        setAiError("Failed to parse AI response. Try again.");
+      if (!structured.ok) {
+        setAiError(structured.error);
         return;
       }
       setAiAnalysis({
-        score: typeof parsed.score === "number" ? parsed.score : 0,
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
-        criticalIssues: Array.isArray(parsed.criticalIssues) ? parsed.criticalIssues.map(String) : [],
-        improvements: Array.isArray(parsed.improvements) ? parsed.improvements.map(String) : [],
-        keywordSuggestions: Array.isArray(parsed.keywordSuggestions) ? parsed.keywordSuggestions.map(String) : [],
-        formatIssues: Array.isArray(parsed.formatIssues) ? parsed.formatIssues.map(String) : [],
-        summaryFeedback: typeof parsed.summaryFeedback === "string" ? parsed.summaryFeedback : "",
-        bulletFeedback: Array.isArray(parsed.bulletFeedback)
-          ? parsed.bulletFeedback.filter((b: unknown) => b && typeof b === "object")
-          : [],
+        score: structured.data.score,
+        strengths: structured.data.strengths,
+        criticalIssues: structured.data.criticalIssues,
+        improvements: structured.data.improvements,
+        keywordSuggestions: structured.data.keywordSuggestions,
+        formatIssues: structured.data.formatIssues,
+        summaryFeedback: structured.data.summaryFeedback,
+        bulletFeedback: structured.data.bulletFeedback,
       });
     } catch (err) {
       setAiError((err as Error).message);
     } finally {
       setIsAiAnalyzing(false);
     }
-  }, [apiKeys, buildResumeText, consent, jobDescription, parseLLMOutput, providerId, redaction.stripContactInfo]);
+  }, [apiKeys, buildResumeText, consent, jobDescription, providerId, redaction.stripContactInfo]);
 
   const scoreStartColor = (score: number) => {
     if (score >= 80) return "text-green-600";

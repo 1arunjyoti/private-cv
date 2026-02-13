@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupTestDatabase, teardownTestDatabase, getResumeById } from '@/tests/utils/db-helpers';
+import { setupTestDatabase, teardownTestDatabase } from '@/tests/utils/db-helpers';
 import { createMockFile, createCorruptedFile } from '@/tests/utils/factories';
 
 /**

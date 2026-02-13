@@ -87,11 +87,11 @@ describe("CustomForm", () => {
       expect(screen.getByText("Speaking")).toBeDefined();
     });
 
-    it("should display Untitled for unnamed sections", () => {
+    it("should display New Section for unnamed sections", () => {
       const sections = [createCustomSection({ name: "" })];
       render(<CustomForm data={sections} onChange={mockOnChange} />);
 
-      expect(screen.getByText("Untitled")).toBeDefined();
+      expect(screen.getByText("New Section")).toBeDefined();
     });
   });
 
@@ -239,7 +239,7 @@ describe("CustomForm", () => {
       const sections = [createCustomSection()];
       render(<CustomForm data={sections} onChange={mockOnChange} />);
 
-      expect(screen.getByText("Community Helper")).toBeDefined();
+      expect(screen.getByDisplayValue("Community Helper")).toBeDefined();
     });
   });
 
@@ -268,9 +268,10 @@ describe("CustomForm", () => {
       ];
       render(<CustomForm data={sections} onChange={mockOnChange} />);
 
-      // First section should be visible
-      const nameInput = screen.getByPlaceholderText(/section title/i);
-      expect(nameInput).toBeDefined();
+      // Collapsible sections default to open, so both section title inputs are visible.
+      const nameInputs = screen.getAllByPlaceholderText(/section title/i);
+      expect(nameInputs).toHaveLength(2);
+      expect(nameInputs[0]).toHaveValue("First Section");
     });
   });
 
@@ -288,8 +289,10 @@ describe("CustomForm", () => {
       const sections = [createCustomSection()];
       render(<CustomForm data={sections} onChange={mockOnChange} />);
 
-      // Item title should be visible
-      expect(screen.getByText("Community Helper")).toBeDefined();
+      expect(screen.getByDisplayValue("Community Helper")).toBeDefined();
+      expect(screen.getByDisplayValue("Local community service")).toBeDefined();
+      expect(screen.getByDisplayValue("2024-01")).toBeDefined();
+      expect(screen.getByDisplayValue("https://example.org")).toBeDefined();
     });
   });
 

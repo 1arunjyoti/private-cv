@@ -3,10 +3,10 @@
  */
 
 import React from "react";
-import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
+import { View, StyleSheet } from "@react-pdf/renderer";
 import type { Certificate, LayoutSettings } from "@/db";
 import { formatDate } from "@/lib/template-utils";
-import { SectionHeading, RichText } from "../primitives";
+import { SectionHeading, RichText, EntryHeader } from "../primitives";
 import type {
   FontConfig,
   GetColorFn,
@@ -115,11 +115,14 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
     },
   });
 
-  const getListPrefix = (index: number): string => {
-    if (listStyle === "bullet") return "•";
-    if (listStyle === "number") return `${index + 1}.`;
-    return "";
-  };
+  // Resolve effective link style
+  const effectiveLinkStyle =
+    settings.sectionLinkStyle ||
+    (settings.linkShowFullUrl
+      ? "inline"
+      : settings.linkShowIcon
+        ? "icon"
+        : "icon");
 
   return (
     <View style={styles.container}>
@@ -142,55 +145,29 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
       )}
 
       {certificates.map((cert, index) => {
-        const prefix = getListPrefix(index);
-
         return (
           <View key={cert.id} style={styles.entryBlock}>
-            <View style={styles.headerRow}>
-              <View style={styles.nameRow}>
-                {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-                <Text style={styles.name}>{cert.name}</Text>
-                {cert.url &&
-                  (settings.linkShowIcon || settings.linkShowFullUrl) && (
-                    <Link src={cert.url} style={{ textDecoration: "none" }}>
-                      <Text
-                        style={{
-                          fontSize: fontSize - 1,
-                          color: linkColor,
-                          marginLeft: 4,
-                          fontWeight: settings.certificatesUrlBold
-                            ? "bold"
-                            : "normal",
-                          fontStyle: settings.certificatesUrlItalic
-                            ? "italic"
-                            : "normal",
-                        }}
-                      >
-                        {settings.linkShowFullUrl
-                          ? `  ${cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                          : settings.linkShowIcon
-                            ? " 🔗"
-                            : ""}
-                      </Text>
-                    </Link>
-                  )}
-              </View>
-              {cert.date && (
-                <Text style={styles.date}>{formatDate(cert.date)}</Text>
-              )}
-            </View>
-
-            {cert.issuer && <Text style={styles.issuer}>{cert.issuer}</Text>}
-
-            {cert.url &&
-              !settings.linkShowIcon &&
-              !settings.linkShowFullUrl && (
-                <Link src={cert.url}>
-                  <Text style={styles.url}>
-                    {cert.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </Text>
-                </Link>
-              )}
+            <EntryHeader
+              title={cert.name}
+              subtitle={cert.issuer}
+              dateRange={cert.date ? formatDate(cert.date) : undefined}
+              url={cert.url}
+              layoutStyle={1}
+              fontSize={fontSize}
+              fonts={fonts}
+              getColor={getColor}
+              titleBold={settings.certificatesNameBold}
+              titleItalic={settings.certificatesNameItalic}
+              subtitleBold={settings.certificatesIssuerBold}
+              subtitleItalic={settings.certificatesIssuerItalic}
+              dateBold={settings.certificatesDateBold}
+              dateItalic={settings.certificatesDateItalic}
+              urlBold={settings.certificatesUrlBold}
+              urlItalic={settings.certificatesUrlItalic}
+              listStyle={listStyle}
+              index={index}
+              sectionLinkStyle={settings.sectionLinkStyle}
+            />
 
             {cert.summary && (
               <RichText
@@ -199,8 +176,8 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                 fonts={fonts}
                 lineHeight={lineHeight}
                 linkColor={linkColor}
-                showLinkIcon={settings.linkShowIcon}
-                showFullUrl={settings.linkShowFullUrl}
+                showLinkIcon={effectiveLinkStyle === "icon"}
+                showFullUrl={effectiveLinkStyle === "inline"}
                 style={styles.summary}
               />
             )}

@@ -15,6 +15,7 @@ interface ResumeState {
   saveResume: (resume: Resume) => Promise<void>;
   createNewResume: (title?: string, templateId?: string) => Promise<Resume>;
   deleteResume: (id: string) => Promise<void>;
+  duplicateResume: (resume: Resume) => Promise<void>;
   getAllResumes: () => Promise<Resume[]>;
   updateCurrentResume: (updates: Partial<Resume>) => void;
   resetResume: () => void;
@@ -132,6 +133,32 @@ export const useResumeStore = create<ResumeState>()(
             set({ currentResume: null });
           }
           set({ isLoading: false });
+        } catch (err) {
+          set({ error: (err as Error).message, isLoading: false });
+        }
+      },
+
+      duplicateResume: async (originalResume: Resume) => {
+        set({ isLoading: true, error: null });
+        try {
+          const newId = uuidv4();
+          const newTimestamp = new Date().toISOString();
+
+          // Create a deep copy of the original resume to avoid reference bugs
+          const clonedResume = structuredClone(originalResume);
+
+          const newResume: Resume = {
+            ...clonedResume,
+            id: newId,
+            meta: {
+              ...clonedResume.meta,
+              title: `${clonedResume.meta.title} (Copy)`,
+              lastModified: newTimestamp,
+            },
+          };
+
+          await db.resumes.add(newResume);
+          set({ currentResume: newResume, isLoading: false });
         } catch (err) {
           set({ error: (err as Error).message, isLoading: false });
         }
