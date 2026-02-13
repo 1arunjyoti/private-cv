@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import {
@@ -9,6 +10,15 @@ import {
   CloudOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Privacy",
+  description:
+    "Read how PrivateCV protects your data with local-first storage, offline operation, and transparent privacy practices.",
+  alternates: {
+    canonical: "/privacy",
+  },
+};
 
 export default function PrivacyPage() {
   return (
@@ -52,7 +62,7 @@ export default function PrivacyPage() {
               <PrivacyAspect
                 icon={<EyeOff className="h-8 w-8 text-primary" />}
                 title="Anonymous Analytics"
-                description="We use Vercel Analytics to understand website traffic and performance to improve the app. This data is completely anonymous and does NOT include any personal information from your resume."
+                description="We use Microsoft Clarity to understand website traffic and performance to improve the app. This data is completely anonymous and does NOT include any personal information from your resume."
               />
               <PrivacyAspect
                 icon={<Lock className="h-8 w-8 text-primary" />}

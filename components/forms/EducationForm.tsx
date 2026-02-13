@@ -17,12 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import {
-  generateSectionSummaryAction,
-  improveSectionTextAction,
-  grammarCheckSectionTextAction,
-} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface EducationFormProps {
   data: Education[];
@@ -45,11 +41,7 @@ const getScoreValue = (score: string) => {
 };
 
 export function EducationForm({ data, onChange }: EducationFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -164,92 +156,20 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const handleGenerateSummary = useCallback(
-    async (edu: Education) => {
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      const result = await generateSectionSummaryAction({
-        provider: { providerId, apiKeys, consent },
-        section: "education",
-        input: buildInput(edu),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (edu: Education) => {
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      if (!edu.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [edu.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(edu.summary)
-        : edu.summary;
-      const result = await improveSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "education",
-        text: raw,
-        tone,
-        context: buildInput(edu),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (edu: Education) => {
-      setLlmErrors((prev) => ({ ...prev, [edu.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
-      if (!edu.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [edu.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(edu.summary)
-        : edu.summary;
-      const result = await grammarCheckSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "education",
-        text: raw,
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: result.error }));
-      } else if (result.noChanges) {
-        setLlmErrors((prev) => ({ ...prev, [edu.id]: "✓ No grammar issues found." }));
-      } else {
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [edu.id]: result.text,
-        }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [edu.id]: false }));
-    },
-    [apiKeys, consent, providerId, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Education>({
+    section: "education",
+    getId: (edu) => edu.id,
+    buildInput,
+    getCurrentText: (edu) => edu.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -488,7 +408,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                       size="sm"
                       onClick={() => {
                         updateEducation(edu.id, "summary", generatedSummaries[edu.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }));
+                        clearGenerated(edu.id);
                       }}
                     >
                       Apply
@@ -507,7 +427,7 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [edu.id]: "" }))
+                        clearGenerated(edu.id)
                       }
                     >
                       Discard

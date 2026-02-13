@@ -18,6 +18,12 @@ import {
   View,
   StyleSheet,
   Text,
+  Svg,
+  Path,
+  Defs,
+  LinearGradient,
+  Stop,
+  Ellipse,
   pdf,
 } from "@react-pdf/renderer";
 import type { Resume, LayoutSettings } from "@/db";
@@ -216,6 +222,10 @@ const DefaultHeader: React.FC<
   showImage = true,
   layout = "horizontal",
 }) => {
+  const headerArtStyle = settings.headerArtStyle || "none";
+  const decorationColor =
+    settings.headerBackgroundColor || getColor("decorations", "#2563eb");
+
   const nameStyle = {
     fontSize: settings.nameFontSize || 28,
     fontWeight: settings.nameBold ? ("bold" as const) : ("normal" as const),
@@ -394,22 +404,169 @@ const DefaultHeader: React.FC<
     </View>
   );
 
+  const renderHeaderArt = () => {
+    if (headerArtStyle === "none") return null;
+
+    if (headerArtStyle === "wave") {
+      return (
+        <Svg
+          viewBox="0 0 600 140"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "-12.5%",
+            width: "125%",
+            height: 150,
+          }}
+        >
+          <Defs>
+            <LinearGradient id="headerWaveGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={decorationColor} stopOpacity="0.24" />
+              <Stop offset="1" stopColor={decorationColor} stopOpacity="0.02" />
+            </LinearGradient>
+          </Defs>
+          <Path
+            d="M0,0 L600,0 L600,92 Q460,136 300,82 T0,92 Z"
+            fill="url(#headerWaveGrad)"
+          />
+          <Path
+            d="M0,0 L600,0 L600,76 Q460,116 300,62 T0,76 Z"
+            fill={decorationColor}
+            fillOpacity="0.12"
+          />
+        </Svg>
+      );
+    }
+
+    if (headerArtStyle === "curve") {
+      return (
+        <Svg
+          viewBox="0 0 600 130"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "-10%",
+            width: "120%",
+            height: 130,
+          }}
+        >
+          <Path
+            d="M0,0 L600,0 L600,68 C480,116 120,112 0,70 Z"
+            fill={decorationColor}
+            fillOpacity="0.18"
+          />
+          <Path
+            d="M0,0 L600,0 L600,52 C470,94 130,90 0,55 Z"
+            fill={decorationColor}
+            fillOpacity="0.1"
+          />
+        </Svg>
+      );
+    }
+
+    if (headerArtStyle === "diagonal") {
+      return (
+        <Svg
+          viewBox="0 0 600 130"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "-10%",
+            width: "120%",
+            height: 130,
+          }}
+        >
+          <Path
+            d="M0,0 L600,0 L600,34 L0,96 Z"
+            fill={decorationColor}
+            fillOpacity="0.14"
+          />
+          <Path
+            d="M0,0 L600,0 L600,18 L0,70 Z"
+            fill={decorationColor}
+            fillOpacity="0.08"
+          />
+        </Svg>
+      );
+    }
+
+    if (headerArtStyle === "blob") {
+      return (
+        <Svg
+          viewBox="0 0 600 150"
+          style={{
+            position: "absolute",
+            top: -42,
+            left: "-12.5%",
+            width: "125%",
+            height: 160,
+          }}
+        >
+          <Ellipse
+            cx="160"
+            cy="28"
+            rx="190"
+            ry="68"
+            fill={decorationColor}
+            fillOpacity="0.15"
+          />
+          <Ellipse
+            cx="430"
+            cy="26"
+            rx="170"
+            ry="60"
+            fill={decorationColor}
+            fillOpacity="0.11"
+          />
+          <Ellipse
+            cx="300"
+            cy="50"
+            rx="240"
+            ry="65"
+            fill={decorationColor}
+            fillOpacity="0.07"
+          />
+        </Svg>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <View
       style={{
-        flexDirection: "row",
-        justifyContent: showImage && basics.image ? "space-between" : "center",
-        alignItems: "flex-start",
+        position: "relative",
+        minHeight: headerArtStyle === "none" ? undefined : 104,
       }}
     >
-      {photoPosition === "left" && imageView}
-      {textView}
-      {photoPosition === "right" && imageView}
+      {renderHeaderArt()}
+      <View
+        style={{
+          minHeight: headerArtStyle === "none" ? undefined : 92,
+          justifyContent: headerArtStyle === "none" ? "flex-start" : "center",
+          paddingTop: headerArtStyle === "none" ? 0 : 6,
+          paddingBottom: headerArtStyle === "none" ? 0 : 6,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent:
+              showImage && basics.image ? "space-between" : "center",
+            alignItems: "flex-start",
+          }}
+        >
+          {photoPosition === "left" && imageView}
+          {textView}
+          {photoPosition === "right" && imageView}
+        </View>
+      </View>
     </View>
   );
 };
 
-// ============================================================================
+// ============================================================================ 
 // SECTION RENDERER
 // ============================================================================
 
@@ -640,6 +797,11 @@ export function createTemplate(config: TemplateConfig) {
       settings.themeColorTarget || [],
     );
     const fontSize = settings.fontSize || 9;
+    const hasHeaderArt = (settings.headerArtStyle || "none") !== "none";
+    const headerBackgroundColor =
+      settings.headerBackgroundColor || config.headerBackgroundColor;
+    const useFullBleedHeaderBackground =
+      config.fullWidthHeader || !!settings.headerBackgroundColor || hasHeaderArt;
 
     // Layout measurements
     const marginH = mmToPt(settings.marginHorizontal || 12);
@@ -687,9 +849,9 @@ export function createTemplate(config: TemplateConfig) {
 
     if (settings.leftColumnSections || settings.rightColumnSections) {
       // Use the explicit lists from settings
-      leftContent = finalLeftIDs;
-      middleContent = finalMiddleIDs;
-      rightContent = finalRightIDs;
+      leftContent = [...finalLeftIDs];
+      middleContent = [...finalMiddleIDs];
+      rightContent = [...finalRightIDs];
     } else {
       // Legacy behavior: Use sectionOrder to sort, but Config to categorize
       leftContent = order.filter((id) => finalLeftIDs.includes(id));
@@ -706,9 +868,9 @@ export function createTemplate(config: TemplateConfig) {
     const orphans = order.filter((id) => !knownSections.includes(id));
 
     if (config.layoutType === "three-column") {
-      middleContent.push(...orphans);
+      middleContent = [...middleContent, ...orphans];
     } else {
-      rightContent.push(...orphans);
+      rightContent = [...rightContent, ...orphans];
     }
 
     // Create styles
@@ -744,6 +906,10 @@ export function createTemplate(config: TemplateConfig) {
       },
       header: {
         marginBottom: settings.headerBottomMargin || 12,
+        backgroundColor:
+          !hasHeaderArt && headerBackgroundColor
+            ? headerBackgroundColor
+            : undefined,
         borderBottomWidth:
           settings.sectionHeadingStyle === 1
             ? config.id === "classic"
@@ -754,15 +920,18 @@ export function createTemplate(config: TemplateConfig) {
         borderBottomStyle: "solid",
         paddingBottom: settings.sectionHeadingStyle === 1 ? 8 : 0,
         // Full width header support via negative margins
-        ...(config.fullWidthHeader
+        ...(useFullBleedHeaderBackground
           ? {
-              backgroundColor: config.headerBackgroundColor,
+              backgroundColor:
+                !hasHeaderArt && headerBackgroundColor
+                  ? headerBackgroundColor
+                  : undefined,
               // Break out of page padding
               marginTop: -marginV,
               marginLeft: -marginH,
               marginRight: -marginH,
               // Restore internal padding
-              paddingTop: marginV,
+              paddingTop: hasHeaderArt ? 0 : marginV,
               paddingHorizontal: marginH,
               // Use headerBottomMargin for spacing below header
               paddingBottom: settings.headerBottomMargin || 12,

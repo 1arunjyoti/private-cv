@@ -425,6 +425,25 @@ describe("Section ordering", () => {
 });
 
 describe("Style calculations", () => {
+  it("should prefer layout header background over template config background", () => {
+    const resolveHeaderBg = (
+      layoutHeaderBackgroundColor?: string,
+      templateHeaderBackgroundColor?: string,
+    ) => layoutHeaderBackgroundColor || templateHeaderBackgroundColor;
+
+    expect(resolveHeaderBg("#111111", "#ffffff")).toBe("#111111");
+  });
+
+  it("should fallback to template config header background when layout value is empty", () => {
+    const resolveHeaderBg = (
+      layoutHeaderBackgroundColor?: string,
+      templateHeaderBackgroundColor?: string,
+    ) => layoutHeaderBackgroundColor || templateHeaderBackgroundColor;
+
+    expect(resolveHeaderBg("", "#ffffff")).toBe("#ffffff");
+    expect(resolveHeaderBg(undefined, "#ffffff")).toBe("#ffffff");
+  });
+
   it("should calculate name style correctly", () => {
     const settings = {
       nameFontSize: 28,
@@ -471,6 +490,7 @@ describe("Style calculations", () => {
   it("should handle missing settings with defaults", () => {
     const settings: Partial<typeof fullSettings> = {};
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const fullSettings = {
       nameFontSize: 28,
       nameBold: true,

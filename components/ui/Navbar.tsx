@@ -15,6 +15,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/#features", label: "Features" },
     { href: "/templates", label: "Templates" },
+    { href: "/dashboard", label: "My Resumes" },
     { href: "/how-to-use", label: "How to Use" },
   ];
 
@@ -22,7 +23,7 @@ export function Navbar() {
     <header className="fixed top-4 left-0 right-0 z-50">
       <div className="landing-container">
         <div className="w-full rounded-3xl border bg-background/80 backdrop-blur-md shadow-lg supports-backdrop-filter:bg-background/60">
-          <div className="flex h-16 items-center px-6">
+          <div className="flex h-16 items-center px-4 lg:px-6">
             {/* Logo - Left */}
             <div className="flex flex-1 items-center justify-start">
               <Link href="/" className="flex items-center gap-2">
@@ -36,12 +37,12 @@ export function Navbar() {
             </div>
 
             {/* Desktop Nav - Center */}
-            <nav className="hidden md:flex flex-1 items-center justify-center gap-8 text-sm font-medium">
+            <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 text-sm font-medium mx-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-muted-foreground transition-all hover:text-primary hover:scale-105"
+                  className="text-muted-foreground transition-all hover:text-primary hover:scale-105 whitespace-nowrap"
                 >
                   {link.label}
                 </Link>
@@ -49,7 +50,7 @@ export function Navbar() {
             </nav>
 
             {/* Actions - Right */}
-            <div className="flex flex-1 items-center justify-end gap-4">
+            <div className="flex flex-1 items-center justify-end gap-2 lg:gap-4">
               <div className="hidden md:flex">
                 <ThemeToggle />
               </div>
@@ -148,6 +149,7 @@ export function Navbar() {
                           <Link
                             href="https://github.com/1arunjyoti/private-cv"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                           >
                             GitHub Repository

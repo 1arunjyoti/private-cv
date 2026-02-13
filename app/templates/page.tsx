@@ -4,9 +4,12 @@ import { TemplatesGallery } from "./TemplatesGallery";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Resume Templates | PrivateCV",
+  title: "Resume Templates",
   description:
     "Choose from our collection of professional, creative, and ATS-friendly resume templates. All templates are free and privacy-focused.",
+  alternates: {
+    canonical: "/templates",
+  },
 };
 
 export default function TemplatesPage() {

@@ -8,7 +8,7 @@
 import React from "react";
 import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
 import type { Education, LayoutSettings } from "@/db";
-import { formatDate } from "@/lib/template-utils";
+import { formatDate, formatDateRange } from "@/lib/template-utils";
 import {
   SectionHeading,
   BulletList,
@@ -125,7 +125,9 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
 
       {/* Education Entries */}
       {education.map((edu, index) => {
-        const dateRange = `${formatDate(edu.startDate)} – ${formatDate(edu.endDate)}`;
+        const startDate = formatDate(edu.startDate);
+        const endDate = formatDate(edu.endDate);
+        const dateRange = formatDateRange(edu.startDate, edu.endDate);
 
         // Build degree string
         let degreeStr = edu.studyType || "";
@@ -167,7 +169,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange ? dateRange.split("–")[0].trim() : ""}
+                    {startDate || endDate}
                   </Text>
                   <Text
                     style={{
@@ -189,9 +191,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange && dateRange.includes("–")
-                      ? " - " + dateRange.split("–")[1].trim()
-                      : ""}
+                    {startDate && endDate ? ` - ${endDate}` : ""}
                   </Text>
                   {edu.score && (
                     <Text
@@ -243,7 +243,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                       zIndex: 10,
                     }}
                   />
-                  {(index < education.length - 1 || true) && (
+                  {index < education.length - 1 && (
                     <View
                       style={{
                         position: "absolute",

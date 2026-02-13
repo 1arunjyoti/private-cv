@@ -1,7 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import type { LLMGenerateInput, LLMProvider } from "@/lib/llm/types";
+import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 
 const DEFAULT_MODEL = "gemini-3-flash-preview";
+
+function getGoogleModel(): string {
+  const configured = useLLMSettingsStore.getState().googleModel?.trim();
+  return configured || DEFAULT_MODEL;
+}
 
 function buildPrompt(input: LLMGenerateInput): string {
   if (input.system) {
@@ -64,8 +70,9 @@ async function requestGoogleGenerate(
   input: LLMGenerateInput,
 ): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
+  const model = getGoogleModel();
   const response = await ai.models.generateContent({
-    model: DEFAULT_MODEL,
+    model,
     contents: buildPrompt(input),
     config: {
       temperature: input.temperature ?? 0.5,
@@ -81,7 +88,7 @@ async function requestGoogleGenerate(
   if (parsed.maxTokensReached) {
     const retryTokens = Math.min(Math.max((input.maxTokens ?? 512) * 2, 1024), 4096);
     const retryResponse = await ai.models.generateContent({
-      model: DEFAULT_MODEL,
+      model,
       contents: buildPrompt(input),
       config: {
         temperature: input.temperature ?? 0.5,
@@ -108,7 +115,7 @@ async function requestGoogleGenerate(
 
 export const googleProvider: LLMProvider = {
   id: "google",
-  label: `Google (${DEFAULT_MODEL})`,
+  label: "Google",
   status: "ready",
   requiresApiKey: true,
   async validateKey(apiKey: string) {

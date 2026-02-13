@@ -56,6 +56,9 @@ export interface LLMSettings {
   consent: LLMConsentSettings;
   redaction: LLMRedactionSettings;
   tone: LLMTone;
+  googleModel: string;
+  openaiModel: string;
+  anthropicModel: string;
   localEndpoint: string;
   localModel: string;
   localApiType: LocalApiType;

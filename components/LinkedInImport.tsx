@@ -154,7 +154,7 @@ export function LinkedInImport({
     setParsedData(null);
     setInputText("");
     setOpen(false);
-  }, [parsedData, resume, updateCurrentResume]);
+  }, [parsedData, resume, setOpen, updateCurrentResume]);
 
   const sectionCounts = parsedData
     ? {
@@ -316,7 +316,7 @@ export function LinkedInImport({
                 }
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="flex-1 min-h-[150px] text-sm"
+                className="flex-1 min-h-37.5 text-sm"
                 disabled={isProcessing}
               />
 

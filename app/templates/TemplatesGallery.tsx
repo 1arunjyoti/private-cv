@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import {
   SlidersHorizontal,
@@ -48,12 +48,19 @@ export function TemplatesGallery() {
   useEffect(() => {
     const stored = localStorage.getItem("favoriteTemplates");
     if (stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFavorites(new Set(JSON.parse(stored)));
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setFavorites(new Set(parsed.filter((item) => typeof item === "string")));
+        }
+      } catch {
+        localStorage.removeItem("favoriteTemplates");
+      }
     }
   }, []);
 
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = useCallback((id: string) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(id)) {
       newFavorites.delete(id);
@@ -65,85 +72,97 @@ export function TemplatesGallery() {
       "favoriteTemplates",
       JSON.stringify(Array.from(newFavorites)),
     );
-  };
+  }, [favorites]);
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
     setCurrentPage(1);
-  };
+  }, []);
 
   const categories = CATEGORIES;
 
   // Extract all unique tags
-  const allTags = Array.from(
-    new Set(templates.flatMap((t) => t.tags || [])),
-  ).sort();
+  const allTags = useMemo(
+    () => Array.from(new Set(templates.flatMap((t) => t.tags || []))).sort(),
+    [],
+  );
 
-  const filteredTemplates = templates
-    .filter((t: Template) => {
-      // Category Filter
-      if (selectedCategory !== "All") {
-        if (Array.isArray(t.category)) {
-          if (!t.category.includes(selectedCategory)) return false;
-        } else {
-          if (t.category !== selectedCategory) return false;
-        }
-      }
+  const filteredTemplates = useMemo(
+    () =>
+      templates
+        .filter((t: Template) => {
+          // Category Filter
+          if (selectedCategory !== "All") {
+            if (Array.isArray(t.category)) {
+              if (!t.category.includes(selectedCategory)) return false;
+            } else {
+              if (t.category !== selectedCategory) return false;
+            }
+          }
 
-      // Search Filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesName = t.name.toLowerCase().includes(query);
-        const matchesDesc = t.description.toLowerCase().includes(query);
-        const matchesTags = t.tags?.some((tag) =>
-          tag.toLowerCase().includes(query),
-        );
-        if (!matchesName && !matchesDesc && !matchesTags) return false;
-      }
+          // Search Filter
+          if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const matchesName = t.name.toLowerCase().includes(query);
+            const matchesDesc = t.description.toLowerCase().includes(query);
+            const matchesTags = t.tags?.some((tag) =>
+              tag.toLowerCase().includes(query),
+            );
+            if (!matchesName && !matchesDesc && !matchesTags) return false;
+          }
 
-      // Tag Filter (AND logic)
-      if (selectedTags.length > 0) {
-        const hasAllTags = selectedTags.every((tag) => t.tags?.includes(tag));
-        if (!hasAllTags) return false;
-      }
+          // Tag Filter (AND logic)
+          if (selectedTags.length > 0) {
+            const hasAllTags = selectedTags.every((tag) => t.tags?.includes(tag));
+            if (!hasAllTags) return false;
+          }
 
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sortOption) {
-        case "newest":
-          return (
-            new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
-          );
-        case "popular":
-          return (b.popularity || 0) - (a.popularity || 0);
-        case "alphabetical":
-          return a.name.localeCompare(b.name);
-        case "recommended":
-        default:
-          return 0; // Keep default order
-      }
-    });
+          return true;
+        })
+        .sort((a, b) => {
+          switch (sortOption) {
+            case "newest":
+              return (
+                new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
+              );
+            case "popular":
+              return (b.popularity || 0) - (a.popularity || 0);
+            case "alphabetical":
+              return a.name.localeCompare(b.name);
+            case "recommended":
+            default:
+              return 0; // Keep default order
+          }
+        }),
+    [searchQuery, selectedCategory, selectedTags, sortOption],
+  );
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE);
-  const paginatedTemplates = filteredTemplates.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+  const totalPages = useMemo(
+    () => Math.ceil(filteredTemplates.length / ITEMS_PER_PAGE),
+    [filteredTemplates.length],
+  );
+  const paginatedTemplates = useMemo(
+    () =>
+      filteredTemplates.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE,
+      ),
+    [currentPage, filteredTemplates],
   );
 
   // Reset page relative to category changes
-  const handleCategoryChange = (category: Category) => {
+  const handleCategoryChange = useCallback((category: Category) => {
     setSelectedCategory(category);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
   return (
     <div className="landing-container mx-auto space-y-8">
@@ -177,7 +196,7 @@ export function TemplatesGallery() {
               value={sortOption}
               onValueChange={(value: SortOption) => setSortOption(value)}
             >
-              <SelectTrigger className="w-full md:w-[160px]">
+              <SelectTrigger className="w-full md:w-40">
                 <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>

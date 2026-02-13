@@ -37,7 +37,7 @@ export function ResetConfirmDialog({
           <Button
             variant="outline"
             size="sm"
-            className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+            className="text-destructive border-primary/20 hover:text-destructive/90 hover:bg-destructive/10"
           >
             <RotateCcw className="h-4 w-4" />
             Reset

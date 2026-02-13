@@ -1,5 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentProxy } from 'unpdf';
+import { checkPdfParseRateLimit } from './rate-limit';
+
+const DEFAULT_MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getMaxFileSizeBytes(): number {
+  return parsePositiveInt(
+    process.env.PDF_PARSE_MAX_FILE_SIZE_BYTES,
+    DEFAULT_MAX_FILE_SIZE_BYTES,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Position-aware text extraction
@@ -171,6 +187,21 @@ function isLikelyScannedPDF(text: string, numPages: number): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimit = checkPdfParseRateLimit(request);
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        {
+          error: 'Too many PDF parse requests. Please try again shortly.',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfterSeconds ?? 60),
+          },
+        },
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
@@ -186,6 +217,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid file type. Please upload a PDF file.' },
         { status: 400 }
+      );
+    }
+
+    const maxFileSizeBytes = getMaxFileSizeBytes();
+    if (file.size > maxFileSizeBytes) {
+      return NextResponse.json(
+        {
+          error: `PDF file is too large. Maximum allowed size is ${Math.floor(maxFileSizeBytes / (1024 * 1024))}MB.`,
+        },
+        { status: 413 },
       );
     }
 

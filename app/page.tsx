@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -12,6 +13,17 @@ import {
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 
+export const metadata: Metadata = {
+  title: {
+    absolute: "PrivateCV - Privacy-First Resume Creator",
+  },
+  description:
+    "Build professional resumes offline with complete privacy. No data leaves your device. Free, open-source, and ATS-friendly.",
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default function Home() {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -21,18 +33,8 @@ export default function Home() {
     image: "https://privatecv.vercel.app/opengraph-image",
     operatingSystem: "Web Browser",
     applicationCategory: "BusinessApplication",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
     description:
       "A privacy-first, offline-capable resume builder that runs entirely in your browser. No data leaves your device.",
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      ratingCount: "120",
-    },
     featureList:
       "Offline mode, ATS-friendly templates, PDF export, Privacy focused, No sign-up required",
   };

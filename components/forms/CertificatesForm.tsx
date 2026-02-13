@@ -10,12 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import {
-  generateSectionSummaryAction,
-  improveSectionTextAction,
-  grammarCheckSectionTextAction,
-} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface CertificatesFormProps {
   data: Certificate[];
@@ -23,11 +19,7 @@ interface CertificatesFormProps {
 }
 
 export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -90,92 +82,20 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const handleGenerateSummary = useCallback(
-    async (cert: Certificate) => {
-      setLlmErrors((prev) => ({ ...prev, [cert.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }));
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      const result = await generateSectionSummaryAction({
-        provider: { providerId, apiKeys, consent },
-        section: "certificate",
-        input: buildInput(cert),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (cert: Certificate) => {
-      setLlmErrors((prev) => ({ ...prev, [cert.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }));
-      if (!cert.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [cert.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(cert.summary)
-        : cert.summary;
-      const result = await improveSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "certificate",
-        text: raw,
-        tone,
-        context: buildInput(cert),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (cert: Certificate) => {
-      setLlmErrors((prev) => ({ ...prev, [cert.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }));
-      if (!cert.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [cert.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(cert.summary)
-        : cert.summary;
-      const result = await grammarCheckSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "certificate",
-        text: raw,
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-      } else if (result.noChanges) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: "✓ No grammar issues found." }));
-      } else {
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [cert.id]: result.text,
-        }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
-    },
-    [apiKeys, consent, providerId, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Certificate>({
+    section: "certificate",
+    getId: (cert) => cert.id,
+    buildInput,
+    getCurrentText: (cert) => cert.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -347,7 +267,7 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
                       size="sm"
                       onClick={() => {
                         updateCertificate(cert.id, "summary", generatedSummaries[cert.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }));
+                        clearGenerated(cert.id);
                       }}
                     >
                       Apply
@@ -366,7 +286,7 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }))
+                        clearGenerated(cert.id)
                       }
                     >
                       Discard

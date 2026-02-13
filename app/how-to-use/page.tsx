@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import {
@@ -15,6 +16,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "How to Use PrivateCV",
+  description:
+    "Learn how to build, customize, and export a resume in PrivateCV with step-by-step guidance.",
+  alternates: {
+    canonical: "/how-to-use",
+  },
+};
 
 export default function HowToUsePage() {
   return (

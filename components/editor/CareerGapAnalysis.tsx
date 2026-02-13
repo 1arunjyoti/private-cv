@@ -25,9 +25,13 @@ import { cn } from "@/lib/utils";
 import type { Resume } from "@/db";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import { parseLLMJson } from "@/lib/llm/json";
 import { buildCareerGapAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import {
+  validateCareerGapAnalysis,
+  type CareerGapAnalysisData,
+} from "@/lib/llm/analysis-validation";
+import { generateStructuredOutput } from "@/lib/llm/structured-output";
 
 interface CareerGapAnalysisProps {
   resume: Resume;
@@ -37,40 +41,7 @@ interface CareerGapAnalysisProps {
   onOpenChange?: (open: boolean) => void; // Controlled open state handler
 }
 
-interface GapInfo {
-  period: string;
-  duration: string;
-  between: string;
-  severity: "minor" | "moderate" | "significant";
-  suggestion: string;
-}
-
-interface MissingElement {
-  element: string;
-  importance: "critical" | "recommended" | "nice-to-have";
-  reason: string;
-  suggestion: string;
-}
-
-interface Recommendation {
-  priority: number;
-  category: string;
-  title: string;
-  description: string;
-}
-
-interface AnalysisResult {
-  gaps: GapInfo[];
-  missingElements: MissingElement[];
-  careerProgression: {
-    assessment: string;
-    level: string;
-    consistency: string;
-  };
-  strengths: string[];
-  recommendations: Recommendation[];
-  overallScore: number;
-}
+type AnalysisResult = CareerGapAnalysisData;
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   minor: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-300", label: "Minor" },
@@ -167,21 +138,22 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
 
     try {
       const resumeText = buildResumeText();
-      const output = await result.provider.generateText(result.apiKey, {
+      const structured = await generateStructuredOutput({
+        generateText: (prompt, temperature, maxTokens) =>
+          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
         prompt: buildCareerGapAnalysisPrompt(resumeText),
-        temperature: 0.3,
+        temperature: 0.2,
         maxTokens: 2048,
+        validator: validateCareerGapAnalysis,
+        schemaHint:
+          "{ gaps:{period:string,duration:string,between:string,severity:'minor'|'moderate'|'significant',suggestion:string}[], missingElements:{element:string,importance:'critical'|'recommended'|'nice-to-have',reason:string,suggestion:string}[], careerProgression:{assessment:string,level:string,consistency:string}, strengths:string[], recommendations:{priority:number,category:string,title:string,description:string}[], overallScore:number(0-100) }",
+        repairAttempts: 1,
       });
-
-      const parsed = parseLLMJson<AnalysisResult>(output, {
-        sanitizeMultilineStrings: true,
-      });
-      if (!parsed) {
-        setError("Could not parse AI response. Please try again.");
+      if (!structured.ok) {
+        setError(structured.error);
         return;
       }
-
-      setAnalysis(parsed);
+      setAnalysis(structured.data);
     } catch (err) {
       setError((err as Error).message);
     } finally {

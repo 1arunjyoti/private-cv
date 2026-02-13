@@ -24,9 +24,13 @@ import type { Resume } from "@/db";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { useResumeStore } from "@/store/useResumeStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
-import { parseLLMJson } from "@/lib/llm/json";
 import { buildConsistencyCheckPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import {
+  validateConsistencyAnalysis,
+  type ConsistencyIssueData,
+} from "@/lib/llm/analysis-validation";
+import { generateStructuredOutput } from "@/lib/llm/structured-output";
 
 interface ConsistencyCheckerProps {
   resume: Resume;
@@ -36,14 +40,7 @@ interface ConsistencyCheckerProps {
   onOpenChange?: (open: boolean) => void; // Controlled open state handler
 }
 
-interface ConsistencyIssue {
-  type: "tense" | "punctuation" | "passive" | "formatting" | "style";
-  description: string;
-  location: string;
-  original: string;
-  fix: string;
-  severity: "high" | "medium" | "low";
-}
+type ConsistencyIssue = ConsistencyIssueData;
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
   tense: { label: "Tense", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" },
@@ -138,23 +135,22 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
 
     try {
       const resumeText = buildResumeText();
-      const output = await result.provider.generateText(result.apiKey, {
+      const structured = await generateStructuredOutput({
+        generateText: (prompt, temperature, maxTokens) =>
+          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
         prompt: buildConsistencyCheckPrompt(resumeText),
-        temperature: 0.3,
+        temperature: 0.2,
         maxTokens: 2048,
+        validator: validateConsistencyAnalysis,
+        schemaHint:
+          "{ issues:{ type:'tense'|'punctuation'|'passive'|'formatting'|'style', description:string, location:string, original:string, fix:string, severity:'high'|'medium'|'low' }[] }",
+        repairAttempts: 1,
       });
-
-      const parsed = parseLLMJson<{ issues?: ConsistencyIssue[] }>(output, {
-        sanitizeMultilineStrings: true,
-      });
-      if (!parsed) {
-        setError("Could not parse AI response. Please try again.");
+      if (!structured.ok) {
+        setError(structured.error);
         return;
       }
-
-      if (parsed.issues && Array.isArray(parsed.issues)) {
-        setIssues(parsed.issues);
-      }
+      setIssues(structured.data.issues);
     } catch (err) {
       setError((err as Error).message);
     } finally {

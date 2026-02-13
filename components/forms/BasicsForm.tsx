@@ -247,7 +247,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
       provider: { providerId, apiKeys, consent },
       requiredConsent: "generation",
       prompt: buildSummaryPrompt(buildSummaryInput()),
-      temperature: 0.5,
+      temperature: 0.3,
       maxTokens: 256,
     });
     if (!result.ok) {
@@ -277,7 +277,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
       text: raw,
       tone,
       context: buildPersonContext(),
-      temperature: 0.4,
+      temperature: 0.2,
       maxTokens: 256,
     });
     if (!result.ok) {
@@ -313,7 +313,7 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
       provider: { providerId, apiKeys, consent },
       section: "summary",
       text: raw,
-      temperature: 0.2,
+      temperature: 0.1,
       maxTokens: 256,
     });
     if (!result.ok) {

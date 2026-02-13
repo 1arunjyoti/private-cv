@@ -61,7 +61,7 @@ export async function generatePromptTextAction(opts: {
     provider: opts.provider,
     requiredConsent: opts.requiredConsent,
     prompt: opts.prompt,
-    temperature: opts.temperature ?? 0.5,
+    temperature: opts.temperature ?? 0.3,
     maxTokens: opts.maxTokens ?? 256,
   });
 }
@@ -77,7 +77,7 @@ export async function generateSectionSummaryAction(opts: {
     provider: opts.provider,
     requiredConsent: "generation",
     prompt: buildSectionSummaryPrompt(opts.section, opts.input),
-    temperature: opts.temperature ?? 0.5,
+    temperature: opts.temperature ?? 0.3,
     maxTokens: opts.maxTokens ?? 256,
   });
 }
@@ -95,7 +95,7 @@ export async function improveSectionTextAction(opts: {
     provider: opts.provider,
     requiredConsent: "rewriting",
     prompt: buildRewritePrompt(opts.section, opts.text, opts.tone, opts.context),
-    temperature: opts.temperature ?? 0.4,
+    temperature: opts.temperature ?? 0.2,
     maxTokens: opts.maxTokens ?? 256,
   });
 }
@@ -111,7 +111,7 @@ export async function grammarCheckSectionTextAction(opts: {
     provider: opts.provider,
     requiredConsent: "rewriting",
     prompt: buildGrammarPrompt(opts.section, opts.text),
-    temperature: opts.temperature ?? 0.2,
+    temperature: opts.temperature ?? 0.1,
     maxTokens: opts.maxTokens ?? 256,
   });
 

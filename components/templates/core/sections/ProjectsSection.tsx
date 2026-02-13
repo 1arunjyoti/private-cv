@@ -5,7 +5,7 @@
 import React from "react";
 import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
 import type { Project, LayoutSettings } from "@/db";
-import { formatDate } from "@/lib/template-utils";
+import { formatDate, formatDateRange } from "@/lib/template-utils";
 import {
   SectionHeading,
   BulletList,
@@ -128,10 +128,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
 
       {/* Project Entries */}
       {projects.map((proj, index) => {
-        const dateRange =
-          proj.startDate || proj.endDate
-            ? `${formatDate(proj.startDate)} – ${formatDate(proj.endDate)}`
-            : undefined;
+        const startDate = formatDate(proj.startDate);
+        const endDate = formatDate(proj.endDate);
+        const dateRange = formatDateRange(proj.startDate, proj.endDate) || undefined;
 
         return (
           <View key={proj.id} style={styles.entryBlock}>
@@ -165,7 +164,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange ? dateRange.split("–")[0].trim() : ""}
+                    {startDate || endDate}
                   </Text>
                   <Text
                     style={{
@@ -185,9 +184,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                       textAlign: "right",
                     }}
                   >
-                    {dateRange && dateRange.includes("–")
-                      ? " - " + dateRange.split("–")[1].trim()
-                      : ""}
+                    {startDate && endDate ? ` - ${endDate}` : ""}
                   </Text>
                 </View>
 
@@ -211,7 +208,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                       zIndex: 10,
                     }}
                   />
-                  {(index < projects.length - 1 || true) && (
+                  {index < projects.length - 1 && (
                     <View
                       style={{
                         position: "absolute",

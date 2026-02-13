@@ -1,7 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { LLMGenerateInput, LLMProvider } from "@/lib/llm/types";
+import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 
 const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+
+function getAnthropicModel(): string {
+  const configured = useLLMSettingsStore.getState().anthropicModel?.trim();
+  return configured || DEFAULT_MODEL;
+}
 
 async function requestAnthropic(
   apiKey: string,
@@ -14,7 +20,7 @@ async function requestAnthropic(
 
   try {
     const message = await client.messages.create({
-      model: DEFAULT_MODEL,
+      model: getAnthropicModel(),
       system: input.system || undefined,
       messages: [
         {
@@ -51,7 +57,7 @@ async function requestAnthropic(
 
 export const anthropicProvider: LLMProvider = {
   id: "anthropic",
-  label: `Anthropic (${DEFAULT_MODEL})`,
+  label: "Anthropic",
   status: "ready",
   requiresApiKey: true,
   async validateKey(apiKey: string) {

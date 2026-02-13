@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { Document, Packer } from "docx";
 
 // Mock the docx module to avoid complex Document creation in tests

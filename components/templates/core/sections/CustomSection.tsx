@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "@react-pdf/renderer";
+import { View, StyleSheet } from "@react-pdf/renderer";
 import type { CustomSection as CustomSectionType, LayoutSettings } from "@/db";
 import { SectionHeading, RichText, EntryHeader } from "../primitives";
 import type {

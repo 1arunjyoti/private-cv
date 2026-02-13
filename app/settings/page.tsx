@@ -23,9 +23,34 @@ import {
   Cloud,
   Link2Off,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+
+const GOOGLE_MODELS = [
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash" },
+  { value: "gemini-3-pro-preview", label: "Gemini 3 Pro" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+];
+
+const OPENAI_MODELS = [
+  { value: "gpt-5-mini", label: "GPT-5 Mini" },
+  { value: "gpt-5", label: "GPT-5" },
+  { value: "gpt-4.1", label: "GPT-4.1" },
+];
+
+const ANTHROPIC_MODELS = [
+  { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
+  { value: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
+  { value: "claude-opus-4-5-20251101", label: "Claude Opus 4.5" },
+];
+const CUSTOM_MODEL_VALUE = "__custom__";
+const GOOGLE_MODEL_VALUES = GOOGLE_MODELS.map((model) => model.value);
+const OPENAI_MODEL_VALUES = OPENAI_MODELS.map((model) => model.value);
+const ANTHROPIC_MODEL_VALUES = ANTHROPIC_MODELS.map((model) => model.value);
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -35,6 +60,9 @@ export default function SettingsPage() {
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
   const tone = useLLMSettingsStore((state) => state.tone);
+  const googleModel = useLLMSettingsStore((state) => state.googleModel);
+  const openaiModel = useLLMSettingsStore((state) => state.openaiModel);
+  const anthropicModel = useLLMSettingsStore((state) => state.anthropicModel);
   const localEndpoint = useLLMSettingsStore((state) => state.localEndpoint);
   const localModel = useLLMSettingsStore((state) => state.localModel);
   const localApiType = useLLMSettingsStore((state) => state.localApiType);
@@ -45,12 +73,34 @@ export default function SettingsPage() {
   const setConsent = useLLMSettingsStore((state) => state.setConsent);
   const setRedaction = useLLMSettingsStore((state) => state.setRedaction);
   const setTone = useLLMSettingsStore((state) => state.setTone);
+  const setGoogleModel = useLLMSettingsStore((state) => state.setGoogleModel);
+  const setOpenAIModel = useLLMSettingsStore((state) => state.setOpenAIModel);
+  const setAnthropicModel = useLLMSettingsStore((state) => state.setAnthropicModel);
   const setLocalEndpoint = useLLMSettingsStore((state) => state.setLocalEndpoint);
   const setLocalModel = useLLMSettingsStore((state) => state.setLocalModel);
   const setLocalApiType = useLLMSettingsStore((state) => state.setLocalApiType);
 
   const provider = useMemo(() => getProvider(providerId), [providerId]);
+  const selectedCloudModel = useMemo(() => {
+    if (providerId === "google") return googleModel;
+    if (providerId === "openai") return openaiModel;
+    if (providerId === "anthropic") return anthropicModel;
+    return "";
+  }, [anthropicModel, googleModel, openaiModel, providerId]);
+  const googleModelSelectValue = GOOGLE_MODEL_VALUES.includes(googleModel)
+    ? googleModel
+    : CUSTOM_MODEL_VALUE;
+  const openaiModelSelectValue = OPENAI_MODEL_VALUES.includes(openaiModel)
+    ? openaiModel
+    : CUSTOM_MODEL_VALUE;
+  const anthropicModelSelectValue = ANTHROPIC_MODEL_VALUES.includes(anthropicModel)
+    ? anthropicModel
+    : CUSTOM_MODEL_VALUE;
   const currentKey = apiKeys[providerId] || "";
+  const validateLabel =
+    providerId === "local" && localApiType !== "huggingface"
+      ? "Validate Connection"
+      : "Validate Key";
   const syncProviderId = useSyncStore((state) => state.providerId);
   const syncStatus = useSyncStore((state) => state.status);
   const syncLinkedAccount = useSyncStore((state) => state.linkedAccount);
@@ -81,6 +131,7 @@ export default function SettingsPage() {
   const [testError, setTestError] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
     if (!isCloudSyncEnabled) return;
@@ -112,7 +163,7 @@ export default function SettingsPage() {
           setValidationMessage(
             providerId === "local"
               ? `Connected to ${localApiType} at ${localEndpoint} (${localModel})`
-              : `${result.provider.label} connected successfully.`
+              : `${result.provider.label} connected successfully (${selectedCloudModel}).`
           );
         } else {
         setValidationMessage(
@@ -132,7 +183,7 @@ export default function SettingsPage() {
       providerId,
       apiKeys,
       consent,
-      requiredConsent: "generation",
+      requiredConsent: null,
     });
     if ("error" in result) {
       setTestError(result.error);
@@ -341,15 +392,17 @@ export default function SettingsPage() {
                 {syncEncryptionEnabled ? (
                   <div className="space-y-2">
                     <Label htmlFor="syncPassphrase">Passphrase</Label>
-                    <Input
-                      id="syncPassphrase"
-                      type="password"
-                      placeholder="Enter passphrase for this session"
-                      value={syncPassphrase}
-                      onChange={(event) =>
-                        setSyncPassphrase(event.target.value)
-                      }
-                    />
+                    <form onSubmit={(event) => event.preventDefault()}>
+                      <Input
+                        id="syncPassphrase"
+                        type="password"
+                        placeholder="Enter passphrase for this session"
+                        value={syncPassphrase}
+                        onChange={(event) =>
+                          setSyncPassphrase(event.target.value)
+                        }
+                      />
+                    </form>
                     <p className="text-xs text-muted-foreground">
                       Passphrase is never stored. If lost, encrypted cloud
                       backups cannot be recovered.
@@ -394,18 +447,36 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="apiKey">API Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                value={currentKey}
-                onChange={(event) => setApiKey(providerId, event.target.value)}
-                placeholder={
-                  providerId === "local" && localApiType !== "huggingface"
-                    ? "Not required for local models"
-                    : "Paste your API key"
-                }
-                disabled={providerId === "local" && localApiType !== "huggingface"}
-              />
+              <form onSubmit={(event) => event.preventDefault()}>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="apiKey"
+                    type={showApiKey ? "text" : "password"}
+                    value={currentKey}
+                    onChange={(event) => setApiKey(providerId, event.target.value)}
+                    placeholder={
+                      providerId === "local" && localApiType !== "huggingface"
+                        ? "Not required for local models"
+                        : "Paste your API key"
+                    }
+                    disabled={providerId === "local" && localApiType !== "huggingface"}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowApiKey((value) => !value)}
+                    disabled={providerId === "local" && localApiType !== "huggingface"}
+                    aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </form>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -421,7 +492,7 @@ export default function SettingsPage() {
                 >
                   {validationStatus === "validating"
                     ? "Validating..."
-                    : "Validate Key"}
+                    : validateLabel}
                 </Button>
                 <Button
                   variant="ghost"
@@ -498,7 +569,126 @@ export default function SettingsPage() {
                   <strong>Hugging Face:</strong> /models/{"{model}"}.
                 </p>
               </div>
-            ) : null}
+            ) : (
+              <div className="space-y-3">
+                {providerId === "google" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="googleModel">Google Model</Label>
+                    <Select
+                      value={googleModelSelectValue}
+                      onValueChange={(value) => {
+                        if (value === CUSTOM_MODEL_VALUE) {
+                          if (GOOGLE_MODEL_VALUES.includes(googleModel)) {
+                            setGoogleModel("");
+                          }
+                          return;
+                        }
+                        setGoogleModel(value);
+                      }}
+                    >
+                      <SelectTrigger id="googleModel" className="w-full">
+                        <SelectValue placeholder="Select a Google model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GOOGLE_MODELS.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value={CUSTOM_MODEL_VALUE}>
+                          Custom model
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {googleModelSelectValue === CUSTOM_MODEL_VALUE ? (
+                      <Input
+                        value={googleModel}
+                        onChange={(event) => setGoogleModel(event.target.value)}
+                        placeholder="Enter custom Google model ID"
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {providerId === "openai" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="openaiModel">OpenAI Model</Label>
+                    <Select
+                      value={openaiModelSelectValue}
+                      onValueChange={(value) => {
+                        if (value === CUSTOM_MODEL_VALUE) {
+                          if (OPENAI_MODEL_VALUES.includes(openaiModel)) {
+                            setOpenAIModel("");
+                          }
+                          return;
+                        }
+                        setOpenAIModel(value);
+                      }}
+                    >
+                      <SelectTrigger id="openaiModel" className="w-full">
+                        <SelectValue placeholder="Select an OpenAI model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OPENAI_MODELS.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value={CUSTOM_MODEL_VALUE}>
+                          Custom model
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {openaiModelSelectValue === CUSTOM_MODEL_VALUE ? (
+                      <Input
+                        value={openaiModel}
+                        onChange={(event) => setOpenAIModel(event.target.value)}
+                        placeholder="Enter custom OpenAI model ID"
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {providerId === "anthropic" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="anthropicModel">Anthropic Model</Label>
+                    <Select
+                      value={anthropicModelSelectValue}
+                      onValueChange={(value) => {
+                        if (value === CUSTOM_MODEL_VALUE) {
+                          if (ANTHROPIC_MODEL_VALUES.includes(anthropicModel)) {
+                            setAnthropicModel("");
+                          }
+                          return;
+                        }
+                        setAnthropicModel(value);
+                      }}
+                    >
+                      <SelectTrigger id="anthropicModel" className="w-full">
+                        <SelectValue placeholder="Select an Anthropic model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ANTHROPIC_MODELS.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value={CUSTOM_MODEL_VALUE}>
+                          Custom model
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {anthropicModelSelectValue === CUSTOM_MODEL_VALUE ? (
+                      <Input
+                        value={anthropicModel}
+                        onChange={(event) => setAnthropicModel(event.target.value)}
+                        placeholder="Enter custom Anthropic model ID"
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <Separator />
 
@@ -620,17 +810,11 @@ export default function SettingsPage() {
                 isTesting ||
                 (providerId !== "local" && !currentKey) ||
                 (providerId === "local" && localApiType === "huggingface" && !currentKey) ||
-                provider?.status !== "ready" ||
-                !consent.generation
+                provider?.status !== "ready"
               }
             >
               {isTesting ? "Generating..." : "Generate Summary"}
             </Button>
-            {!consent.generation ? (
-              <p className="text-xs text-muted-foreground">
-                Enable content generation consent to run the test.
-              </p>
-            ) : null}
             {testOutput ? (
               <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">
                 {testOutput}

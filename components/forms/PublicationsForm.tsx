@@ -10,12 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import {
-  generateSectionSummaryAction,
-  improveSectionTextAction,
-  grammarCheckSectionTextAction,
-} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface PublicationsFormProps {
   data: Publication[];
@@ -23,11 +19,7 @@ interface PublicationsFormProps {
 }
 
 export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
-  const providerId = useLLMSettingsStore((state) => state.providerId);
-  const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
-  const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
@@ -88,92 +80,20 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const handleGenerateSummary = useCallback(
-    async (pub: Publication) => {
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      const result = await generateSectionSummaryAction({
-        provider: { providerId, apiKeys, consent },
-        section: "publication",
-        input: buildInput(pub),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (pub: Publication) => {
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if (!pub.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [pub.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(pub.summary)
-        : pub.summary;
-      const result = await improveSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "publication",
-        text: raw,
-        tone,
-        context: buildInput(pub),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (pub: Publication) => {
-      setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if (!pub.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [pub.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(pub.summary)
-        : pub.summary;
-      const result = await grammarCheckSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "publication",
-        text: raw,
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-      } else if (result.noChanges) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: "✓ No grammar issues found." }));
-      } else {
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [pub.id]: result.text,
-        }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
-    },
-    [apiKeys, consent, providerId, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<Publication>({
+    section: "publication",
+    getId: (pub) => pub.id,
+    buildInput,
+    getCurrentText: (pub) => pub.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   return (
     <div className="space-y-4">
@@ -337,7 +257,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                       size="sm"
                       onClick={() => {
                         updatePublication(pub.id, "summary", generatedSummaries[pub.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
+                        clearGenerated(pub.id);
                       }}
                     >
                       Apply
@@ -356,7 +276,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }))
+                        clearGenerated(pub.id)
                       }
                     >
                       Discard

@@ -1,8 +1,14 @@
 import OpenAI from "openai";
 import type { LLMGenerateInput, LLMProvider } from "@/lib/llm/types";
+import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 
 const DEFAULT_MODEL = "gpt-5-mini";
 const MIN_MAX_OUTPUT_TOKENS = 16;
+
+function getOpenAIModel(): string {
+  const configured = useLLMSettingsStore.getState().openaiModel?.trim();
+  return configured || DEFAULT_MODEL;
+}
 
 function formatAPIErrorDetails(error: InstanceType<typeof OpenAI.APIError>): string {
   const e = error as InstanceType<typeof OpenAI.APIError> & {
@@ -47,7 +53,7 @@ async function requestOpenAI(
     });
 
     const response = await client.responses.create({
-      model: DEFAULT_MODEL,
+      model: getOpenAIModel(),
       input: messages,
       max_output_tokens: Math.max(
         input.maxTokens ?? 512,
@@ -81,7 +87,7 @@ async function requestOpenAI(
 
 export const openaiProvider: LLMProvider = {
   id: "openai",
-  label: `OpenAI (${DEFAULT_MODEL})`,
+  label: "OpenAI",
   status: "ready",
   requiresApiKey: true,
 

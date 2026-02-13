@@ -66,10 +66,55 @@ describe('PDFParser', () => {
     });
 
     it('should handle network errors', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockFetch.mockRejectedValue(new Error('Network error'));
 
       const file = createMockFile('pdf', 5000);
       await expect(parser.extractText(file)).rejects.toThrow('Network error');
+    });
+
+    it('should retry transient network errors and succeed', async () => {
+      mockFetch
+        .mockRejectedValueOnce(new Error('Failed to fetch'))
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            text: 'Recovered resume text',
+            numPages: 1,
+          }),
+        });
+
+      const file = createMockFile('pdf', 5000);
+      const result = await parser.extractText(file);
+
+      expect(result).toBe('Recovered resume text');
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry 5xx API failures and succeed', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          json: async () => ({
+            error: 'Temporary server issue',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            text: 'Server recovered',
+            numPages: 1,
+          }),
+        });
+
+      const file = createMockFile('pdf', 5000);
+      const result = await parser.extractText(file);
+
+      expect(result).toBe('Server recovered');
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
     it('should include details and suggestion in error', async () => {
@@ -85,6 +130,22 @@ describe('PDFParser', () => {
 
       const file = createMockFile('pdf', 5000);
       await expect(parser.extractText(file)).rejects.toThrow(/Failed to read PDF.*Corrupted file.*Try another/);
+    });
+
+    it('should fall back to status text when error response is not JSON', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => {
+          throw new Error('Invalid JSON');
+        },
+      });
+
+      const file = createMockFile('pdf', 5000);
+      await expect(parser.extractText(file)).rejects.toThrow(
+        /Failed to parse PDF: Internal Server Error/,
+      );
     });
   });
 

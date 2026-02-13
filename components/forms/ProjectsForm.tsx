@@ -12,15 +12,13 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import {
   generatePromptTextAction,
-  generateSectionSummaryAction,
-  improveSectionTextAction,
-  grammarCheckSectionTextAction,
 } from "@/lib/llm/form-actions";
 import {
   buildHighlightsPrompt,
   buildBulletQuantifierPrompt,
 } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface ProjectsFormProps {
   data: Project[];
@@ -33,7 +31,6 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedDescriptions, setGeneratedDescriptions] = useState<Record<string, string>>({});
   const [generatedHighlights, setGeneratedHighlights] = useState<Record<string, string[]>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
@@ -192,92 +189,22 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const handleGenerateDescription = useCallback(
-    async (proj: Project) => {
-      setLlmErrors((prev) => ({ ...prev, [proj.id]: "" }));
-      setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }));
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      const result = await generateSectionSummaryAction({
-        provider: { providerId, apiKeys, consent },
-        section: "project",
-        input: buildInput(proj),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-      } else {
-        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId],
-  );
-
-  const handleImproveDescription = useCallback(
-    async (proj: Project) => {
-      setLlmErrors((prev) => ({ ...prev, [proj.id]: "" }));
-      setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }));
-      if (!proj.description?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [proj.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(proj.description)
-        : proj.description;
-      const result = await improveSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "project description",
-        text: raw,
-        tone,
-        context: buildInput(proj),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-      } else {
-        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarDescription = useCallback(
-    async (proj: Project) => {
-      setLlmErrors((prev) => ({ ...prev, [proj.id]: "" }));
-      setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }));
-      if (!proj.description?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [proj.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(proj.description)
-        : proj.description;
-      const result = await grammarCheckSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "project description",
-        text: raw,
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-      } else if (result.noChanges) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: "✓ No grammar issues found." }));
-      } else {
-        setGeneratedDescriptions((prev) => ({
-          ...prev,
-          [proj.id]: result.text,
-        }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
-    },
-    [apiKeys, consent, providerId, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateDescription,
+    handleImprove: handleImproveDescription,
+    handleGrammar: handleGrammarDescription,
+    clearGenerated,
+  } = useSectionAIActions<Project>({
+    section: "project",
+    improveSection: "project description",
+    grammarSection: "project description",
+    getId: (proj) => proj.id,
+    buildInput,
+    getCurrentText: (proj) => proj.description || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedDescriptions,
+    setLoading: setIsGenerating,
+  });
 
   const handleGenerateHighlights = useCallback(
     async (proj: Project) => {
@@ -288,7 +215,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
         provider: { providerId, apiKeys, consent },
         requiredConsent: "generation",
         prompt: buildHighlightsPrompt("project", buildInput(proj)),
-        temperature: 0.5,
+        temperature: 0.3,
         maxTokens: 256,
       });
       if (!result.ok) {
@@ -316,7 +243,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
         provider: { providerId, apiKeys, consent },
         requiredConsent: "rewriting",
         prompt: buildBulletQuantifierPrompt(bullet, buildInput(proj)),
-        temperature: 0.5,
+        temperature: 0.2,
         maxTokens: 128,
       });
       if (!result.ok) {
@@ -493,7 +420,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       size="sm"
                       onClick={() => {
                         updateProject(proj.id, "description", generatedDescriptions[proj.id]);
-                        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }));
+                        clearGenerated(proj.id);
                       }}
                     >
                       Apply
@@ -512,7 +439,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }))
+                        clearGenerated(proj.id)
                       }
                     >
                       Discard

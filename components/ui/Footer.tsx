@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t py-6 bg-background">
-      <div className="landing-container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+    <footer className="border-t py-4 sm:py-6 bg-background">
+      <div className="landing-container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-2 sm:gap-6">
         <div className="text-sm text-muted-foreground text-center md:text-left">
           © {new Date().getFullYear()} PrivateCV. Open Source & Privacy-First.
         </div>

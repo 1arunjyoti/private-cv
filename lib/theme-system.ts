@@ -68,6 +68,8 @@ export const BASE_THEME: Partial<LayoutSettings> = {
   bulletMargin: 1,
   useBullets: true,
   headerBottomMargin: 12,
+  headerBackgroundColor: "",
+  headerArtStyle: "none",
   
   // Color targets
   themeColorTarget: ["headings", "links", "icons", "decorations"],

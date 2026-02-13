@@ -12,15 +12,13 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import {
   generatePromptTextAction,
-  generateSectionSummaryAction,
-  improveSectionTextAction,
-  grammarCheckSectionTextAction,
 } from "@/lib/llm/form-actions";
 import {
   buildHighlightsPrompt,
   buildBulletQuantifierPrompt,
 } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
+import { useSectionAIActions } from "./hooks/useSectionAIActions";
 
 interface WorkFormProps {
   data: WorkExperience[];
@@ -32,7 +30,6 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const tone = useLLMSettingsStore((state) => state.tone);
   const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
   const [generatedHighlights, setGeneratedHighlights] = useState<Record<string, string[]>>({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
@@ -144,92 +141,20 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const handleGenerateSummary = useCallback(
-    async (exp: WorkExperience) => {
-      setLlmErrors((prev) => ({ ...prev, [exp.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: "" }));
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: true }));
-      const result = await generateSectionSummaryAction({
-        provider: { providerId, apiKeys, consent },
-        section: "work experience",
-        input: buildInput(exp),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [exp.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId],
-  );
-
-  const handleImproveSummary = useCallback(
-    async (exp: WorkExperience) => {
-      setLlmErrors((prev) => ({ ...prev, [exp.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: "" }));
-      if (!exp.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [exp.id]: "Add a description before improving it.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(exp.summary)
-        : exp.summary;
-      const result = await improveSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "work experience",
-        text: raw,
-        tone,
-        context: buildInput(exp),
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [exp.id]: result.error }));
-      } else {
-        setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: result.text }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: false }));
-    },
-    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
-  );
-
-  const handleGrammarSummary = useCallback(
-    async (exp: WorkExperience) => {
-      setLlmErrors((prev) => ({ ...prev, [exp.id]: "" }));
-      setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: "" }));
-      if (!exp.summary?.trim()) {
-        setLlmErrors((prev) => ({
-          ...prev,
-          [exp.id]: "Add a description before checking grammar.",
-        }));
-        return;
-      }
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: true }));
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(exp.summary)
-        : exp.summary;
-      const result = await grammarCheckSectionTextAction({
-        provider: { providerId, apiKeys, consent },
-        section: "work experience",
-        text: raw,
-      });
-      if (!result.ok) {
-        setLlmErrors((prev) => ({ ...prev, [exp.id]: result.error }));
-      } else if (result.noChanges) {
-        setLlmErrors((prev) => ({ ...prev, [exp.id]: "✓ No grammar issues found." }));
-      } else {
-        setGeneratedSummaries((prev) => ({
-          ...prev,
-          [exp.id]: result.text,
-        }));
-      }
-      setIsGenerating((prev) => ({ ...prev, [exp.id]: false }));
-    },
-    [apiKeys, consent, providerId, redaction.stripContactInfo],
-  );
+  const {
+    handleGenerate: handleGenerateSummary,
+    handleImprove: handleImproveSummary,
+    handleGrammar: handleGrammarSummary,
+    clearGenerated,
+  } = useSectionAIActions<WorkExperience>({
+    section: "work experience",
+    getId: (exp) => exp.id,
+    buildInput,
+    getCurrentText: (exp) => exp.summary || "",
+    setErrors: setLlmErrors,
+    setGenerated: setGeneratedSummaries,
+    setLoading: setIsGenerating,
+  });
 
   const handleGenerateHighlights = useCallback(
     async (exp: WorkExperience) => {
@@ -240,7 +165,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
         provider: { providerId, apiKeys, consent },
         requiredConsent: "generation",
         prompt: buildHighlightsPrompt("work experience", buildInput(exp)),
-        temperature: 0.5,
+        temperature: 0.3,
         maxTokens: 256,
       });
       if (!result.ok) {
@@ -268,7 +193,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
         provider: { providerId, apiKeys, consent },
         requiredConsent: "rewriting",
         prompt: buildBulletQuantifierPrompt(bullet, buildInput(exp)),
-        temperature: 0.5,
+        temperature: 0.2,
         maxTokens: 128,
       });
       if (!result.ok) {
@@ -467,7 +392,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       size="sm"
                       onClick={() => {
                         updateExperience(exp.id, "summary", generatedSummaries[exp.id]);
-                        setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: "" }));
+                        clearGenerated(exp.id);
                       }}
                     >
                       Apply
@@ -486,7 +411,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedSummaries((prev) => ({ ...prev, [exp.id]: "" }))
+                        clearGenerated(exp.id)
                       }
                     >
                       Discard

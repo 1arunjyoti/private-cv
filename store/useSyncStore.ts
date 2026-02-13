@@ -402,7 +402,7 @@ export const useSyncStore = create<SyncState>()(
         try {
           const provider = getSyncProvider(state.providerId);
           const linkedAccount = await withRetry(() =>
-            provider.getAccountProfile(state.auth),
+            provider.getAccountProfile(state.auth!),
           );
           if (linkedAccount) {
             set({ linkedAccount });

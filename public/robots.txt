@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://privatecv.vercel.app/sitemap.xml

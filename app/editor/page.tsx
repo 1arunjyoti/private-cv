@@ -500,7 +500,7 @@ function EditorContent() {
               </DropdownMenu>
 
               <Link href="/settings">
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 border-primary/20 hover:bg-primary/10">
                   <Settings className="h-4 w-4" />
                   Settings
                 </Button>
@@ -514,6 +514,7 @@ function EditorContent() {
                   onClick={handleSave}
                   disabled={isSaving}
                   aria-label="Save (Ctrl+S)"
+                  className="border-primary/20 hover:bg-primary/10"
                 >
                   {isSaving ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -530,6 +531,7 @@ function EditorContent() {
                     onClick={syncNow}
                     disabled={!syncAuth || syncStatus === "syncing"}
                     aria-label="Sync"
+                    className="border-primary/20 hover:bg-primary/10"
                   >
                     {syncStatus === "syncing" ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

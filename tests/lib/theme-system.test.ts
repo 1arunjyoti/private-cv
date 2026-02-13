@@ -236,6 +236,8 @@ describe("BASE_THEME", () => {
     expect(BASE_THEME.bulletMargin).toBeDefined();
     expect(BASE_THEME.useBullets).toBeDefined();
     expect(BASE_THEME.headerBottomMargin).toBeDefined();
+    expect(BASE_THEME.headerBackgroundColor).toBeDefined();
+    expect(BASE_THEME.headerArtStyle).toBeDefined();
   });
 
   it("should have color target settings", () => {

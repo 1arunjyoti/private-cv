@@ -148,6 +148,8 @@ export interface LayoutSettings {
   marginHorizontal: number; // 0-30mm
   marginVertical: number; // 0-30mm
   headerBottomMargin: number; // 0-50, default 20
+  headerBackgroundColor?: string; // Optional custom header background color
+  headerArtStyle?: 'none' | 'wave' | 'curve' | 'diagonal' | 'blob'; // Decorative header art style
   // Section Headings
   sectionHeadingStyle: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; // 9 visual styles
   sectionHeadingAlign: 'left' | 'center' | 'right';

@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Heading } from "lucide-react";
+import { THEME_COLORS } from "@/lib/constants";
+import { Heading, Plus } from "lucide-react";
 import { SettingsSection } from "../SettingsSection";
 import { SpacingControl } from "../SpacingControl";
 import { SubSectionCard } from "../SubSectionCard";
@@ -20,6 +21,11 @@ export function HeaderSettings({
   isOpen,
   onToggle,
 }: HeaderSettingsProps) {
+  const currentHeaderBgColor = layoutSettings.headerBackgroundColor || "";
+  const hasPresetHeaderColor = THEME_COLORS.some(
+    (c) => c.value === currentHeaderBgColor,
+  );
+
   return (
     <SettingsSection
       title="Header"
@@ -82,6 +88,101 @@ export function HeaderSettings({
             step={2}
             onChange={(val) => updateSetting("headerBottomMargin", val)}
           />
+        </SubSectionCard>
+
+        <SubSectionCard className="space-y-3">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Header Background
+          </Label>
+          <div className="flex flex-row flex-wrap gap-3 items-center">
+            <button
+              onClick={() => updateSetting("headerBackgroundColor", "")}
+              className={`px-2.5 h-8 rounded-md border text-xs font-medium transition-all ${
+                !currentHeaderBgColor
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                  : "border-border bg-transparent hover:border-primary/30"
+              }`}
+              title="Use Template Default"
+            >
+              Default
+            </button>
+            {THEME_COLORS.map((color) => (
+              <button
+                key={`header-bg-${color.value}`}
+                onClick={() => updateSetting("headerBackgroundColor", color.value)}
+                className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                  currentHeaderBgColor === color.value
+                    ? "ring-2 ring-offset-2 ring-primary scale-110"
+                    : "hover:scale-105 border-border"
+                }`}
+                style={{ backgroundColor: color.value }}
+                title={color.name}
+              >
+                {currentHeaderBgColor === color.value && (
+                  <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
+                )}
+              </button>
+            ))}
+
+            <div
+              className={`relative flex items-center justify-center w-7 h-7 rounded-full border transition-all ${
+                currentHeaderBgColor && !hasPresetHeaderColor
+                  ? "ring-2 ring-offset-2 ring-primary scale-110 border-transparent"
+                  : "border-border border-dashed hover:scale-105 hover:border-primary/50"
+              }`}
+              style={{
+                backgroundColor:
+                  currentHeaderBgColor && !hasPresetHeaderColor
+                    ? currentHeaderBgColor
+                    : "transparent",
+              }}
+              title="Custom Header Color"
+            >
+              {(!currentHeaderBgColor || hasPresetHeaderColor) && (
+                <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
+              {currentHeaderBgColor && !hasPresetHeaderColor && (
+                <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
+              )}
+              <input
+                type="color"
+                value={currentHeaderBgColor || "#000000"}
+                onChange={(e) =>
+                  updateSetting("headerBackgroundColor", e.target.value)
+                }
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+          </div>
+        </SubSectionCard>
+
+        <SubSectionCard className="space-y-3">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Header Art Style
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { value: "none", label: "None" },
+                { value: "wave", label: "Wave" },
+                { value: "curve", label: "Curve" },
+                { value: "diagonal", label: "Diagonal" },
+                { value: "blob", label: "Blob" },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting("headerArtStyle", option.value)}
+                className={`flex items-center justify-center p-2 rounded-md border transition-all text-xs font-medium ${
+                  (layoutSettings.headerArtStyle || "none") === option.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/20 text-primary"
+                    : "border-border bg-transparent hover:border-primary/30"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </SubSectionCard>
 
         {/* Profile Photo Settings */}
