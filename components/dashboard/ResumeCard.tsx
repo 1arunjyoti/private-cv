@@ -32,7 +32,7 @@ import type { Resume } from "@/db";
 import Image from "next/image";
 import { templates } from "@/lib/templates-data";
 
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState, type MouseEvent } from "react";
 import { DeleteResumeDialog } from "./DeleteResumeDialog";
 
 interface ResumeCardProps {
@@ -41,11 +41,35 @@ interface ResumeCardProps {
   onDuplicate: (resume: Resume) => void;
 }
 
-export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
+const templateById = new Map(templates.map((template) => [template.id, template]));
+
+export const ResumeCard = memo(function ResumeCard({
+  resume,
+  onDelete,
+  onDuplicate,
+}: ResumeCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const lastModified = new Date(resume.meta.lastModified);
-  const template = templates.find((t) => t.id === resume.meta.templateId);
+  const lastEditedLabel = useMemo(
+    () =>
+      formatDistanceToNow(new Date(resume.meta.lastModified), { addSuffix: true }),
+    [resume.meta.lastModified],
+  );
+  const template = templateById.get(resume.meta.templateId);
   const templateImage = template?.image || "/images/ats_scanner_template.jpg";
+  const handleDuplicate = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      onDuplicate(resume);
+    },
+    [onDuplicate, resume],
+  );
+  const handleOpenDeleteDialog = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  }, []);
+  const handleConfirmDelete = useCallback(() => {
+    onDelete(resume.id);
+  }, [onDelete, resume.id]);
 
   return (
     <>
@@ -60,7 +84,7 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
             <div className="flex items-center text-xs text-muted-foreground">
               <Calendar className="mr-1 h-3 w-3" />
               <span>
-                Edited {formatDistanceToNow(lastModified, { addSuffix: true })}
+                Edited {lastEditedLabel}
               </span>
             </div>
           </div>
@@ -68,13 +92,13 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                className="h-8 w-8 p-0 opacity-100 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 focus:opacity-100"
               >
                 <span className="sr-only">Open menu</span>
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px] z-20">
+            <DropdownMenuContent align="end" className="w-40 z-20">
               <DropdownMenuItem asChild>
                 <Link
                   href={`/editor?id=${resume.id}`}
@@ -85,10 +109,7 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate(resume);
-                }}
+                onClick={handleDuplicate}
                 className="cursor-pointer"
               >
                 <Copy className="mr-2 h-4 w-4" />
@@ -96,10 +117,7 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDeleteDialog(true);
-                }}
+                onClick={handleOpenDeleteDialog}
                 className="text-red-600 focus:text-red-600 cursor-pointer"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -139,12 +157,14 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
         </CardFooter>
       </Card>
 
-      <DeleteResumeDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={() => onDelete(resume.id)}
-        resumeTitle={resume.meta.title}
-      />
+      {showDeleteDialog && (
+        <DeleteResumeDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={handleConfirmDelete}
+          resumeTitle={resume.meta.title}
+        />
+      )}
     </>
   );
-}
+});

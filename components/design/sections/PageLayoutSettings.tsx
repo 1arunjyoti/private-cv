@@ -524,7 +524,13 @@ export function PageLayoutSettings({
             onDragEnd={handleDragEnd}
           >
             <div
-              className={`grid gap-4 ${effectiveColumnCount === 3 ? "grid-cols-3" : effectiveColumnCount > 1 ? "grid-cols-2" : "grid-cols-1"}`}
+              className={`grid gap-4 ${
+                effectiveColumnCount === 3
+                  ? "grid-cols-1 lg:grid-cols-3"
+                  : effectiveColumnCount > 1
+                    ? "grid-cols-1 md:grid-cols-2"
+                    : "grid-cols-1"
+              }`}
             >
               {/* Left Column */}
               {effectiveColumnCount > 1 && (

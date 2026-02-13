@@ -99,9 +99,12 @@ async function refreshResumeStore(): Promise<void> {
   const current = useResumeStore.getState().currentResume;
 
   if (current) {
-    const matched = allResumes.find((resume) => resume.id === current.id) ?? null;
-    useResumeStore.setState({ currentResume: matched });
-    return;
+    const matched = allResumes.find((resume) => resume.id === current.id);
+    if (matched) {
+      useResumeStore.setState({ currentResume: matched });
+      return;
+    }
+    // Current resume not found in restored data — fall through to pick first
   }
   useResumeStore.setState({ currentResume: allResumes[0] ?? null });
 }
@@ -312,7 +315,17 @@ async function ensureFreshAuth(): Promise<ProviderAuthState | null> {
       return null;
     }
 
-    // Keep existing auth for transient/non-auth failures to avoid forcing reconnect.
+    // If the token is already expired, there is no point keeping it.
+    if (isAuthExpired(state.auth)) {
+      useSyncStore.setState({
+        auth: null,
+        linkedAccount: null,
+        status: "not-connected",
+        error: "Session expired. Click Connect Google Drive.",
+      });
+      return null;
+    }
+    // Keep existing (still-valid) auth for transient/non-auth failures.
     useSyncStore.setState({ error: message });
     return state.auth;
   }
@@ -423,10 +436,15 @@ export const useSyncStore = create<SyncState>()(
       },
 
       deleteCloudData: async () => {
-        const state = get();
         const auth = await ensureFreshAuth();
+        const state = get();
         if (!auth || !state.remoteFileMeta) {
-          set({ status: "not-connected" });
+          set({
+            status: "not-connected",
+            error: !auth
+              ? "Session expired. Click Connect Google Drive."
+              : "No sync file found. Connect Google Drive first.",
+          });
           return;
         }
 
@@ -463,10 +481,15 @@ export const useSyncStore = create<SyncState>()(
       },
 
       restoreFromCloud: async () => {
-        const state = get();
         const auth = await ensureFreshAuth();
+        const state = get();
         if (!auth || !state.remoteFileMeta) {
-          set({ status: "not-connected" });
+          set({
+            status: "not-connected",
+            error: !auth
+              ? "Session expired. Click Connect Google Drive."
+              : "No sync file found. Connect Google Drive first.",
+          });
           return;
         }
         if (state.encryptionEnabled && !state.passphrase) {
@@ -523,11 +546,16 @@ export const useSyncStore = create<SyncState>()(
       },
 
       syncNow: async () => {
-        const state = get();
         trackSyncMetric("attempt");
         const auth = await ensureFreshAuth();
+        const state = get();
         if (!auth || !state.remoteFileMeta) {
-          set({ status: "not-connected" });
+          set({
+            status: "not-connected",
+            error: !auth
+              ? "Session expired. Click Connect Google Drive."
+              : "No sync file found. Connect Google Drive first.",
+          });
           return;
         }
         if (state.encryptionEnabled && !state.passphrase) {
@@ -651,9 +679,9 @@ export const useSyncStore = create<SyncState>()(
       },
 
       resolveConflict: async (resolution) => {
+        const auth = await ensureFreshAuth();
         const state = get();
         const conflict = state.conflict;
-        const auth = await ensureFreshAuth();
         if (!conflict || !auth || !state.remoteFileMeta) {
           return;
         }
@@ -711,11 +739,12 @@ export const useSyncStore = create<SyncState>()(
       },
 
       startupPull: async () => {
-        const state = get();
-        if (!state.auth || !state.remoteFileMeta) return;
+        const preState = get();
+        if (!preState.auth || !preState.remoteFileMeta) return;
         try {
           const auth = await ensureFreshAuth();
           if (!auth) return;
+          const state = get();
           const provider = getSyncProvider(state.providerId);
           const remoteResult = await withRetry(() =>
             provider.downloadSyncFile(auth, state.remoteFileMeta!),

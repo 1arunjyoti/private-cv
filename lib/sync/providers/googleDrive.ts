@@ -195,7 +195,7 @@ export class GoogleDriveSyncProvider implements SyncProviderAdapter {
       });
 
       tokenClient.requestAccessToken({
-        prompt: interactive ? "consent" : "none",
+        prompt: interactive ? "" : "none",
       });
     });
 

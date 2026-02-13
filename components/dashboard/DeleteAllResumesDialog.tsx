@@ -10,35 +10,29 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-interface DeleteResumeDialogProps {
+interface DeleteAllResumesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  resumeTitle: string;
 }
 
-export function DeleteResumeDialog({
+export function DeleteAllResumesDialog({
   open,
   onOpenChange,
   onConfirm,
-  resumeTitle,
-}: DeleteResumeDialogProps) {
+}: DeleteAllResumesDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[90%] rounded-lg sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Are you absolutely sure?</DialogTitle>
+          <DialogTitle>Delete all resumes?</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            resume
-            <span className="font-semibold text-foreground">
-              {" "}
-              &quot;{resumeTitle}&quot;{" "}
-            </span>
-            and remove it from your device.
+            This action cannot be undone. This will permanently delete{" "}
+            <span className="font-bold text-destructive">ALL</span> your saved
+            resumes from this device.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:space-x-2">
+        <DialogFooter className="flex-col gap-4 sm:flex-row sm:space-x-2">
           <Button
             variant="outline"
             className="mt-0 w-full sm:w-auto"
@@ -55,7 +49,7 @@ export function DeleteResumeDialog({
             }}
             className="w-full sm:w-auto"
           >
-            Delete Resume
+            Delete All Resumes
           </Button>
         </DialogFooter>
       </DialogContent>

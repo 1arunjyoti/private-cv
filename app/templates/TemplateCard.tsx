@@ -32,50 +32,29 @@ export function TemplateCard({
           template.image ? "bg-muted/5" : template.gradient
         } group-hover:scale-105 transition-transform duration-500`}
       >
-        <div className="absolute top-4 left-4 z-20">
-          <Button
-            variant="secondary"
-            size="icon"
-            className={cn(
-              "h-8 w-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-black transition-colors",
-              isFavorite && "text-red-500 hover:text-red-600",
-            )}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleFavorite(template.id);
-            }}
-          >
-            <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
-            <span className="sr-only">Favorite</span>
-          </Button>
-        </div>
         {template.image ? (
-          <div className="relative h-full flex items-center justify-center">
-            <div className="relative h-full w-full max-w-70 p-4">
-              <Image
-                src={template.image}
-                alt={`${template.name} preview`}
-                width={300}
-                height={380}
-                className="object-contain"
-                quality={80}
-                priority={index < 2}
-                sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 300px"
-              />
-              <div
-                className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-black/10 md:bg-black/10 cursor-pointer"
-                onClick={() => onPreview(template)}
+          <div className="relative h-full w-full">
+            <Image
+              src={template.image}
+              alt={`${template.name} preview`}
+              fill
+              className="object-cover object-top"
+              quality={80}
+              priority={index < 2}
+              sizes="(max-width: 640px) 200px, (max-width: 1024px) 280px, 300px"
+            />
+            <div
+              className="absolute inset-0 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-black/10 md:bg-black/10 cursor-pointer"
+              onClick={() => onPreview(template)}
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                className="shadow-lg transform transition-transform md:translate-y-4 md:group-hover:translate-y-0"
               >
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="shadow-lg transform transition-transform md:translate-y-4 md:group-hover:translate-y-0"
-                >
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                  Preview
-                </Button>
-              </div>
+                <Maximize2 className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
             </div>
           </div>
         ) : (
@@ -123,14 +102,33 @@ export function TemplateCard({
 
       <div className="p-5 flex-1 flex flex-col gap-4">
         <div>
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            {template.name}
-            {template.beta && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                Beta
-              </Badge>
-            )}
-          </h3>
+          <div className="flex items-start justify-between w-full">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              {template.name}
+              {template.beta && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  Beta
+                </Badge>
+              )}
+            </h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-8 w-8 rounded-full hover:bg-muted transition-colors shrink-0",
+                isFavorite &&
+                  "text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100",
+              )}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite(template.id);
+              }}
+            >
+              <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
+              <span className="sr-only">Favorite</span>
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
             {template.description}
           </p>

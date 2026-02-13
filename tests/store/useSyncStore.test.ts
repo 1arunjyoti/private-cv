@@ -403,4 +403,85 @@ describe("useSyncStore", () => {
     expect(mockProvider.downloadSyncFile).toHaveBeenCalledTimes(3);
     expect(useSyncStore.getState().status).toBe("up-to-date");
   });
+
+  it("restoreFromCloud works after session expiry and reconnect", async () => {
+    const { db } = await import("@/db");
+    const { useSyncStore } = await import("@/store/useSyncStore");
+    const resume = createCurrentResume("Cloud Resume", "cloud-1");
+
+    // 1. Start with an expired auth
+    useSyncStore.setState({
+      auth: { accessToken: "expired-token", expiresAt: Date.now() - 1000 },
+      remoteFileMeta: { remoteId: "remote-file" },
+    });
+
+    // Silent refresh fails with a non-auth error (e.g. popup issue)
+    mockProvider.signIn.mockRejectedValueOnce(
+      new Error("popup_failed_to_open"),
+    );
+
+    await useSyncStore.getState().restoreFromCloud();
+
+    // Should bail with error and clear auth
+    expect(useSyncStore.getState().auth).toBeNull();
+    expect(useSyncStore.getState().status).toBe("not-connected");
+    expect(useSyncStore.getState().error).toContain("Session expired");
+
+    // 2. User reconnects via connect()
+    mockProvider.signIn.mockResolvedValue({
+      accessToken: "fresh-token",
+      expiresAt: Date.now() + 60_000,
+    });
+    mockProvider.getAccountProfile.mockResolvedValue({
+      email: "user@example.com",
+    });
+    mockProvider.ensureSyncFile.mockResolvedValue({
+      remoteId: "remote-file",
+    });
+
+    await useSyncStore.getState().connect();
+    expect(useSyncStore.getState().auth?.accessToken).toBe("fresh-token");
+
+    // 3. restoreFromCloud should now succeed
+    mockProvider.downloadSyncFile.mockResolvedValue({
+      fileMeta: { remoteId: "remote-file" },
+      raw: JSON.stringify({
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        deviceId: "device-1",
+        encrypted: false,
+        checksum: "abc",
+        resumes: [resume],
+      }),
+    });
+    vi.mocked(db.resumes.bulkPut).mockResolvedValue(undefined as never);
+
+    await useSyncStore.getState().restoreFromCloud();
+
+    expect(useSyncStore.getState().status).toBe("up-to-date");
+    expect(useSyncStore.getState().error).toBeNull();
+  });
+
+  it("ensureFreshAuth returns null when expired token cannot refresh silently", async () => {
+    const { useSyncStore } = await import("@/store/useSyncStore");
+
+    // Set an expired auth
+    useSyncStore.setState({
+      auth: { accessToken: "old-token", expiresAt: Date.now() - 5000 },
+      remoteFileMeta: { remoteId: "remote-file" },
+    });
+
+    // Silent sign-in fails with a non-auth error (not a 401)
+    mockProvider.signIn.mockRejectedValue(
+      new Error("popup_failed_to_open"),
+    );
+
+    // Trigger ensureFreshAuth indirectly via syncNow
+    await useSyncStore.getState().syncNow();
+
+    // Auth should be cleared because the token was expired
+    expect(useSyncStore.getState().auth).toBeNull();
+    expect(useSyncStore.getState().status).toBe("not-connected");
+    expect(useSyncStore.getState().error).toContain("Session expired");
+  });
 });

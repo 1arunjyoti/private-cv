@@ -44,7 +44,7 @@ export function ResetConfirmDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-106.25">
+      <DialogContent className="sm:max-w-106.25 rounded-lg">
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive mb-2">
             <AlertTriangle className="h-5 w-5" />

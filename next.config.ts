@@ -8,6 +8,19 @@ const nextConfig: NextConfig = {
     unoptimized: true,
     qualities: [75, 80],
   },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 

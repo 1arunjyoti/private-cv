@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Trash2 } from "lucide-react";
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { ResumeCard } from "@/components/dashboard/ResumeCard";
+import { DeleteAllResumesDialog } from "@/components/dashboard/DeleteAllResumesDialog";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
@@ -14,10 +15,12 @@ import type { Resume } from "@/db";
 export default function DashboardPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
 
   const getAllResumes = useResumeStore((state) => state.getAllResumes);
   const deleteResume = useResumeStore((state) => state.deleteResume);
   const duplicateResume = useResumeStore((state) => state.duplicateResume);
+  const deleteAllResumes = useResumeStore((state) => state.deleteAllResumes);
 
   const loadResumes = useCallback(async () => {
     setIsLoading(true);
@@ -43,24 +46,41 @@ export default function DashboardPage() {
     loadResumes();
   };
 
+  const handleDeleteAll = async () => {
+    await deleteAllResumes();
+    loadResumes();
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       <main className="flex-1 landing-container mx-auto px-4 pt-28 pb-8 md:pt-32 md:pb-12">
         <div className="flex flex-col gap-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">My Resumes</h1>
               <p className="text-muted-foreground">
                 Manage your created resumes here.
               </p>
             </div>
-            <Button asChild>
-              <Link href="/templates">
-                <Plus className="h-4 w-4" />
-                New Resume
-              </Link>
-            </Button>
+            <div className="flex gap-2 self-start sm:self-auto">
+              {resumes.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteAllDialogOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete All
+                </Button>
+              )}
+              <Button asChild>
+                <Link href="/templates">
+                  <Plus className="h-4 w-4" />
+                  New Resume
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -104,6 +124,11 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+      <DeleteAllResumesDialog
+        open={isDeleteAllDialogOpen}
+        onOpenChange={setIsDeleteAllDialogOpen}
+        onConfirm={handleDeleteAll}
+      />
       <Footer />
     </div>
   );

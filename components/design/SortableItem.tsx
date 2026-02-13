@@ -47,26 +47,28 @@ export function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-2.5 rounded-lg bg-card border shadow-sm hover:border-primary/50 transition-colors group touch-none"
+      className="flex items-center justify-between p-2 rounded-lg bg-card border shadow-sm hover:border-primary/50 transition-colors group touch-none gap-2"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <div
           {...attributes}
           {...listeners}
           role="button"
           aria-label="Drag to reorder"
-          className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-muted rounded-md transition-colors"
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md transition-colors shrink-0"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-sm font-medium truncate" title={label}>
+          {label}
+        </span>
       </div>
-      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 shrink-0">
         {canMoveLeft && onMoveLeft && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-6 w-6"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -74,14 +76,14 @@ export function SortableItem({
             }}
             aria-label="Move section left"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-3 w-3" />
           </Button>
         )}
         {canMoveRight && onMoveRight && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-6 w-6"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -89,28 +91,28 @@ export function SortableItem({
             }}
             aria-label="Move section right"
           >
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3 w-3" />
           </Button>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-6 w-6"
           disabled={isFirst}
           onClick={onMoveUp}
           aria-label="Move section up"
         >
-          <ArrowUp className="h-3.5 w-3.5" />
+          <ArrowUp className="h-3 w-3" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-6 w-6"
           disabled={isLast}
           onClick={onMoveDown}
           aria-label="Move section down"
         >
-          <ArrowDown className="h-3.5 w-3.5" />
+          <ArrowDown className="h-3 w-3" />
         </Button>
       </div>
     </div>

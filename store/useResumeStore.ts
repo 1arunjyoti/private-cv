@@ -15,6 +15,7 @@ interface ResumeState {
   saveResume: (resume: Resume) => Promise<void>;
   createNewResume: (title?: string, templateId?: string) => Promise<Resume>;
   deleteResume: (id: string) => Promise<void>;
+  deleteAllResumes: () => Promise<void>;
   duplicateResume: (resume: Resume) => Promise<void>;
   getAllResumes: () => Promise<Resume[]>;
   updateCurrentResume: (updates: Partial<Resume>) => void;
@@ -133,6 +134,16 @@ export const useResumeStore = create<ResumeState>()(
             set({ currentResume: null });
           }
           set({ isLoading: false });
+        } catch (err) {
+          set({ error: (err as Error).message, isLoading: false });
+        }
+      },
+
+      deleteAllResumes: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          await db.resumes.clear();
+          set({ currentResume: null, isLoading: false });
         } catch (err) {
           set({ error: (err as Error).message, isLoading: false });
         }

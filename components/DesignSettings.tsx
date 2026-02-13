@@ -183,7 +183,7 @@ export function DesignSettings() {
 
       <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <DialogContent
-          className="sm:max-w-md"
+          className="sm:max-w-md rounded-lg"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             resetButtonRef.current?.focus();

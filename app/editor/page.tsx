@@ -61,6 +61,7 @@ import {
   Settings,
   TrendingUp,
   Linkedin,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -71,6 +72,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -146,14 +148,39 @@ function EditorContent() {
   const [careerGapAnalysisOpen, setCareerGapAnalysisOpen] = useState(false);
   const [linkedInImportOpen, setLinkedInImportOpen] = useState(false);
 
-  // Load or create resume on mount
+  const templateAppliedRef = useRef(false);
+  const initializedRef = useRef(false);
+
+  // Load or create resume on mount — runs once per editor session
   useEffect(() => {
+    if (initializedRef.current) return;
+
     if (resumeId) {
+      initializedRef.current = true;
       loadResume(resumeId);
     } else if (!currentResume) {
+      initializedRef.current = true;
+      templateAppliedRef.current = true;
       createNewResume(undefined, templateParam || undefined);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, loadResume, createNewResume, currentResume, templateParam]);
+
+  // Apply template from URL when it differs from current resume's template (one-time only)
+  useEffect(() => {
+    if (
+      templateParam &&
+      currentResume &&
+      !resumeId &&
+      !templateAppliedRef.current &&
+      !initializedRef.current &&
+      currentResume.meta.templateId !== templateParam
+    ) {
+      templateAppliedRef.current = true;
+      initializedRef.current = true;
+      createNewResume(undefined, templateParam);
+    }
+  }, [templateParam, currentResume, resumeId, createNewResume]);
 
   const handleSave = useCallback(async () => {
     if (!currentResume) return;
@@ -500,7 +527,11 @@ function EditorContent() {
               </DropdownMenu>
 
               <Link href="/settings">
-                <Button size="sm" variant="outline" className="gap-2 border-primary/20 hover:bg-primary/10">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 border-primary/20 hover:bg-primary/10"
+                >
                   <Settings className="h-4 w-4" />
                   Settings
                 </Button>
@@ -573,13 +604,22 @@ function EditorContent() {
                 </SheetTrigger>
                 <SheetContent
                   side="right"
+                  hideClose
                   className="w-75 sm:w-100 overflow-y-auto p-4"
                 >
-                  <SheetHeader className="text-left border-b pb-4">
-                    <SheetTitle>Editor Menu</SheetTitle>
-                    <SheetDescription>
-                      Manage your resume and editor settings.
-                    </SheetDescription>
+                  <SheetHeader className="text-left border-b pb-4 space-y-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <SheetTitle>Editor Menu</SheetTitle>
+                        <SheetDescription>
+                          Manage your resume and editor settings.
+                        </SheetDescription>
+                      </div>
+                      <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                      </SheetClose>
+                    </div>
                     <div className="text-xs text-muted-foreground space-y-1 mt-3 pt-3 border-t">
                       <p>
                         Last saved:{" "}

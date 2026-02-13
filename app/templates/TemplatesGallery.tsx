@@ -52,7 +52,9 @@ export function TemplatesGallery() {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           // eslint-disable-next-line react-hooks/set-state-in-effect
-          setFavorites(new Set(parsed.filter((item) => typeof item === "string")));
+          setFavorites(
+            new Set(parsed.filter((item) => typeof item === "string")),
+          );
         }
       } catch {
         localStorage.removeItem("favoriteTemplates");
@@ -60,19 +62,22 @@ export function TemplatesGallery() {
     }
   }, []);
 
-  const toggleFavorite = useCallback((id: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(id)) {
-      newFavorites.delete(id);
-    } else {
-      newFavorites.add(id);
-    }
-    setFavorites(newFavorites);
-    localStorage.setItem(
-      "favoriteTemplates",
-      JSON.stringify(Array.from(newFavorites)),
-    );
-  }, [favorites]);
+  const toggleFavorite = useCallback(
+    (id: string) => {
+      const newFavorites = new Set(favorites);
+      if (newFavorites.has(id)) {
+        newFavorites.delete(id);
+      } else {
+        newFavorites.add(id);
+      }
+      setFavorites(newFavorites);
+      localStorage.setItem(
+        "favoriteTemplates",
+        JSON.stringify(Array.from(newFavorites)),
+      );
+    },
+    [favorites],
+  );
 
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
@@ -115,7 +120,9 @@ export function TemplatesGallery() {
 
           // Tag Filter (AND logic)
           if (selectedTags.length > 0) {
-            const hasAllTags = selectedTags.every((tag) => t.tags?.includes(tag));
+            const hasAllTags = selectedTags.every((tag) =>
+              t.tags?.includes(tag),
+            );
             if (!hasAllTags) return false;
           }
 
@@ -125,7 +132,8 @@ export function TemplatesGallery() {
           switch (sortOption) {
             case "newest":
               return (
-                new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
+                new Date(b.date || "").getTime() -
+                new Date(a.date || "").getTime()
               );
             case "popular":
               return (b.popularity || 0) - (a.popularity || 0);
@@ -350,7 +358,7 @@ export function TemplatesGallery() {
         open={!!previewTemplate}
         onOpenChange={(open) => !open && setPreviewTemplate(null)}
       >
-        <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 overflow-hidden bg-muted/50 border-none">
+        <DialogContent className="max-w-4xl w-[90vw] h-[70vh] p-0 overflow-hidden bg-muted/50 border-none rounded-lg">
           <DialogTitle className="sr-only">
             {previewTemplate?.name} Preview
           </DialogTitle>

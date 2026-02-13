@@ -7,9 +7,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { FileText, Layout, Zap, Menu } from "lucide-react";
+import { FileText, Layout, Zap, Menu, X } from "lucide-react";
 
 export function Navbar() {
   const navLinks = [
@@ -78,23 +79,30 @@ export function Navbar() {
                   </SheetTrigger>
                   <SheetContent
                     side="right"
+                    hideClose
                     className="w-75 sm:w-87.5 px-0 border-l flex flex-col bg-background/95 backdrop-blur-md"
                   >
                     <div className="flex flex-col h-full">
                       {/* Drawer Header */}
-                      <SheetHeader className="px-6 py-6 border-b text-left space-y-0">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-                            <FileText className="h-5 w-5" />
+                      <SheetHeader className="px-6 py-8 border-b text-left space-y-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="flex flex-col">
+                              <SheetTitle className="font-bold text-xl tracking-tight leading-none text-foreground">
+                                PrivateCV
+                              </SheetTitle>
+                              <SheetDescription className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1 font-semibold">
+                                Privacy-First
+                              </SheetDescription>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <SheetTitle className="font-bold text-xl tracking-tight leading-none text-foreground">
-                              PrivateCV
-                            </SheetTitle>
-                            <SheetDescription className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1 font-semibold">
-                              Privacy-First
-                            </SheetDescription>
-                          </div>
+                          <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                            <X className="h-5 w-5" />
+                            <span className="sr-only">Close</span>
+                          </SheetClose>
                         </div>
                       </SheetHeader>
 
