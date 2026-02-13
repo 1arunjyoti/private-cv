@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import { parseLLMJson } from "@/lib/llm/json";
 import { buildATSAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
@@ -171,21 +172,9 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
   }, [resume, redaction.stripContactInfo]);
 
   const parseLLMOutput = useCallback((output: string) => {
-    const trimmed = output.trim();
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      const codeBlockMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
-      if (codeBlockMatch?.[1]) {
-        try { return JSON.parse(codeBlockMatch[1].trim()); } catch { /* fall through */ }
-      }
-      const start = trimmed.indexOf("{");
-      const end = trimmed.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        try { return JSON.parse(trimmed.slice(start, end + 1)); } catch { /* fall through */ }
-      }
-      return null;
-    }
+    return parseLLMJson<Record<string, unknown>>(output, {
+      sanitizeMultilineStrings: true,
+    });
   }, []);
 
   const handleAIAnalysis = useCallback(async () => {

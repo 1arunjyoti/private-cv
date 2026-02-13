@@ -32,6 +32,7 @@ import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { useResumeStore } from "@/store/useResumeStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import { buildLinkedInParsingPrompt } from "@/lib/llm/prompts";
+import { redactContactInfo } from "@/lib/llm/redaction";
 import { parseLLMImportOutput } from "@/lib/import/ai-enhance";
 import {
   importService,
@@ -71,6 +72,7 @@ export function LinkedInImport({
   const providerId = useLLMSettingsStore((state) => state.providerId);
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
+  const redaction = useLLMSettingsStore((state) => state.redaction);
   const updateCurrentResume = useResumeStore(
     (state) => state.updateCurrentResume,
   );
@@ -95,8 +97,11 @@ export function LinkedInImport({
     setParsedData(null);
 
     try {
+      const sanitizedInput = redaction.stripContactInfo
+        ? redactContactInfo(inputText)
+        : inputText;
       const output = await result.provider.generateText(result.apiKey, {
-        prompt: buildLinkedInParsingPrompt(inputText),
+        prompt: buildLinkedInParsingPrompt(sanitizedInput),
         temperature: 0.3,
         maxTokens: 4096,
       });
@@ -108,7 +113,7 @@ export function LinkedInImport({
     } finally {
       setIsProcessing(false);
     }
-  }, [inputText, providerId, apiKeys, consent]);
+  }, [inputText, providerId, apiKeys, consent, redaction.stripContactInfo]);
 
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>, type: "csv" | "pdf") => {

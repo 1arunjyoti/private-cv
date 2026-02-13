@@ -21,6 +21,7 @@ import type { Resume } from "@/db";
 import { extractKeywords, checkLikelyMatch } from "@/lib/text-processing";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import { parseLLMJson } from "@/lib/llm/json";
 import { buildJobMatchAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 import { useResumeStore } from "@/store/useResumeStore";
@@ -193,78 +194,32 @@ export function JobMatcher({ resume }: JobMatcherProps) {
   }, [resume, redaction.stripContactInfo]);
 
   const parseLLMOutput = useCallback((output: string) => {
-    const sanitizeJsonString = (text: string) => {
-      let result = "";
-      let inString = false;
-      let escaped = false;
-      for (let i = 0; i < text.length; i += 1) {
-        const char = text[i];
-        if (char === "\\" && inString && !escaped) {
-          escaped = true;
-          result += char;
-          continue;
-        }
-        if (char === "\"" && !escaped) {
-          inString = !inString;
-          result += char;
-          continue;
-        }
-        if (inString && (char === "\n" || char === "\r")) {
-          result += "\\n";
-        } else {
-          result += char;
-        }
-        escaped = false;
-      }
-      return result;
-    };
-
     const trimmed = output.trim();
-    const tryParse = (text: string) => JSON.parse(text);
-
-    try {
-      return tryParse(sanitizeJsonString(trimmed));
-    } catch {
-      const codeBlockMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
-      if (codeBlockMatch?.[1]) {
-        try {
-          return tryParse(sanitizeJsonString(codeBlockMatch[1].trim()));
-        } catch {
-          // fall through
-        }
-      }
-
-      const start = trimmed.indexOf("{");
-      const end = trimmed.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        try {
-          return tryParse(
-            sanitizeJsonString(trimmed.slice(start, end + 1)),
-          );
-        } catch {
-          // fall through
-        }
-      }
-
-      const summaryMatch = trimmed.match(
-        /summary\s*:\s*([\s\S]*?)(?:keywords\s*:|$)/i,
-      );
-      const keywordsMatch = trimmed.match(/keywords?\s*:\s*([\s\S]*)/i);
-
-      const summary = summaryMatch?.[1]?.trim() || "";
-      const keywordsRaw = keywordsMatch?.[1]?.trim() || "";
-      const keywords = keywordsRaw
-        ? keywordsRaw
-            .split(/[\n,]/)
-            .map((line) => line.replace(/^[-•]\s*/, "").trim())
-            .filter(Boolean)
-        : [];
-
-      return {
-        summary: summary || trimmed,
-        keywords,
-      };
+    const parsed = parseLLMJson<Record<string, unknown>>(trimmed, {
+      sanitizeMultilineStrings: true,
+    });
+    if (parsed) {
+      return parsed;
     }
+
+    const summaryMatch = trimmed.match(
+      /summary\s*:\s*([\s\S]*?)(?:keywords\s*:|$)/i,
+    );
+    const keywordsMatch = trimmed.match(/keywords?\s*:\s*([\s\S]*)/i);
+
+    const summary = summaryMatch?.[1]?.trim() || "";
+    const keywordsRaw = keywordsMatch?.[1]?.trim() || "";
+    const keywords = keywordsRaw
+      ? keywordsRaw
+          .split(/[\n,]/)
+          .map((line) => line.replace(/^[-•]\s*/, "").trim())
+          .filter(Boolean)
+      : [];
+
+    return {
+      summary: summary || trimmed,
+      keywords,
+    };
   }, []);
 
   const handleLLMAnalyze = useCallback(async () => {

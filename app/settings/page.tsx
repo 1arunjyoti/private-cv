@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,19 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { LLM_PROVIDERS, getProvider } from "@/lib/llm/providers";
+import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import { buildSummaryPrompt } from "@/lib/llm/prompts";
+import { redactContactInfo } from "@/lib/llm/redaction";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ArrowLeft, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
+import {
+  ArrowLeft,
+  Settings,
+  ChevronUp,
+  Cloud,
+  Link2Off,
+  AlertTriangle,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,6 +51,23 @@ export default function SettingsPage() {
 
   const provider = useMemo(() => getProvider(providerId), [providerId]);
   const currentKey = apiKeys[providerId] || "";
+  const syncProviderId = useSyncStore((state) => state.providerId);
+  const syncStatus = useSyncStore((state) => state.status);
+  const syncLinkedAccount = useSyncStore((state) => state.linkedAccount);
+  const syncError = useSyncStore((state) => state.error);
+  const syncAuth = useSyncStore((state) => state.auth);
+  const syncLastSyncAt = useSyncStore((state) => state.lastSyncAt);
+  const syncEncryptionEnabled = useSyncStore((state) => state.encryptionEnabled);
+  const syncPassphrase = useSyncStore((state) => state.passphrase);
+  const setSyncProvider = useSyncStore((state) => state.setProvider);
+  const setSyncEncryptionEnabled = useSyncStore((state) => state.setEncryptionEnabled);
+  const setSyncPassphrase = useSyncStore((state) => state.setPassphrase);
+  const connectSync = useSyncStore((state) => state.connect);
+  const disconnectSync = useSyncStore((state) => state.disconnect);
+  const loadLinkedAccount = useSyncStore((state) => state.loadLinkedAccount);
+  const deleteCloudData = useSyncStore((state) => state.deleteCloudData);
+  const syncNow = useSyncStore((state) => state.syncNow);
+  const restoreFromCloud = useSyncStore((state) => state.restoreFromCloud);
 
   const [validationStatus, setValidationStatus] = useState<
     "idle" | "validating" | "valid" | "invalid"
@@ -53,32 +80,41 @@ export default function SettingsPage() {
   const [testOutput, setTestOutput] = useState("");
   const [testError, setTestError] = useState("");
   const [isTesting, setIsTesting] = useState(false);
-  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(true);
+  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isCloudSyncEnabled) return;
+    if (!syncAuth) return;
+    if (syncLinkedAccount?.email || syncLinkedAccount?.displayName) return;
+    loadLinkedAccount().catch(() => {
+      // Non-blocking metadata fetch.
+    });
+  }, [syncAuth, syncLinkedAccount, loadLinkedAccount]);
 
   const handleValidate = async () => {
-    if (!provider || provider.status !== "ready") {
+    const result = ensureLLMProvider({
+      providerId,
+      apiKeys,
+      consent,
+      requiredConsent: null,
+    });
+    if ("error" in result) {
       setValidationStatus("invalid");
-      setValidationMessage("Selected provider is not available yet.");
-      return;
-    }
-    const requiresKey = !(providerId === "local" && localApiType !== "huggingface");
-    if (requiresKey && !currentKey) {
-      setValidationStatus("invalid");
-      setValidationMessage("Please provide an API key.");
+      setValidationMessage(result.error);
       return;
     }
     setValidationStatus("validating");
     setValidationMessage("");
     try {
-      const isValid = await provider.validateKey(currentKey);
+      const isValid = await result.provider.validateKey(result.apiKey);
       setValidationStatus(isValid ? "valid" : "invalid");
-      if (isValid) {
-        setValidationMessage(
-          providerId === "local"
-            ? `Connected to ${localApiType} at ${localEndpoint} (${localModel})`
-            : `${provider.label} connected successfully.`
-        );
-      } else {
+        if (isValid) {
+          setValidationMessage(
+            providerId === "local"
+              ? `Connected to ${localApiType} at ${localEndpoint} (${localModel})`
+              : `${result.provider.label} connected successfully.`
+          );
+        } else {
         setValidationMessage(
           providerId === "local"
             ? `Connection failed. Check: endpoint=${localEndpoint}, model=${localModel}, type=${localApiType}`
@@ -92,21 +128,25 @@ export default function SettingsPage() {
   };
 
   const handleTestSummary = async () => {
-    if (!provider || provider.status !== "ready") {
-      setTestError("Selected provider is not available yet.");
-      return;
-    }
-    const requiresKey = !(providerId === "local" && localApiType !== "huggingface");
-    if (requiresKey && !currentKey) {
-      setTestError("Please provide an API key first.");
+    const result = ensureLLMProvider({
+      providerId,
+      apiKeys,
+      consent,
+      requiredConsent: "generation",
+    });
+    if ("error" in result) {
+      setTestError(result.error);
       return;
     }
     setIsTesting(true);
     setTestError("");
     setTestOutput("");
     try {
-      const output = await provider.generateText(currentKey, {
-        prompt: buildSummaryPrompt(testInput),
+      const sanitizedInput = redaction.stripContactInfo
+        ? redactContactInfo(testInput)
+        : testInput;
+      const output = await result.provider.generateText(result.apiKey, {
+        prompt: buildSummaryPrompt(sanitizedInput),
         temperature: 0.5,
         maxTokens: 256,
       });
@@ -129,7 +169,7 @@ export default function SettingsPage() {
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-semibold text-lg flex items-center gap-2 whitespace-nowrap">
             <Settings className="h-5 w-5" />
-            <span className="">LLM Settings</span>
+            <span className="">Settings</span>
             <Badge variant="outline" className="ml-1">Beta</Badge>
           </div>
 
@@ -174,6 +214,151 @@ export default function SettingsPage() {
               </p>
             </CardContent>
           )}
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Cloud className="h-5 w-5" />
+              Cloud Sync (BYOS)
+              <Badge variant="outline">Beta</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {!isCloudSyncEnabled ? (
+              <p className="text-sm text-muted-foreground">
+                Cloud sync is disabled in this build. Set
+                `NEXT_PUBLIC_ENABLE_CLOUD_SYNC=true` to enable.
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="syncProvider">Provider</Label>
+                  <Select
+                    value={syncProviderId}
+                    onValueChange={(value) =>
+                      setSyncProvider(value as typeof syncProviderId)
+                    }
+                  >
+                    <SelectTrigger id="syncProvider" className="w-full">
+                      <SelectValue placeholder="Select a cloud provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google-drive">Google Drive</SelectItem>
+                      <SelectItem value="dropbox" disabled>
+                        Dropbox (coming soon)
+                      </SelectItem>
+                      <SelectItem value="onedrive" disabled>
+                        OneDrive (coming soon)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {!syncAuth ? (
+                    <Button onClick={connectSync}>Connect Google Drive</Button>
+                  ) : (
+                    <Button variant="outline" onClick={disconnectSync}>
+                      <Link2Off className="h-4 w-4" />
+                      Disconnect
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={syncNow}
+                    disabled={!syncAuth || syncStatus === "syncing"}
+                  >
+                    {syncStatus === "syncing" ? "Syncing..." : "Sync now"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={restoreFromCloud}
+                    disabled={!syncAuth || syncStatus === "syncing"}
+                  >
+                    Restore from cloud
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const ok = window.confirm(
+                        "Delete cloud backup data? This removes the sync file content from your cloud account.",
+                      );
+                      if (ok) {
+                        deleteCloudData();
+                      }
+                    }}
+                    disabled={!syncAuth || syncStatus === "syncing"}
+                  >
+                    Delete cloud backup
+                  </Button>
+                </div>
+
+                <div className="rounded-md border bg-muted/20 p-3 text-sm">
+                  <p className="font-medium">
+                    Status:{" "}
+                    <span className="text-muted-foreground">{syncStatus}</span>
+                  </p>
+                  {syncLinkedAccount?.email ? (
+                    <p className="text-muted-foreground">
+                      Connected account: {syncLinkedAccount.email}
+                    </p>
+                  ) : null}
+                  {!syncLinkedAccount?.email &&
+                  syncLinkedAccount?.displayName ? (
+                    <p className="text-muted-foreground">
+                      Connected account: {syncLinkedAccount.displayName}
+                    </p>
+                  ) : null}
+                  {syncLastSyncAt ? (
+                    <p className="text-muted-foreground">
+                      Last sync: {new Date(syncLastSyncAt).toLocaleString()}
+                    </p>
+                  ) : null}
+                  {syncError ? (
+                    <p className="mt-2 flex items-start gap-2 text-destructive">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{syncError}</span>
+                    </p>
+                  ) : null}
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label>Encrypt cloud file</Label>
+                    <p className="text-xs text-muted-foreground">
+                      If enabled, cloud data is encrypted with your passphrase.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={syncEncryptionEnabled}
+                    onCheckedChange={setSyncEncryptionEnabled}
+                  />
+                </div>
+
+                {syncEncryptionEnabled ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="syncPassphrase">Passphrase</Label>
+                    <Input
+                      id="syncPassphrase"
+                      type="password"
+                      placeholder="Enter passphrase for this session"
+                      value={syncPassphrase}
+                      onChange={(event) =>
+                        setSyncPassphrase(event.target.value)
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Passphrase is never stored. If lost, encrypted cloud
+                      backups cannot be recovered.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </CardContent>
         </Card>
 
         <Card>
@@ -255,7 +440,13 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground">
                 {providerId === "local" && localApiType !== "huggingface"
                   ? "API key not required for local models (Ollama, LM Studio, OpenAI-compatible)."
-                  : "Google keys must allow browser usage and have the Generative Language API enabled."}
+                  : providerId === "google"
+                    ? "Google keys must allow browser usage and have the Generative Language API enabled."
+                    : providerId === "openai"
+                      ? "OpenAI API key must be active in a project with available quota/billing."
+                      : providerId === "anthropic"
+                        ? "Anthropic API key must be active and enabled for the selected workspace/project."
+                        : "Hugging Face Inference API key is required for Hugging Face local mode."}
               </p>
             </div>
 

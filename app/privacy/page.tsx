@@ -42,7 +42,7 @@ export default function PrivacyPage() {
               <PrivacyAspect
                 icon={<Database className="h-8 w-8 text-primary" />}
                 title="Browser-Based Storage"
-                description="Your resumes, photos, and personal details are stored inside your browser's IndexedDB. We never transfer this data to any external server."
+                description="Your resumes, photos, and personal details are stored inside your browser's IndexedDB by default. We never transfer this data to our own server."
               />
               <PrivacyAspect
                 icon={<CloudOff className="h-8 w-8 text-primary" />}
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
                 />
                 <FAQItem
                   question="How do I backup my data?"
-                  answer="Since we don't store your data, we recommend using the 'Export JSON' feature in the editor. This downloads a local file to your computer that you can re-import later if you switch devices or browsers."
+                  answer="You can use 'Export JSON' for local backups. You can also optionally enable BYOS Cloud Sync in Settings to store a sync file in your own Google Drive account. If you enable encryption, keep your passphrase safe, because lost passphrases cannot be recovered."
                 />
                 <FAQItem
                   question="Is it open source?"

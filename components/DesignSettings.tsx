@@ -111,6 +111,18 @@ export function DesignSettings() {
     });
   };
 
+  const updateSettings = (settings: Partial<LayoutSettings>) => {
+    updateCurrentResume({
+      meta: {
+        ...currentResume.meta,
+        layoutSettings: {
+          ...layoutSettings,
+          ...settings,
+        },
+      },
+    });
+  };
+
   const updateThemeColor = (color: string) => {
     updateCurrentResume({
       meta: {
@@ -171,6 +183,7 @@ export function DesignSettings() {
           <PageLayoutSettings
             layoutSettings={layoutSettings}
             updateSetting={updateSetting}
+            updateSettings={updateSettings}
             isOpen={openSections.layout}
             onToggle={() => toggleSection("layout")}
             templateId={currentResume.meta.templateId}

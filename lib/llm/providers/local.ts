@@ -3,7 +3,7 @@ import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 
 type ChatCompletionResponse = {
   choices?: Array<{
-    message?: { content?: string };
+    message?: { content?: string | Array<{ text?: string }> };
   }>;
   error?: { message?: string };
 };
@@ -17,6 +17,70 @@ type HuggingFaceResponse =
   | { generated_text?: string }
   | Array<{ generated_text?: string }>
   | { error?: string };
+
+function normalizeEndpoint(endpoint: string): string {
+  try {
+    const url = new URL(endpoint);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error("unsupported protocol");
+    }
+    return endpoint.replace(/\/$/, "");
+  } catch {
+    throw new Error("Local endpoint must be a valid http(s) URL.");
+  }
+}
+
+async function readResponseBody(response: Response): Promise<unknown> {
+  const raw = await response.text();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function extractErrorMessage(body: unknown, fallback: string): string {
+  if (!body) return fallback;
+  if (typeof body === "string") {
+    const trimmed = body.trim();
+    return trimmed ? trimmed.slice(0, 500) : fallback;
+  }
+  if (typeof body === "object") {
+    const value = body as {
+      message?: string;
+      error?: string | { message?: string };
+    };
+    if (typeof value.error === "string" && value.error.trim()) {
+      return value.error.trim();
+    }
+    if (
+      value.error &&
+      typeof value.error === "object" &&
+      typeof value.error.message === "string" &&
+      value.error.message.trim()
+    ) {
+      return value.error.message.trim();
+    }
+    if (typeof value.message === "string" && value.message.trim()) {
+      return value.message.trim();
+    }
+  }
+  return fallback;
+}
+
+function extractChatMessageContent(
+  content: string | Array<{ text?: string }> | undefined,
+): string {
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => (typeof part?.text === "string" ? part.text : ""))
+      .join("\n")
+      .trim();
+  }
+  return "";
+}
 
 /**
  * Build OpenAI-compatible chat completions URL
@@ -65,9 +129,10 @@ async function requestLocalGenerate(
   if (!localModel) {
     throw new Error("Local model is not configured.");
   }
+  const endpoint = normalizeEndpoint(localEndpoint);
 
   if (localApiType === "ollama") {
-    const url = buildOllamaUrl(localEndpoint);
+    const url = buildOllamaUrl(endpoint);
     const prompt = input.system
       ? `${input.system}\n\n${input.prompt}`
       : input.prompt;
@@ -85,11 +150,15 @@ async function requestLocalGenerate(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = (await response.json()) as OllamaResponse;
+    const responseBody = await readResponseBody(response);
     if (!response.ok) {
-      const message = data.error || "Ollama request failed.";
+      const message = extractErrorMessage(responseBody, "Ollama request failed.");
       throw new Error(`Local model error (${response.status}): ${message}`);
     }
+    if (!responseBody || typeof responseBody !== "object") {
+      throw new Error("Local model returned an invalid response format.");
+    }
+    const data = responseBody as OllamaResponse;
     const text = data.response?.trim();
     if (!text) {
       throw new Error("Local model returned an empty response.");
@@ -101,45 +170,48 @@ async function requestLocalGenerate(
     // Both LM Studio and OpenAI use the same endpoint structure
     // LM Studio: http://localhost:1234/v1/chat/completions (OpenAI-compatible)
     // OpenAI-compatible APIs: <endpoint>/v1/chat/completions
-    const url = localApiType === "lmstudio" 
-      ? buildLMStudioUrl(localEndpoint)
-      : buildOpenAIUrl(localEndpoint);
-    
+    const url = localApiType === "lmstudio"
+      ? buildLMStudioUrl(endpoint)
+      : buildOpenAIUrl(endpoint);
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (localApiType === "openai" && apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+
     const messages = [
       input.system ? { role: "system", content: input.system } : null,
       { role: "user", content: input.prompt },
     ].filter(Boolean);
-    
+
     const body = {
       model: localModel,
       messages,
       temperature: input.temperature ?? 0.5,
       max_tokens: input.maxTokens ?? 512,
     };
-    
-    console.log(`[LLM] Sending request to ${url}`, {
-      model: localModel,
-      messageCount: messages.length,
-    });
-    
+
     const response = await fetch(url, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
-    
-    console.log(`[LLM] Response status: ${response.status}`);
-    
+
+    const responseBody = await readResponseBody(response);
     if (!response.ok) {
-      const data = (await response.json().catch(() => ({}))); 
-      const message = data.error?.message || `Request failed with status ${response.status}`;
+      const message = extractErrorMessage(
+        responseBody,
+        `Request failed with status ${response.status}`,
+      );
       throw new Error(`Local model error (${response.status}): ${message}`);
     }
-    
-    const data = (await response.json()) as ChatCompletionResponse;
-    const text = data.choices?.[0]?.message?.content?.trim();
+
+    if (!responseBody || typeof responseBody !== "object") {
+      throw new Error("Local model returned an invalid response format.");
+    }
+    const data = responseBody as ChatCompletionResponse;
+    const text = extractChatMessageContent(data.choices?.[0]?.message?.content);
     if (!text) {
       throw new Error("Local model returned an empty response.");
     }
@@ -150,7 +222,7 @@ async function requestLocalGenerate(
     if (!apiKey) {
       throw new Error("Hugging Face API key is required.");
     }
-    const url = buildHuggingFaceUrl(localEndpoint, localModel);
+    const url = buildHuggingFaceUrl(endpoint, localModel);
     const body = {
       inputs: input.system
         ? `${input.system}\n\n${input.prompt}`
@@ -169,14 +241,18 @@ async function requestLocalGenerate(
       },
       body: JSON.stringify(body),
     });
-    const data = (await response.json()) as HuggingFaceResponse;
+    const responseBody = await readResponseBody(response);
     if (!response.ok) {
-      const message =
-        "error" in data && data.error
-          ? data.error
-          : "Hugging Face request failed.";
+      const message = extractErrorMessage(
+        responseBody,
+        "Hugging Face request failed.",
+      );
       throw new Error(`Local model error (${response.status}): ${message}`);
     }
+    if (!responseBody || typeof responseBody !== "object") {
+      throw new Error("Local model returned an invalid response format.");
+    }
+    const data = responseBody as HuggingFaceResponse;
     const text =
       Array.isArray(data) && data[0]?.generated_text
         ? data[0].generated_text

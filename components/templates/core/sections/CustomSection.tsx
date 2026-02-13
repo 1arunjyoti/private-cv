@@ -3,9 +3,9 @@
  */
 
 import React from "react";
-import { View, Text, Link, StyleSheet } from "@react-pdf/renderer";
+import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { CustomSection as CustomSectionType, LayoutSettings } from "@/db";
-import { SectionHeading, RichText } from "../primitives";
+import { SectionHeading, RichText, EntryHeader } from "../primitives";
 import type {
   FontConfig,
   GetColorFn,
@@ -113,12 +113,6 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
     },
   });
 
-  const getListPrefix = (index: number): string => {
-    if (listStyle === "bullet") return "•";
-    if (listStyle === "number") return `${index + 1}.`;
-    return "";
-  };
-
   // Resolve effective link style
   const effectiveLinkStyle =
     settings.sectionLinkStyle ||
@@ -151,67 +145,29 @@ export const CustomSection: React.FC<CustomSectionProps> = ({
           )}
 
           {section.items.map((item, index) => {
-            const prefix = getListPrefix(index);
-
             return (
               <View key={item.id} style={styles.entryBlock}>
-                <View style={styles.headerRow}>
-                  <View style={styles.nameRow}>
-                    {prefix && <Text style={styles.listPrefix}>{prefix}</Text>}
-
-                    {/* Name (Link if underline style) */}
-                    {item.url && effectiveLinkStyle === "underline" ? (
-                      <Link src={item.url} style={{ textDecoration: "none" }}>
-                        <Text
-                          style={[styles.name, { textDecoration: "underline" }]}
-                        >
-                          {item.name}
-                        </Text>
-                      </Link>
-                    ) : (
-                      <Text style={styles.name}>{item.name}</Text>
-                    )}
-
-                    {/* Inline URL or Icon */}
-                    {item.url &&
-                      (effectiveLinkStyle === "inline" ||
-                        effectiveLinkStyle === "icon") && (
-                        <Link src={item.url} style={{ textDecoration: "none" }}>
-                          <Text
-                            style={{
-                              fontSize: fontSize - 1,
-                              color: linkColor,
-                              marginLeft: 4,
-                              fontWeight: settings.customSectionUrlBold
-                                ? "bold"
-                                : "normal",
-                              fontStyle: settings.customSectionUrlItalic
-                                ? "italic"
-                                : "normal",
-                            }}
-                          >
-                            {effectiveLinkStyle === "inline"
-                              ? `  ${item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
-                              : " 🔗"}
-                          </Text>
-                        </Link>
-                      )}
-                  </View>
-                  {item.date && <Text style={styles.date}>{item.date}</Text>}
-                </View>
-
-                {item.description && (
-                  <Text style={styles.description}>{item.description}</Text>
-                )}
-
-                {/* Newline/Below URL */}
-                {item.url && effectiveLinkStyle === "newline" && (
-                  <Link src={item.url} style={styles.url}>
-                    <Text style={styles.url}>
-                      {item.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                    </Text>
-                  </Link>
-                )}
+                <EntryHeader
+                  title={item.name}
+                  subtitle={item.description}
+                  dateRange={item.date}
+                  url={item.url}
+                  layoutStyle={1}
+                  fontSize={fontSize}
+                  fonts={fonts}
+                  getColor={getColor}
+                  titleBold={settings.customSectionNameBold}
+                  titleItalic={settings.customSectionNameItalic}
+                  subtitleBold={settings.customSectionDescriptionBold}
+                  subtitleItalic={settings.customSectionDescriptionItalic}
+                  dateBold={settings.customSectionDateBold}
+                  dateItalic={settings.customSectionDateItalic}
+                  urlBold={settings.customSectionUrlBold}
+                  urlItalic={settings.customSectionUrlItalic}
+                  listStyle={listStyle}
+                  index={index}
+                  sectionLinkStyle={settings.sectionLinkStyle}
+                />
 
                 {item.summary && (
                   <RichText

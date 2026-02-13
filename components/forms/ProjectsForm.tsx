@@ -10,15 +10,16 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import {
+  generatePromptTextAction,
+  generateSectionSummaryAction,
+  improveSectionTextAction,
+  grammarCheckSectionTextAction,
+} from "@/lib/llm/form-actions";
 import {
   buildHighlightsPrompt,
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
   buildBulletQuantifierPrompt,
 } from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
 interface ProjectsFormProps {
@@ -191,40 +192,24 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
   const handleGenerateDescription = useCallback(
     async (proj: Project) => {
-      const result = ensureProvider("generation");
       setLlmErrors((prev) => ({ ...prev, [proj.id]: "" }));
       setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("project", buildInput(proj));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
+      const result = await generateSectionSummaryAction({
+        provider: { providerId, apiKeys, consent },
+        section: "project",
+        input: buildInput(proj),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
+      } else {
+        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   const handleImproveDescription = useCallback(
@@ -238,31 +223,25 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(proj.description)
-          : proj.description;
-        const context = buildInput(proj);
-        const prompt = buildRewritePrompt("project description", raw, tone, context);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(proj.description)
+        : proj.description;
+      const result = await improveSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "project description",
+        text: raw,
+        tone,
+        context: buildInput(proj),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
+      } else {
+        setGeneratedDescriptions((prev) => ({ ...prev, [proj.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
     },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
+    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
   );
 
   const handleGrammarDescription = useCallback(
@@ -276,74 +255,54 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(proj.description)
-          : proj.description;
-        const prompt = buildGrammarPrompt("project description", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [proj.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [proj.id]: "✓ No grammar issues found." }));
-          return;
-        }
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(proj.description)
+        : proj.description;
+      const result = await grammarCheckSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "project description",
+        text: raw,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
+      } else if (result.noChanges) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: "✓ No grammar issues found." }));
+      } else {
         setGeneratedDescriptions((prev) => ({
           ...prev,
-          [proj.id]: grammarResult.text || "",
+          [proj.id]: result.text,
         }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
       }
+      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
     },
-    [ensureProvider, redaction.stripContactInfo],
+    [apiKeys, consent, providerId, redaction.stripContactInfo],
   );
 
   const handleGenerateHighlights = useCallback(
     async (proj: Project) => {
-      const result = ensureProvider();
       setLlmErrors((prev) => ({ ...prev, [proj.id]: "" }));
       setGeneratedHighlights((prev) => ({ ...prev, [proj.id]: [] }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [proj.id]: true }));
-      try {
-        const prompt = buildHighlightsPrompt("project", buildInput(proj));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        const bullets = output
+      const result = await generatePromptTextAction({
+        provider: { providerId, apiKeys, consent },
+        requiredConsent: "generation",
+        prompt: buildHighlightsPrompt("project", buildInput(proj)),
+        temperature: 0.5,
+        maxTokens: 256,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
+      } else {
+        const bullets = result.text
           .split("\n")
           .map((line) => line.replace(/^[-•]\s*/, "").trim())
           .filter(Boolean);
         setGeneratedHighlights((prev) => ({ ...prev, [proj.id]: bullets }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
       }
+      setIsGenerating((prev) => ({ ...prev, [proj.id]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   const handleQuantifyBullet = useCallback(
@@ -351,29 +310,23 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
       const bullet = proj.highlights[bulletIndex];
       if (!bullet?.trim()) return;
       const key = `${proj.id}-${bulletIndex}`;
-      const result = ensureProvider("rewriting");
       setQuantifiedBullets((prev) => ({ ...prev, [key]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
-        return;
-      }
       setIsQuantifying((prev) => ({ ...prev, [key]: true }));
-      try {
-        const context = buildInput(proj);
-        const prompt = buildBulletQuantifierPrompt(bullet, context);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 128,
-        });
-        setQuantifiedBullets((prev) => ({ ...prev, [key]: output.trim() }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [proj.id]: (err as Error).message }));
-      } finally {
-        setIsQuantifying((prev) => ({ ...prev, [key]: false }));
+      const result = await generatePromptTextAction({
+        provider: { providerId, apiKeys, consent },
+        requiredConsent: "rewriting",
+        prompt: buildBulletQuantifierPrompt(bullet, buildInput(proj)),
+        temperature: 0.5,
+        maxTokens: 128,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
+      } else {
+        setQuantifiedBullets((prev) => ({ ...prev, [key]: result.text.trim() }));
       }
+      setIsQuantifying((prev) => ({ ...prev, [key]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   return (

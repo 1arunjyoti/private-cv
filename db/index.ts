@@ -343,6 +343,9 @@ export interface AppSettings {
   theme?: 'light' | 'dark' | 'system';
   defaultTemplateId?: string;
   value?: string;
+  // Cloud sync metadata keys are stored in settings table via persisted stores.
+  // Known ids: sync.provider, sync.remoteFileId, sync.remoteEtag, sync.lastSyncAt,
+  // sync.encryptionEnabled, sync.deviceId, sync.auth, cloud-sync-settings.
 }
 
 // Dexie database definition

@@ -30,6 +30,7 @@ import { LayoutSettings, LayoutSettingValue } from "../types";
 interface PageLayoutSettingsProps {
   layoutSettings: LayoutSettings;
   updateSetting: (key: keyof LayoutSettings, value: LayoutSettingValue) => void;
+  updateSettings?: (settings: Partial<LayoutSettings>) => void;
   isOpen: boolean;
   onToggle: () => void;
   templateId: string;
@@ -38,6 +39,7 @@ interface PageLayoutSettingsProps {
 export function PageLayoutSettings({
   layoutSettings,
   updateSetting,
+  updateSettings,
   isOpen,
   onToggle,
   templateId,
@@ -79,6 +81,29 @@ export function PageLayoutSettings({
     }
 
     // Fallback: Use sectionOrder logic (Legacy/Single Column)
+    // BUT check if we are in multi-column mode (columnCount > 1) without explicit settings
+    // This happens during transitions or initial setup of multi-column
+    if ((layoutSettings.columnCount || 1) > 1) {
+      // Start with clean slate based on config defaults but using current sectionOrder
+      const currentOrder = layoutSettings.sectionOrder || [];
+      const allSectionIds = SECTIONS.map((s) => s.id);
+      const validOrder = currentOrder.filter((id) =>
+        allSectionIds.includes(id),
+      );
+      const missingIds = allSectionIds.filter((id) => !validOrder.includes(id));
+      const fullOrder = [...validOrder, ...missingIds];
+
+      const defaultLeft = config.leftColumnSections || [];
+      const defaultMiddle = config.middleColumnSections || [];
+
+      const left = fullOrder.filter((id) => defaultLeft.includes(id));
+      const middle = fullOrder.filter((id) => defaultMiddle.includes(id));
+      const right = fullOrder.filter(
+        (id) => !defaultLeft.includes(id) && !defaultMiddle.includes(id),
+      );
+
+      return { left, middle, right };
+    }
     const currentOrder = layoutSettings.sectionOrder || [];
     const allSectionIds = SECTIONS.map((s) => s.id);
     const validOrder = currentOrder.filter((id) => allSectionIds.includes(id));
@@ -258,14 +283,27 @@ export function PageLayoutSettings({
       );
     }
 
-    updateSetting("leftColumnSections", finalColumns.left);
-    updateSetting("middleColumnSections", finalColumns.middle);
-    updateSetting("rightColumnSections", finalColumns.right);
-    updateSetting("sectionOrder", [
-      ...finalColumns.left,
-      ...finalColumns.middle,
-      ...finalColumns.right,
-    ]);
+    if (updateSettings) {
+      updateSettings({
+        leftColumnSections: finalColumns.left,
+        middleColumnSections: finalColumns.middle,
+        rightColumnSections: finalColumns.right,
+        sectionOrder: [
+          ...finalColumns.left,
+          ...finalColumns.middle,
+          ...finalColumns.right,
+        ],
+      });
+    } else {
+      updateSetting("leftColumnSections", finalColumns.left);
+      updateSetting("middleColumnSections", finalColumns.middle);
+      updateSetting("rightColumnSections", finalColumns.right);
+      updateSetting("sectionOrder", [
+        ...finalColumns.left,
+        ...finalColumns.middle,
+        ...finalColumns.right,
+      ]);
+    }
   };
 
   const handleMoveSection = (id: string, direction: "up" | "down") => {
@@ -289,19 +327,116 @@ export function PageLayoutSettings({
       const newColumns = { ...columns, [columnKey]: newItems };
       setColumns(newColumns);
 
-      updateSetting("leftColumnSections", newColumns.left);
-      updateSetting("middleColumnSections", newColumns.middle);
-      updateSetting("rightColumnSections", newColumns.right);
-      updateSetting("sectionOrder", [
-        ...newColumns.left,
-        ...newColumns.middle,
-        ...newColumns.right,
-      ]);
+      if (updateSettings) {
+        updateSettings({
+          leftColumnSections: newColumns.left,
+          middleColumnSections: newColumns.middle,
+          rightColumnSections: newColumns.right,
+          sectionOrder: [
+            ...newColumns.left,
+            ...newColumns.middle,
+            ...newColumns.right,
+          ],
+        });
+      } else {
+        updateSetting("leftColumnSections", newColumns.left);
+        updateSetting("middleColumnSections", newColumns.middle);
+        updateSetting("rightColumnSections", newColumns.right);
+        updateSetting("sectionOrder", [
+          ...newColumns.left,
+          ...newColumns.middle,
+          ...newColumns.right,
+        ]);
+      }
     } else if (direction === "down" && index < items.length - 1) {
       const newItems = arrayMove(items, index, index + 1);
       const newColumns = { ...columns, [columnKey]: newItems };
       setColumns(newColumns);
 
+      if (updateSettings) {
+        updateSettings({
+          leftColumnSections: newColumns.left,
+          middleColumnSections: newColumns.middle,
+          rightColumnSections: newColumns.right,
+          sectionOrder: [
+            ...newColumns.left,
+            ...newColumns.middle,
+            ...newColumns.right,
+          ],
+        });
+      } else {
+        updateSetting("leftColumnSections", newColumns.left);
+        updateSetting("middleColumnSections", newColumns.middle);
+        updateSetting("rightColumnSections", newColumns.right);
+        updateSetting("sectionOrder", [
+          ...newColumns.left,
+          ...newColumns.middle,
+          ...newColumns.right,
+        ]);
+      }
+    }
+  };
+
+  const handleMoveSectionBetweenColumns = (
+    id: string,
+    direction: "left" | "right",
+  ) => {
+    // Find current column
+    let currentColumn: keyof typeof columns | null = null;
+    if (columns.left.includes(id)) currentColumn = "left";
+    else if (columns.middle.includes(id)) currentColumn = "middle";
+    else if (columns.right.includes(id)) currentColumn = "right";
+
+    if (!currentColumn) return;
+
+    // Determine target column
+    let targetColumn: keyof typeof columns | null = null;
+
+    if (effectiveColumnCount === 2) {
+      if (currentColumn === "left" && direction === "right")
+        targetColumn = "right";
+      else if (currentColumn === "right" && direction === "left")
+        targetColumn = "left";
+    } else if (effectiveColumnCount === 3) {
+      if (currentColumn === "left" && direction === "right")
+        targetColumn = "middle";
+      else if (currentColumn === "middle") {
+        targetColumn = direction === "left" ? "left" : "right";
+      } else if (currentColumn === "right" && direction === "left")
+        targetColumn = "middle";
+    }
+
+    if (!targetColumn) return;
+
+    // Move item
+    const newColumns = { ...columns };
+
+    // Remove from source
+    newColumns[currentColumn] = newColumns[currentColumn].filter(
+      (item) => item !== id,
+    );
+
+    // Add to target (append to end)
+    // Make sure we don't duplicate if it somehow exists
+    if (!newColumns[targetColumn].includes(id)) {
+      newColumns[targetColumn] = [...newColumns[targetColumn], id];
+    }
+
+    setColumns(newColumns);
+
+    if (updateSettings) {
+      updateSettings({
+        leftColumnSections: newColumns.left,
+        middleColumnSections: newColumns.middle,
+        rightColumnSections: newColumns.right,
+        sectionOrder: [
+          ...newColumns.left,
+          ...newColumns.middle,
+          ...newColumns.right,
+        ],
+      });
+    } else {
+      // Fallback for older parent components
       updateSetting("leftColumnSections", newColumns.left);
       updateSetting("middleColumnSections", newColumns.middle);
       updateSetting("rightColumnSections", newColumns.right);
@@ -414,6 +549,10 @@ export function PageLayoutSettings({
                           isLast={index === columns.left.length - 1}
                           onMoveUp={() => handleMoveSection(id, "up")}
                           onMoveDown={() => handleMoveSection(id, "down")}
+                          canMoveRight={true}
+                          onMoveRight={() =>
+                            handleMoveSectionBetweenColumns(id, "right")
+                          }
                         />
                       );
                     })}
@@ -444,6 +583,14 @@ export function PageLayoutSettings({
                           isLast={index === columns.middle.length - 1}
                           onMoveUp={() => handleMoveSection(id, "up")}
                           onMoveDown={() => handleMoveSection(id, "down")}
+                          canMoveLeft={true}
+                          onMoveLeft={() =>
+                            handleMoveSectionBetweenColumns(id, "left")
+                          }
+                          canMoveRight={true}
+                          onMoveRight={() =>
+                            handleMoveSectionBetweenColumns(id, "right")
+                          }
                         />
                       );
                     })}
@@ -475,6 +622,10 @@ export function PageLayoutSettings({
                         isLast={index === columns.right.length - 1}
                         onMoveUp={() => handleMoveSection(id, "up")}
                         onMoveDown={() => handleMoveSection(id, "down")}
+                        canMoveLeft={effectiveColumnCount > 1}
+                        onMoveLeft={() =>
+                          handleMoveSectionBetweenColumns(id, "left")
+                        }
                       />
                     );
                   })}

@@ -1,5 +1,6 @@
 import { getProvider } from "@/lib/llm/providers";
 import type { LLMProvider, LLMProviderId } from "@/lib/llm/types";
+import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 
 interface EnsureProviderSuccess {
   provider: LLMProvider;
@@ -17,8 +18,8 @@ export type EnsureProviderResult = EnsureProviderSuccess | EnsureProviderError;
  * Handles the API key check correctly: local models (lmstudio, ollama, openai-compatible)
  * do not require an API key, while cloud providers (Google, OpenAI, Anthropic) do.
  *
- * HuggingFace (accessed via the "local" provider with localApiType="huggingface") does
- * require a key, but that's enforced inside the local provider's generateText.
+ * HuggingFace (accessed via the "local" provider with localApiType="huggingface")
+ * requires an API key and is enforced here.
  */
 export function ensureLLMProvider(opts: {
   providerId: LLMProviderId;
@@ -46,9 +47,19 @@ export function ensureLLMProvider(opts: {
   }
 
   const apiKey = apiKeys[providerId]?.trim() ?? "";
+  const localApiType = useLLMSettingsStore.getState().localApiType;
+  const requiresApiKey =
+    provider.requiresApiKey ||
+    (providerId === "local" && localApiType === "huggingface");
 
   // Only require an API key if the provider needs one
-  if (provider.requiresApiKey && !apiKey) {
+  if (requiresApiKey && !apiKey) {
+    if (providerId === "local" && localApiType === "huggingface") {
+      return {
+        error:
+          "Missing API key for Hugging Face Inference. Configure it in Settings.",
+      };
+    }
     return { error: `Missing API key for ${provider.label}. Configure it in Settings.` };
   }
 

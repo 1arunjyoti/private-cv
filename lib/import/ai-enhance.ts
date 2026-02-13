@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { parseLLMJson } from "@/lib/llm/json";
 import type { ParsedResumeData } from "./types";
 
 /**
@@ -6,21 +7,17 @@ import type { ParsedResumeData } from "./types";
  * into the ParsedResumeData format used by the import system.
  */
 export function parseLLMImportOutput(output: string): ParsedResumeData {
-  // Clean up LLM output
-  const cleaned = output.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
-  // Try direct parse
   let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    // Try to extract JSON block
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) {
-      parsed = JSON.parse(match[0]);
-    } else {
+    const parsedResult = parseLLMJson<Record<string, unknown>>(output, {
+      sanitizeMultilineStrings: true,
+    });
+    if (!parsedResult) {
       throw new Error("Could not parse AI response as JSON");
     }
+    parsed = parsedResult;
+  } catch {
+    throw new Error("Could not parse AI response as JSON");
   }
 
   const data: ParsedResumeData = {};

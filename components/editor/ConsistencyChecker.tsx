@@ -24,6 +24,7 @@ import type { Resume } from "@/db";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { useResumeStore } from "@/store/useResumeStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import { parseLLMJson } from "@/lib/llm/json";
 import { buildConsistencyCheckPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
@@ -143,20 +144,12 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
         maxTokens: 2048,
       });
 
-      // Parse JSON with fallbacks
-      let parsed: { issues: ConsistencyIssue[] };
-      try {
-        const cleaned = output.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        parsed = JSON.parse(cleaned);
-      } catch {
-        // Try to find JSON block
-        const jsonMatch = output.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-        } else {
-          setError("Could not parse AI response. Please try again.");
-          return;
-        }
+      const parsed = parseLLMJson<{ issues?: ConsistencyIssue[] }>(output, {
+        sanitizeMultilineStrings: true,
+      });
+      if (!parsed) {
+        setError("Could not parse AI response. Please try again.");
+        return;
       }
 
       if (parsed.issues && Array.isArray(parsed.issues)) {

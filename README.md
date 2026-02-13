@@ -13,6 +13,7 @@ A professional, open-source resume builder that runs entirely in your browser. B
 
 - **🔒 Privacy by Design**: Zero data collection. No servers, no tracking, no cookies.
 - **💾 Local Storage**: All data is stored in your browser's IndexedDB using `Dexie.js`.
+- **☁️ Optional BYOS Cloud Sync**: Connect your Google Drive and store backups in your own cloud account (single sync file), with optional passphrase encryption.
 - **📶 Offline Capable**: Full PWA support—install it and build resumes without internet.
 - **📄 Client-Side PDF**: High-quality PDFs generated instantly in the browser via `@react-pdf/renderer`.
 - **🎨 Extensive Template Library** (14+ templates):
@@ -86,6 +87,17 @@ We use [Vitest](https://vitest.dev/) for unit and integration testing.
 ```bash
 npm run test
 ```
+
+## ☁️ Cloud Sync Setup (Optional)
+
+Enable BYOS cloud sync with:
+
+```bash
+NEXT_PUBLIC_ENABLE_CLOUD_SYNC=true
+NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID=your_google_oauth_client_id
+```
+
+Use a Google OAuth client configured for browser PKCE flow and add your app URL as an authorized redirect origin.
 
 ## 📜 License
 

@@ -10,13 +10,11 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
+  generateSectionSummaryAction,
+  improveSectionTextAction,
+  grammarCheckSectionTextAction,
+} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
 interface PublicationsFormProps {
@@ -90,40 +88,24 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
   const handleGenerateSummary = useCallback(
     async (pub: Publication) => {
-      const result = ensureProvider("generation");
       setLlmErrors((prev) => ({ ...prev, [pub.id]: "" }));
       setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("publication", buildInput(pub));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
+      const result = await generateSectionSummaryAction({
+        provider: { providerId, apiKeys, consent },
+        section: "publication",
+        input: buildInput(pub),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   const handleImproveSummary = useCallback(
@@ -137,30 +119,25 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(pub.summary)
-          : pub.summary;
-        const prompt = buildRewritePrompt("publication", raw, tone, buildInput(pub));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(pub.summary)
+        : pub.summary;
+      const result = await improveSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "publication",
+        text: raw,
+        tone,
+        context: buildInput(pub),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [pub.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
     },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
+    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
   );
 
   const handleGrammarSummary = useCallback(
@@ -174,43 +151,28 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [pub.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(pub.summary)
-          : pub.summary;
-        const prompt = buildGrammarPrompt("publication", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [pub.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [pub.id]: "✓ No grammar issues found." }));
-          return;
-        }
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(pub.summary)
+        : pub.summary;
+      const result = await grammarCheckSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "publication",
+        text: raw,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [pub.id]: result.error }));
+      } else if (result.noChanges) {
+        setLlmErrors((prev) => ({ ...prev, [pub.id]: "✓ No grammar issues found." }));
+      } else {
         setGeneratedSummaries((prev) => ({
           ...prev,
-          [pub.id]: grammarResult.text || "",
+          [pub.id]: result.text,
         }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [pub.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
       }
+      setIsGenerating((prev) => ({ ...prev, [pub.id]: false }));
     },
-    [ensureProvider, redaction.stripContactInfo],
+    [apiKeys, consent, providerId, redaction.stripContactInfo],
   );
 
   return (

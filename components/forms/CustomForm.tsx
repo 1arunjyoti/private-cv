@@ -10,13 +10,11 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
+  generateSectionSummaryAction,
+  improveSectionTextAction,
+  grammarCheckSectionTextAction,
+} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
 interface CustomFormProps {
@@ -151,43 +149,24 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
     [redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
   const handleGenerateSummary = useCallback(
     async (section: CustomSection, item: CustomSection["items"][number]) => {
-      const result = ensureProvider("generation");
       setLlmErrors((prev) => ({ ...prev, [item.id]: "" }));
       setGeneratedSummaries((prev) => ({ ...prev, [item.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt(
-          section.name || "custom item",
-          buildInput(section, item),
-        );
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
+      const result = await generateSectionSummaryAction({
+        provider: { providerId, apiKeys, consent },
+        section: section.name || "custom item",
+        input: buildInput(section, item),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   const handleImproveSummary = useCallback(
@@ -201,30 +180,25 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(item.summary)
-          : item.summary;
-        const prompt = buildRewritePrompt(section.name || "custom item", raw, tone, buildInput(section, item));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(item.summary)
+        : item.summary;
+      const result = await improveSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: section.name || "custom item",
+        text: raw,
+        tone,
+        context: buildInput(section, item),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [item.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
     },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
+    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
   );
 
   const handleGrammarSummary = useCallback(
@@ -238,43 +212,28 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(item.summary)
-          : item.summary;
-        const prompt = buildGrammarPrompt(section.name || "custom item", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [item.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [item.id]: "✓ No grammar issues found." }));
-          return;
-        }
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(item.summary)
+        : item.summary;
+      const result = await grammarCheckSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: section.name || "custom item",
+        text: raw,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [item.id]: result.error }));
+      } else if (result.noChanges) {
+        setLlmErrors((prev) => ({ ...prev, [item.id]: "✓ No grammar issues found." }));
+      } else {
         setGeneratedSummaries((prev) => ({
           ...prev,
-          [item.id]: grammarResult.text || "",
+          [item.id]: result.text,
         }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [item.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
       }
+      setIsGenerating((prev) => ({ ...prev, [item.id]: false }));
     },
-    [ensureProvider, redaction.stripContactInfo],
+    [apiKeys, consent, providerId, redaction.stripContactInfo],
   );
 
   return (

@@ -21,7 +21,7 @@ export function Navbar() {
   return (
     <header className="fixed top-4 left-0 right-0 z-50">
       <div className="landing-container">
-        <div className="w-full rounded-full border bg-background/80 backdrop-blur-md shadow-lg supports-backdrop-filter:bg-background/60">
+        <div className="w-full rounded-3xl border bg-background/80 backdrop-blur-md shadow-lg supports-backdrop-filter:bg-background/60">
           <div className="flex h-16 items-center px-6">
             {/* Logo - Left */}
             <div className="flex flex-1 items-center justify-start">
@@ -56,7 +56,7 @@ export function Navbar() {
               <Link href="/templates" className="hidden md:block">
                 <Button
                   size="sm"
-                  className="font-semibold shadow-sm hover:shadow transition-all cursor-pointer rounded-full px-6"
+                  className="font-semibold shadow-sm hover:shadow transition-all cursor-pointer rounded-3xl px-4"
                 >
                   Get Started
                 </Button>
@@ -77,7 +77,7 @@ export function Navbar() {
                   </SheetTrigger>
                   <SheetContent
                     side="right"
-                    className="w-[300px] sm:w-[350px] px-0 border-l flex flex-col bg-background/95 backdrop-blur-md"
+                    className="w-75 sm:w-87.5 px-0 border-l flex flex-col bg-background/95 backdrop-blur-md"
                   >
                     <div className="flex flex-col h-full">
                       {/* Drawer Header */}

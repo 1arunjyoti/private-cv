@@ -80,6 +80,8 @@ import { ConsistencyChecker } from "@/components/editor/ConsistencyChecker";
 import { CareerGapAnalysis } from "@/components/editor/CareerGapAnalysis";
 import { DisclaimerDialog } from "@/components/DisclaimerDialog";
 import { Separator } from "@/components/ui/separator";
+import { ConflictDialog } from "@/components/sync/ConflictDialog";
+import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
 import { ImportDialog } from "@/components/ImportDialog";
 import { ImportReview } from "@/components/ImportReview";
 import { LinkedInImport } from "@/components/LinkedInImport";
@@ -123,6 +125,10 @@ function EditorContent() {
     (state) => state.updateCurrentResume,
   );
   const resetResume = useResumeStore((state) => state.resetResume);
+  const syncStatus = useSyncStore((state) => state.status);
+  const lastSyncAt = useSyncStore((state) => state.lastSyncAt);
+  const syncNow = useSyncStore((state) => state.syncNow);
+  const syncAuth = useSyncStore((state) => state.auth);
 
   // DisclaimerDialog is now imported from components/DisclaimerDialog
   // but we need to add the import at the top first.
@@ -281,6 +287,13 @@ function EditorContent() {
     return null;
   }
 
+  const cloudSyncMinutesAgo = (() => {
+    if (!lastSyncAt) return "--";
+    const diffMs = Date.now() - new Date(lastSyncAt).getTime();
+    if (!Number.isFinite(diffMs) || diffMs < 0) return "--";
+    return Math.floor(diffMs / 60000).toString();
+  })();
+
   // Use EDITOR_TABS constant defined outside component
 
   return (
@@ -309,6 +322,8 @@ function EditorContent() {
           onCancel={handleImportCancel}
         />
       )}
+
+      <ConflictDialog />
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -337,6 +352,11 @@ function EditorContent() {
                 Last saved:{" "}
                 {new Date(currentResume.meta.lastModified).toLocaleString()}
               </p>
+              {isCloudSyncEnabled ? (
+                <p className="text-xs text-muted-foreground hidden sm:block truncate">
+                  Cloud sync: {cloudSyncMinutesAgo} minutes ago
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -382,7 +402,7 @@ function EditorContent() {
                     className="text-primary border-primary/20 hover:bg-primary/10 gap-2"
                   >
                     <Menu className="h-4 w-4" />
-                    More Options
+                    Tools
                     <ChevronDown className="h-3 w-3 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -420,12 +440,6 @@ function EditorContent() {
                       LinkedIn / Portfolio Import
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <Settings className="h-4 w-4" />
-                      LLM Settings
-                    </Link>
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -484,22 +498,52 @@ function EditorContent() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Save
-              </Button>
-              <ResetConfirmDialog onConfirm={handleReset} />
-              <ThemeToggle />
 
+              <Link href="/settings">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Button>
+              </Link>
+
+              {/* Primary actions */}
+              <div className="flex items-center gap-2 mr-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  aria-label="Save (Ctrl+S)"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save
+                </Button>
+
+                {isCloudSyncEnabled ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={syncNow}
+                    disabled={!syncAuth || syncStatus === "syncing"}
+                    aria-label="Sync"
+                  >
+                    {syncStatus === "syncing" ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4" />
+                    )}
+                    Sync
+                  </Button>
+                ) : null}
+
+                <ResetConfirmDialog onConfirm={handleReset} />
+              </div>
+
+              <ThemeToggle />
               {/* Disclaimer */}
               <DisclaimerDialog />
             </div>
@@ -519,18 +563,6 @@ function EditorContent() {
                   <PenLine className="h-5 w-5" />
                 )}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Save className="h-5 w-5" />
-                )}
-              </Button>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -546,9 +578,58 @@ function EditorContent() {
                     <SheetDescription>
                       Manage your resume and editor settings.
                     </SheetDescription>
+                    <div className="text-xs text-muted-foreground space-y-1 mt-3 pt-3 border-t">
+                      <p>
+                        Last saved:{" "}
+                        {new Date(
+                          currentResume.meta.lastModified,
+                        ).toLocaleString()}
+                      </p>
+                      {isCloudSyncEnabled ? (
+                        <p>Cloud sync: {cloudSyncMinutesAgo} minutes ago</p>
+                      ) : null}
+                    </div>
                   </SheetHeader>
 
                   <div className="flex flex-col gap-6 mt-2">
+                    {/* Section: Primary Actions */}
+                    <div className="space-y-3">
+                      <Button
+                        variant="outline"
+                        className="justify-start w-full h-10"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        {isSaving ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+
+                    {/* Section: Sync & Status */}
+                    {isCloudSyncEnabled ? (
+                      <div className="space-y-3">
+                        <Button
+                          variant="outline"
+                          className="justify-start w-full h-10"
+                          onClick={syncNow}
+                          disabled={!syncAuth || syncStatus === "syncing"}
+                        >
+                          {syncStatus === "syncing" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <TrendingUp className="h-4 w-4" />
+                          )}
+                          {syncStatus === "syncing" ? "Syncing..." : "Sync Now"}
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {isCloudSyncEnabled ? <Separator /> : null}
+
                     {/* Section: Resume Actions */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 px-1">
@@ -636,22 +717,33 @@ function EditorContent() {
                       <div className="flex items-center gap-2 px-1">
                         <Menu className="w-4 h-4 text-muted-foreground" />
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          More Options
+                          Tools
                         </h4>
                       </div>
                       <div className="space-y-2">
-                        <ATSScore
-                          resume={currentResume}
-                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
-                        />
-                        <ConsistencyChecker
-                          resume={currentResume}
-                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
-                        />
-                        <CareerGapAnalysis
-                          resume={currentResume}
-                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
-                        />
+                        {/* Priority 0: Quick utilities */}
+                        <Button
+                          variant="outline"
+                          className="justify-start w-full h-10 border-dashed"
+                          onClick={handleFillSampleData}
+                        >
+                          <Wand2 className="h-4 w-4" />
+                          Fill Sample Data
+                        </Button>
+
+                        {/* Priority 1: Configuration */}
+                        <Button
+                          variant="outline"
+                          className="justify-start w-full h-10"
+                          asChild
+                        >
+                          <Link href="/settings">
+                            <Settings className="h-4 w-4" />
+                            Settings
+                          </Link>
+                        </Button>
+
+                        {/* Priority 2: Data import */}
                         {currentResume && (
                           <LinkedInImport
                             resume={currentResume}
@@ -667,26 +759,22 @@ function EditorContent() {
                             }
                           />
                         )}
-                        <Button
-                          variant="outline"
-                          className="justify-start w-full h-10"
-                          asChild
-                        >
-                          <Link href="/settings">
-                            <Settings className="h-4 w-4" />
-                            LLM Settings
-                          </Link>
-                        </Button>
 
-                        <Button
-                          variant="outline"
-                          className="justify-start w-full h-10 border-dashed"
-                          onClick={handleFillSampleData}
-                        >
-                          <Wand2 className="h-4 w-4" />
-                          Fill Sample Data
-                        </Button>
+                        {/* Priority 3-5: Analysis tools */}
+                        <ATSScore
+                          resume={currentResume}
+                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
+                        />
+                        <ConsistencyChecker
+                          resume={currentResume}
+                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
+                        />
+                        <CareerGapAnalysis
+                          resume={currentResume}
+                          className="w-full justify-start h-10 px-4 bg-background border-primary/10"
+                        />
 
+                        {/* Priority 7: Help */}
                         <DisclaimerDialog
                           trigger={
                             <Button
@@ -702,7 +790,7 @@ function EditorContent() {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="mt-auto pt-2">
+                    <div className="mt-auto pt-2 space-y-2">
                       <ResetConfirmDialog
                         onConfirm={handleReset}
                         trigger={

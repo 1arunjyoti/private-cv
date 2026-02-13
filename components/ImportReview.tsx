@@ -30,6 +30,7 @@ import type { ImportResult, ParsedResumeData } from "@/lib/import";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import { buildImportParsingPrompt } from "@/lib/llm/prompts";
+import { redactContactInfo } from "@/lib/llm/redaction";
 import { parseLLMImportOutput } from "@/lib/import/ai-enhance";
 
 interface ImportReviewProps {
@@ -112,6 +113,7 @@ export function ImportReview({
   const providerId = useLLMSettingsStore((state) => state.providerId);
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
+  const redaction = useLLMSettingsStore((state) => state.redaction);
 
   const data = activeData || importResult.data;
   const { confidence, warnings } = importResult;
@@ -138,8 +140,11 @@ export function ImportReview({
     setEnhanceError(null);
 
     try {
+      const sanitizedRawText = redaction.stripContactInfo
+        ? redactContactInfo(importResult.rawText)
+        : importResult.rawText;
       const output = await result.provider.generateText(result.apiKey, {
-        prompt: buildImportParsingPrompt(importResult.rawText),
+        prompt: buildImportParsingPrompt(sanitizedRawText),
         temperature: 0.3,
         maxTokens: 4096,
       });
@@ -152,7 +157,7 @@ export function ImportReview({
     } finally {
       setIsEnhancing(false);
     }
-  }, [importResult.rawText, providerId, apiKeys, consent]);
+  }, [importResult.rawText, providerId, apiKeys, consent, redaction.stripContactInfo]);
 
   const sections = useMemo(() => {
     const result = [];

@@ -12,13 +12,14 @@ import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { compressImage, validateImageFile } from "@/lib/image-utils";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import {
+  generatePromptTextAction,
+  improveSectionTextAction,
+  grammarCheckSectionTextAction,
+} from "@/lib/llm/form-actions";
 import {
   buildSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
 } from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
 import { redactContactInfo } from "@/lib/llm/redaction";
 import { removeBackground } from "@/lib/image-processing";
 
@@ -241,31 +242,20 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
     setLlmError(null);
     setGeneratedSummary("");
 
-    const result = ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent: "generation",
-    });
-    if ("error" in result) {
-      setLlmError(result.error);
-      return;
-    }
-
     setIsGenerating(true);
-    try {
-      const prompt = buildSummaryPrompt(buildSummaryInput());
-      const output = await result.provider.generateText(result.apiKey, {
-        prompt,
-        temperature: 0.5,
-        maxTokens: 256,
-      });
-      setGeneratedSummary(output);
-    } catch (err) {
-      setLlmError((err as Error).message);
-    } finally {
-      setIsGenerating(false);
+    const result = await generatePromptTextAction({
+      provider: { providerId, apiKeys, consent },
+      requiredConsent: "generation",
+      prompt: buildSummaryPrompt(buildSummaryInput()),
+      temperature: 0.5,
+      maxTokens: 256,
+    });
+    if (!result.ok) {
+      setLlmError(result.error);
+    } else {
+      setGeneratedSummary(result.text);
     }
+    setIsGenerating(false);
   }, [apiKeys, buildSummaryInput, consent, providerId]);
 
   const handleImproveSummary = useCallback(async () => {
@@ -277,34 +267,25 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
       return;
     }
 
-    const result = ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent: "rewriting",
-    });
-    if ("error" in result) {
-      setLlmError(result.error);
-      return;
-    }
-
     setIsGenerating(true);
-    try {
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(data.summary)
-        : data.summary;
-      const context = buildPersonContext();
-      const output = await result.provider.generateText(result.apiKey, {
-        prompt: buildRewritePrompt("summary", raw, tone, context),
-        temperature: 0.4,
-        maxTokens: 256,
-      });
-      setGeneratedSummary(output);
-    } catch (err) {
-      setLlmError((err as Error).message);
-    } finally {
-      setIsGenerating(false);
+    const raw = redaction.stripContactInfo
+      ? redactContactInfo(data.summary)
+      : data.summary;
+    const result = await improveSectionTextAction({
+      provider: { providerId, apiKeys, consent },
+      section: "summary",
+      text: raw,
+      tone,
+      context: buildPersonContext(),
+      temperature: 0.4,
+      maxTokens: 256,
+    });
+    if (!result.ok) {
+      setLlmError(result.error);
+    } else {
+      setGeneratedSummary(result.text);
     }
+    setIsGenerating(false);
   }, [
     apiKeys,
     buildPersonContext,
@@ -324,43 +305,25 @@ export function BasicsForm({ data, onChange }: BasicsFormProps) {
       return;
     }
 
-    const result = ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent: "rewriting",
-    });
-    if ("error" in result) {
-      setLlmError(result.error);
-      return;
-    }
-
     setIsGenerating(true);
-    try {
-      const raw = redaction.stripContactInfo
-        ? redactContactInfo(data.summary)
-        : data.summary;
-      const output = await result.provider.generateText(result.apiKey, {
-        prompt: buildGrammarPrompt("summary", raw),
-        temperature: 0.2,
-        maxTokens: 256,
-      });
-      const grammarResult = processGrammarOutput(raw, output);
-      if (grammarResult.error) {
-        const errMsg = grammarResult.error;
-        setLlmError(errMsg);
-        return;
-      }
-      if (grammarResult.noChanges) {
-        setLlmError("✓ No grammar issues found.");
-        return;
-      }
-      setGeneratedSummary(grammarResult.text || "");
-    } catch (err) {
-      setLlmError((err as Error).message);
-    } finally {
-      setIsGenerating(false);
+    const raw = redaction.stripContactInfo
+      ? redactContactInfo(data.summary)
+      : data.summary;
+    const result = await grammarCheckSectionTextAction({
+      provider: { providerId, apiKeys, consent },
+      section: "summary",
+      text: raw,
+      temperature: 0.2,
+      maxTokens: 256,
+    });
+    if (!result.ok) {
+      setLlmError(result.error);
+    } else if (result.noChanges) {
+      setLlmError("✓ No grammar issues found.");
+    } else {
+      setGeneratedSummary(result.text);
     }
+    setIsGenerating(false);
   }, [apiKeys, consent, data.summary, providerId, redaction.stripContactInfo]);
 
   const handleApplySummary = useCallback(() => {

@@ -10,13 +10,11 @@ import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
 import {
-  buildSectionSummaryPrompt,
-  buildRewritePrompt,
-  buildGrammarPrompt,
-} from "@/lib/llm/prompts";
-import { processGrammarOutput } from "@/lib/llm/grammar";
+  generateSectionSummaryAction,
+  improveSectionTextAction,
+  grammarCheckSectionTextAction,
+} from "@/lib/llm/form-actions";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
 interface CertificatesFormProps {
@@ -92,40 +90,24 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
     [data, redaction.stripContactInfo],
   );
 
-  const ensureProvider = useCallback((requiredConsent: "generation" | "rewriting" | null = "generation") => {
-    return ensureLLMProvider({
-      providerId,
-      apiKeys,
-      consent,
-      requiredConsent,
-    });
-  }, [apiKeys, consent, providerId]);
-
   const handleGenerateSummary = useCallback(
     async (cert: Certificate) => {
-      const result = ensureProvider("generation");
       setLlmErrors((prev) => ({ ...prev, [cert.id]: "" }));
       setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: "" }));
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      try {
-        const prompt = buildSectionSummaryPrompt("certificate", buildInput(cert));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.5,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
+      const result = await generateSectionSummaryAction({
+        provider: { providerId, apiKeys, consent },
+        section: "certificate",
+        input: buildInput(cert),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
     },
-    [buildInput, ensureProvider],
+    [apiKeys, buildInput, consent, providerId],
   );
 
   const handleImproveSummary = useCallback(
@@ -139,30 +121,25 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(cert.summary)
-          : cert.summary;
-        const prompt = buildRewritePrompt("certificate", raw, tone, buildInput(cert));
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.4,
-          maxTokens: 256,
-        });
-        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: output }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(cert.summary)
+        : cert.summary;
+      const result = await improveSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "certificate",
+        text: raw,
+        tone,
+        context: buildInput(cert),
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
+      } else {
+        setGeneratedSummaries((prev) => ({ ...prev, [cert.id]: result.text }));
       }
+      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
     },
-    [buildInput, ensureProvider, redaction.stripContactInfo, tone],
+    [apiKeys, buildInput, consent, providerId, redaction.stripContactInfo, tone],
   );
 
   const handleGrammarSummary = useCallback(
@@ -176,43 +153,28 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
         }));
         return;
       }
-      const result = ensureProvider("rewriting");
-      if ("error" in result) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
-        return;
-      }
       setIsGenerating((prev) => ({ ...prev, [cert.id]: true }));
-      try {
-        const raw = redaction.stripContactInfo
-          ? redactContactInfo(cert.summary)
-          : cert.summary;
-        const prompt = buildGrammarPrompt("certificate", raw);
-        const output = await result.provider.generateText(result.apiKey, {
-          prompt,
-          temperature: 0.2,
-          maxTokens: 256,
-        });
-        const grammarResult = processGrammarOutput(raw, output);
-        if (grammarResult.error) {
-          const errMsg = grammarResult.error;
-          setLlmErrors((prev) => ({ ...prev, [cert.id]: errMsg }));
-          return;
-        }
-        if (grammarResult.noChanges) {
-          setLlmErrors((prev) => ({ ...prev, [cert.id]: "✓ No grammar issues found." }));
-          return;
-        }
+      const raw = redaction.stripContactInfo
+        ? redactContactInfo(cert.summary)
+        : cert.summary;
+      const result = await grammarCheckSectionTextAction({
+        provider: { providerId, apiKeys, consent },
+        section: "certificate",
+        text: raw,
+      });
+      if (!result.ok) {
+        setLlmErrors((prev) => ({ ...prev, [cert.id]: result.error }));
+      } else if (result.noChanges) {
+        setLlmErrors((prev) => ({ ...prev, [cert.id]: "✓ No grammar issues found." }));
+      } else {
         setGeneratedSummaries((prev) => ({
           ...prev,
-          [cert.id]: grammarResult.text || "",
+          [cert.id]: result.text,
         }));
-      } catch (err) {
-        setLlmErrors((prev) => ({ ...prev, [cert.id]: (err as Error).message }));
-      } finally {
-        setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
       }
+      setIsGenerating((prev) => ({ ...prev, [cert.id]: false }));
     },
-    [ensureProvider, redaction.stripContactInfo],
+    [apiKeys, consent, providerId, redaction.stripContactInfo],
   );
 
   return (

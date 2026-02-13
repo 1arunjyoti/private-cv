@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { Resume } from "@/db";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { ensureLLMProvider } from "@/lib/llm/ensure-provider";
+import { parseLLMJson } from "@/lib/llm/json";
 import { buildCareerGapAnalysisPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 
@@ -172,18 +173,12 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
         maxTokens: 2048,
       });
 
-      let parsed: AnalysisResult;
-      try {
-        const cleaned = output.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        parsed = JSON.parse(cleaned);
-      } catch {
-        const jsonMatch = output.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-        } else {
-          setError("Could not parse AI response. Please try again.");
-          return;
-        }
+      const parsed = parseLLMJson<AnalysisResult>(output, {
+        sanitizeMultilineStrings: true,
+      });
+      if (!parsed) {
+        setError("Could not parse AI response. Please try again.");
+        return;
       }
 
       setAnalysis(parsed);
