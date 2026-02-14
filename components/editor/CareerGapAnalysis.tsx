@@ -43,25 +43,55 @@ interface CareerGapAnalysisProps {
 
 type AnalysisResult = CareerGapAnalysisData;
 
-const SEVERITY_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  minor: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-300", label: "Minor" },
-  moderate: { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-300", label: "Moderate" },
-  significant: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", label: "Significant" },
+const SEVERITY_STYLES: Record<
+  string,
+  { bg: string; text: string; label: string }
+> = {
+  minor: {
+    bg: "bg-yellow-100 dark:bg-yellow-900/30",
+    text: "text-yellow-700 dark:text-yellow-300",
+    label: "Minor",
+  },
+  moderate: {
+    bg: "bg-orange-100 dark:bg-orange-900/30",
+    text: "text-orange-700 dark:text-orange-300",
+    label: "Moderate",
+  },
+  significant: {
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-300",
+    label: "Significant",
+  },
 };
 
 const IMPORTANCE_STYLES: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300" },
-  recommended: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300" },
-  "nice-to-have": { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400" },
+  critical: {
+    bg: "bg-red-100 dark:bg-red-900/30",
+    text: "text-red-700 dark:text-red-300",
+  },
+  recommended: {
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    text: "text-blue-700 dark:text-blue-300",
+  },
+  "nice-to-have": {
+    bg: "bg-gray-100 dark:bg-gray-800",
+    text: "text-gray-600 dark:text-gray-400",
+  },
 };
 
-export function CareerGapAnalysis({ resume, className, trigger, open: controlledOpen, onOpenChange }: CareerGapAnalysisProps) {
+export function CareerGapAnalysis({
+  resume,
+  className,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+}: CareerGapAnalysisProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  
+
   // Use controlled state if provided, otherwise use internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
-  
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -76,7 +106,8 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
 
     if (resume.basics.name) sections.push(`Name: ${resume.basics.name}`);
     if (resume.basics.label) sections.push(`Title: ${resume.basics.label}`);
-    if (resume.basics.summary) sections.push(`Summary: ${resume.basics.summary}`);
+    if (resume.basics.summary)
+      sections.push(`Summary: ${resume.basics.summary}`);
 
     resume.work.forEach((w) => {
       const line = [
@@ -85,17 +116,25 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
         `Period: ${w.startDate} - ${w.endDate || "Present"}`,
         w.location ? `Location: ${w.location}` : "",
         w.summary ? `Description: ${w.summary}` : "",
-        w.highlights.length ? `Achievements:\n${w.highlights.map((h) => `  - ${h}`).join("\n")}` : "",
-      ].filter(Boolean).join("\n");
+        w.highlights.length
+          ? `Achievements:\n${w.highlights.map((h) => `  - ${h}`).join("\n")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
       sections.push(`\nWORK EXPERIENCE:\n${line}`);
     });
 
     resume.education.forEach((e) => {
-      sections.push(`\nEDUCATION:\n${e.studyType} ${e.area} at ${e.institution} (${e.startDate} - ${e.endDate})`);
+      sections.push(
+        `\nEDUCATION:\n${e.studyType} ${e.area} at ${e.institution} (${e.startDate} - ${e.endDate})`,
+      );
     });
 
     if (resume.skills.length > 0) {
-      const skillText = resume.skills.map((s) => `${s.name}: ${s.keywords.join(", ")}`).join("\n");
+      const skillText = resume.skills
+        .map((s) => `${s.name}: ${s.keywords.join(", ")}`)
+        .join("\n");
       sections.push(`\nSKILLS:\n${skillText}`);
     }
 
@@ -140,7 +179,11 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
       const resumeText = buildResumeText();
       const structured = await generateStructuredOutput({
         generateText: (prompt, temperature, maxTokens) =>
-          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
+          result.provider.generateText(result.apiKey, {
+            prompt,
+            temperature,
+            maxTokens,
+          }),
         prompt: buildCareerGapAnalysisPrompt(resumeText),
         temperature: 0.2,
         maxTokens: 2048,
@@ -175,7 +218,10 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
             <Button
               variant="outline"
               size="sm"
-              className={cn("text-primary border-primary/20 hover:bg-primary/10", className)}
+              className={cn(
+                "text-primary border-primary/20 hover:bg-primary/10",
+                className,
+              )}
             >
               <TrendingUp className="h-4 w-4" />
               Career Analysis
@@ -190,16 +236,20 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
             Career Gap Analysis
           </DialogTitle>
           <DialogDescription>
-            Analyze your resume for employment gaps, missing elements, and career progression.
+            Analyze your resume for employment gaps, missing elements, and
+            career progression.
           </DialogDescription>
           <div className="flex items-start gap-2 p-2.5 mt-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
             <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-700 dark:text-blue-300"><span className="font-medium">Requires AI:</span> This feature needs an AI provider configured in Settings.</p>
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <span className="font-medium">Requires AI:</span> This feature
+              needs an AI provider configured in Settings.
+            </p>
           </div>
         </DialogHeader>
 
         {/* Action bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleAnalyze} disabled={isAnalyzing} size="sm">
             {isAnalyzing ? (
               <>
@@ -215,8 +265,15 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
           </Button>
           {analysis && (
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Overall Score:</span>
-              <span className={cn("text-lg font-bold", getScoreColor(analysis.overallScore))}>
+              <span className="text-xs text-muted-foreground">
+                Overall Score:
+              </span>
+              <span
+                className={cn(
+                  "text-lg font-bold",
+                  getScoreColor(analysis.overallScore),
+                )}
+              >
                 {analysis.overallScore}/100
               </span>
             </div>
@@ -235,7 +292,9 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
           {!analysis && !isAnalyzing && !error && (
             <div className="text-center py-12 text-muted-foreground">
               <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Click &quot;Analyze Resume&quot; to get career insights.</p>
+              <p className="text-sm">
+                Click &quot;Analyze Resume&quot; to get career insights.
+              </p>
             </div>
           )}
 
@@ -248,9 +307,13 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
                     <Target className="h-4 w-4 text-primary" />
                     Career Progression
                   </h3>
-                  <p className="text-sm text-muted-foreground">{analysis.careerProgression.assessment}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {analysis.careerProgression.assessment}
+                  </p>
                   <div className="flex gap-2">
-                    <Badge variant="outline" className="capitalize">{analysis.careerProgression.level} Level</Badge>
+                    <Badge variant="outline" className="capitalize">
+                      {analysis.careerProgression.level} Level
+                    </Badge>
                     <Badge
                       variant="outline"
                       className={cn(
@@ -274,19 +337,34 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
                   <h3 className="font-medium flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-orange-500" />
                     Employment Gaps
-                    <Badge variant="secondary" className="text-xs">{analysis.gaps.length}</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {analysis.gaps.length}
+                    </Badge>
                   </h3>
                   {analysis.gaps.map((gap, i) => {
-                    const style = SEVERITY_STYLES[gap.severity] || SEVERITY_STYLES.minor;
+                    const style =
+                      SEVERITY_STYLES[gap.severity] || SEVERITY_STYLES.minor;
                     return (
-                      <div key={i} className={cn("rounded p-3 space-y-1", style.bg)}>
+                      <div
+                        key={i}
+                        className={cn("rounded p-3 space-y-1", style.bg)}
+                      >
                         <div className="flex items-center gap-2">
-                          <span className={cn("text-xs font-medium", style.text)}>{style.label}</span>
-                          <span className="text-xs text-muted-foreground">{gap.period} ({gap.duration})</span>
+                          <span
+                            className={cn("text-xs font-medium", style.text)}
+                          >
+                            {style.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {gap.period} ({gap.duration})
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">{gap.between}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {gap.between}
+                        </p>
                         <p className="text-xs">
-                          <span className="font-medium">Suggestion:</span> {gap.suggestion}
+                          <span className="font-medium">Suggestion:</span>{" "}
+                          {gap.suggestion}
                         </p>
                       </div>
                     );
@@ -302,32 +380,45 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
               )}
 
               {/* Missing Elements */}
-              {analysis.missingElements && analysis.missingElements.length > 0 && (
-                <div className="rounded-lg border p-4 space-y-3">
-                  <h3 className="font-medium flex items-center gap-2 text-sm">
-                    <AlertCircle className="h-4 w-4 text-blue-500" />
-                    Missing or Weak Elements
-                    <Badge variant="secondary" className="text-xs">{analysis.missingElements.length}</Badge>
-                  </h3>
-                  {analysis.missingElements.map((elem, i) => {
-                    const style = IMPORTANCE_STYLES[elem.importance] || IMPORTANCE_STYLES["nice-to-have"];
-                    return (
-                      <div key={i} className="rounded border p-3 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge className={cn("text-xs", style.bg, style.text)} variant="secondary">
-                            {elem.importance}
-                          </Badge>
-                          <span className="text-sm font-medium">{elem.element}</span>
+              {analysis.missingElements &&
+                analysis.missingElements.length > 0 && (
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <h3 className="font-medium flex items-center gap-2 text-sm">
+                      <AlertCircle className="h-4 w-4 text-blue-500" />
+                      Missing or Weak Elements
+                      <Badge variant="secondary" className="text-xs">
+                        {analysis.missingElements.length}
+                      </Badge>
+                    </h3>
+                    {analysis.missingElements.map((elem, i) => {
+                      const style =
+                        IMPORTANCE_STYLES[elem.importance] ||
+                        IMPORTANCE_STYLES["nice-to-have"];
+                      return (
+                        <div key={i} className="rounded border p-3 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={cn("text-xs", style.bg, style.text)}
+                              variant="secondary"
+                            >
+                              {elem.importance}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {elem.element}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {elem.reason}
+                          </p>
+                          <p className="text-xs">
+                            <span className="font-medium">Suggestion:</span>{" "}
+                            {elem.suggestion}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">{elem.reason}</p>
-                        <p className="text-xs">
-                          <span className="font-medium">Suggestion:</span> {elem.suggestion}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
 
               {/* Strengths */}
               {analysis.strengths && analysis.strengths.length > 0 && (
@@ -348,30 +439,40 @@ export function CareerGapAnalysis({ resume, className, trigger, open: controlled
               )}
 
               {/* Recommendations */}
-              {analysis.recommendations && analysis.recommendations.length > 0 && (
-                <div className="rounded-lg border p-4 space-y-3">
-                  <h3 className="font-medium flex items-center gap-2 text-sm">
-                    <Lightbulb className="h-4 w-4 text-yellow-500" />
-                    Recommendations
-                  </h3>
-                  {analysis.recommendations
-                    .sort((a, b) => a.priority - b.priority)
-                    .map((rec, i) => (
-                      <div key={i} className="flex gap-3 items-start">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                          {rec.priority}
-                        </span>
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{rec.title}</span>
-                            <Badge variant="outline" className="text-xs capitalize">{rec.category}</Badge>
+              {analysis.recommendations &&
+                analysis.recommendations.length > 0 && (
+                  <div className="rounded-lg border p-4 space-y-3">
+                    <h3 className="font-medium flex items-center gap-2 text-sm">
+                      <Lightbulb className="h-4 w-4 text-yellow-500" />
+                      Recommendations
+                    </h3>
+                    {analysis.recommendations
+                      .sort((a, b) => a.priority - b.priority)
+                      .map((rec, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                          <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                            {rec.priority}
+                          </span>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {rec.title}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="text-xs capitalize"
+                              >
+                                {rec.category}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {rec.description}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground">{rec.description}</p>
                         </div>
-                      </div>
-                    ))}
-                </div>
-              )}
+                      ))}
+                  </div>
+                )}
             </>
           )}
         </div>

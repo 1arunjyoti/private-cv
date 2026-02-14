@@ -25,7 +25,9 @@ type CustomAIItemContext = {
 
 export function CustomForm({ data, onChange }: CustomFormProps) {
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
+  const [generatedSummaries, setGeneratedSummaries] = useState<
+    Record<string, string>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
 
@@ -146,20 +148,16 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
     [redaction.stripContactInfo],
   );
 
-  const {
-    handleGenerate,
-    handleImprove,
-    handleGrammar,
-    clearGenerated,
-  } = useSectionAIActions<CustomAIItemContext>({
-    section: ({ section }) => section.name || "custom item",
-    getId: ({ item }) => item.id,
-    buildInput,
-    getCurrentText: ({ item }) => item.summary || "",
-    setErrors: setLlmErrors,
-    setGenerated: setGeneratedSummaries,
-    setLoading: setIsGenerating,
-  });
+  const { handleGenerate, handleImprove, handleGrammar, clearGenerated } =
+    useSectionAIActions<CustomAIItemContext>({
+      section: ({ section }) => section.name || "custom item",
+      getId: ({ item }) => item.id,
+      buildInput,
+      getCurrentText: ({ item }) => item.summary || "",
+      setErrors: setLlmErrors,
+      setGenerated: setGeneratedSummaries,
+      setLoading: setIsGenerating,
+    });
 
   return (
     <div className="space-y-4">
@@ -270,12 +268,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                           placeholder="e.g. Volunteer"
                           value={item.name}
                           onChange={(e) =>
-                            updateItem(
-                              sec.id,
-                              item.id,
-                              "name",
-                              e.target.value,
-                            )
+                            updateItem(sec.id, item.id, "name", e.target.value)
                           }
                           autoComplete="off"
                         />
@@ -310,12 +303,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                           placeholder="e.g. 2020 - Present"
                           value={item.date}
                           onChange={(e) =>
-                            updateItem(
-                              sec.id,
-                              item.id,
-                              "date",
-                              e.target.value,
-                            )
+                            updateItem(sec.id, item.id, "date", e.target.value)
                           }
                           autoComplete="off"
                         />
@@ -327,12 +315,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                           placeholder="https://..."
                           value={item.url}
                           onChange={(e) =>
-                            updateItem(
-                              sec.id,
-                              item.id,
-                              "url",
-                              e.target.value,
-                            )
+                            updateItem(sec.id, item.id, "url", e.target.value)
                           }
                           autoComplete="url"
                         />
@@ -340,43 +323,59 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={`summary-${item.id}`}>
-                          Description
-                        </Label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGenerate({ section: sec, item })}
-                            disabled={isGenerating[item.id]}
-                          >
-                            {isGenerating[item.id] ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-3.5 w-3.5" />
-                            )}
-                            Generate
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleImprove({ section: sec, item })}
-                            disabled={isGenerating[item.id]}
-                          >
-                            Improve
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGrammar({ section: sec, item })}
-                            disabled={isGenerating[item.id]}
-                          >
-                            Grammar
-                          </Button>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label htmlFor={`summary-${item.id}`}>
+                            Description
+                          </Label>
+                          <span className="text-xs text-muted-foreground sm:hidden">
+                            {(item.summary || "").length} characters
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                            {(item.summary || "").length} characters
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleGenerate({ section: sec, item })
+                              }
+                              disabled={isGenerating[item.id]}
+                            >
+                              {isGenerating[item.id] ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-3.5 w-3.5" />
+                              )}
+                              Generate
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleImprove({ section: sec, item })
+                              }
+                              disabled={isGenerating[item.id]}
+                            >
+                              Improve
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleGrammar({ section: sec, item })
+                              }
+                              disabled={isGenerating[item.id]}
+                            >
+                              Grammar
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       <RichTextEditor
@@ -401,7 +400,7 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                           <p className="text-sm whitespace-pre-wrap">
                             {generatedSummaries[item.id]}
                           </p>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
                               size="sm"
@@ -421,7 +420,9 @@ export function CustomForm({ data, onChange }: CustomFormProps) {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => handleGenerate({ section: sec, item })}
+                              onClick={() =>
+                                handleGenerate({ section: sec, item })
+                              }
                               disabled={isGenerating[item.id]}
                             >
                               Regenerate

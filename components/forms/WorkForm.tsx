@@ -4,15 +4,20 @@ import { useCallback, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Plus, Sparkles, Trash2, Loader2, BarChart3 } from "lucide-react";
+import {
+  Briefcase,
+  Plus,
+  Sparkles,
+  Trash2,
+  Loader2,
+  BarChart3,
+} from "lucide-react";
 import type { WorkExperience } from "@/db";
 import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import {
-  generatePromptTextAction,
-} from "@/lib/llm/form-actions";
+import { generatePromptTextAction } from "@/lib/llm/form-actions";
 import {
   buildHighlightsPrompt,
   buildBulletQuantifierPrompt,
@@ -30,12 +35,20 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
-  const [generatedHighlights, setGeneratedHighlights] = useState<Record<string, string[]>>({});
+  const [generatedSummaries, setGeneratedSummaries] = useState<
+    Record<string, string>
+  >({});
+  const [generatedHighlights, setGeneratedHighlights] = useState<
+    Record<string, string[]>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
-  const [quantifiedBullets, setQuantifiedBullets] = useState<Record<string, string>>({});
-  const [isQuantifying, setIsQuantifying] = useState<Record<string, boolean>>({});
+  const [quantifiedBullets, setQuantifiedBullets] = useState<
+    Record<string, string>
+  >({});
+  const [isQuantifying, setIsQuantifying] = useState<Record<string, boolean>>(
+    {},
+  );
   const addExperience = useCallback(() => {
     const newExp: WorkExperience = {
       id: uuidv4(),
@@ -133,7 +146,9 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
         exp.company ? `Company: ${exp.company}` : "",
         exp.location ? `Location: ${exp.location}` : "",
         exp.summary ? `Current Summary: ${exp.summary}` : "",
-        peerContext.length ? `Other Experience:\n${peerContext.join("\n")}` : "",
+        peerContext.length
+          ? `Other Experience:\n${peerContext.join("\n")}`
+          : "",
       ].filter(Boolean);
       const raw = parts.join("\n");
       return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
@@ -199,7 +214,10 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
       if (!result.ok) {
         setLlmErrors((prev) => ({ ...prev, [exp.id]: result.error }));
       } else {
-        setQuantifiedBullets((prev) => ({ ...prev, [key]: result.text.trim() }));
+        setQuantifiedBullets((prev) => ({
+          ...prev,
+          [key]: result.text.trim(),
+        }));
       }
       setIsQuantifying((prev) => ({ ...prev, [key]: false }));
     },
@@ -333,40 +351,52 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`summary-${exp.id}`}>Description</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateSummary(exp)}
-                  disabled={isGenerating[exp.id]}
-                >
-                  {isGenerating[exp.id] ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Generate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImproveSummary(exp)}
-                  disabled={isGenerating[exp.id]}
-                >
-                  Improve
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGrammarSummary(exp)}
-                  disabled={isGenerating[exp.id]}
-                >
-                  Grammar
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`summary-${exp.id}`}>Description</Label>
+                  <span className="text-xs text-muted-foreground sm:hidden">
+                    {(exp.summary || "").length} characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                    {(exp.summary || "").length} characters
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateSummary(exp)}
+                      disabled={isGenerating[exp.id]}
+                    >
+                      {isGenerating[exp.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImproveSummary(exp)}
+                      disabled={isGenerating[exp.id]}
+                    >
+                      Improve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGrammarSummary(exp)}
+                      disabled={isGenerating[exp.id]}
+                    >
+                      Grammar
+                    </Button>
+                  </div>
+                </div>
               </div>
               <RichTextEditor
                 id={`summary-${exp.id}`}
@@ -386,12 +416,16 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                   <p className="text-sm whitespace-pre-wrap">
                     {generatedSummaries[exp.id]}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateExperience(exp.id, "summary", generatedSummaries[exp.id]);
+                        updateExperience(
+                          exp.id,
+                          "summary",
+                          generatedSummaries[exp.id],
+                        );
                         clearGenerated(exp.id);
                       }}
                     >
@@ -410,9 +444,7 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        clearGenerated(exp.id)
-                      }
+                      onClick={() => clearGenerated(exp.id)}
                     >
                       Discard
                     </Button>
@@ -422,32 +454,34 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <Label>Key Achievements</Label>
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleGenerateHighlights(exp)}
-                    disabled={isGenerating[exp.id]}
-                  >
-                    {isGenerating[exp.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    Generate
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addHighlight(exp.id)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateHighlights(exp)}
+                      disabled={isGenerating[exp.id]}
+                    >
+                      {isGenerating[exp.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addHighlight(exp.id)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
                 </div>
               </div>
               {generatedHighlights[exp.id]?.length ? (
@@ -460,13 +494,20 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       <li key={idx}>{item}</li>
                     ))}
                   </ul>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateExperience(exp.id, "highlights", generatedHighlights[exp.id]);
-                        setGeneratedHighlights((prev) => ({ ...prev, [exp.id]: [] }));
+                        updateExperience(
+                          exp.id,
+                          "highlights",
+                          generatedHighlights[exp.id],
+                        );
+                        setGeneratedHighlights((prev) => ({
+                          ...prev,
+                          [exp.id]: [],
+                        }));
                       }}
                     >
                       Apply
@@ -485,7 +526,10 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedHighlights((prev) => ({ ...prev, [exp.id]: [] }))
+                        setGeneratedHighlights((prev) => ({
+                          ...prev,
+                          [exp.id]: [],
+                        }))
                       }
                     >
                       Discard
@@ -517,7 +561,9 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                           className="shrink-0"
                           title="Quantify with AI"
                           onClick={() => handleQuantifyBullet(exp, hIndex)}
-                          disabled={isQuantifying[bulletKey] || !highlight.trim()}
+                          disabled={
+                            isQuantifying[bulletKey] || !highlight.trim()
+                          }
                         >
                           {isQuantifying[bulletKey] ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -538,17 +584,28 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                       </div>
                       {quantifiedBullets[bulletKey] && (
                         <div className="ml-5 rounded-md border bg-muted/30 p-2 space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">Quantified Version</p>
-                          <p className="text-sm">{quantifiedBullets[bulletKey]}</p>
-                          <div className="flex gap-2">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Quantified Version
+                          </p>
+                          <p className="text-sm">
+                            {quantifiedBullets[bulletKey]}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
                               size="sm"
                               variant="default"
                               className="h-6 text-xs"
                               onClick={() => {
-                                updateHighlight(exp.id, hIndex, quantifiedBullets[bulletKey]);
-                                setQuantifiedBullets((prev) => ({ ...prev, [bulletKey]: "" }));
+                                updateHighlight(
+                                  exp.id,
+                                  hIndex,
+                                  quantifiedBullets[bulletKey],
+                                );
+                                setQuantifiedBullets((prev) => ({
+                                  ...prev,
+                                  [bulletKey]: "",
+                                }));
                               }}
                             >
                               Apply
@@ -559,7 +616,10 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
                               variant="ghost"
                               className="h-6 text-xs"
                               onClick={() =>
-                                setQuantifiedBullets((prev) => ({ ...prev, [bulletKey]: "" }))
+                                setQuantifiedBullets((prev) => ({
+                                  ...prev,
+                                  [bulletKey]: "",
+                                }))
                               }
                             >
                               Discard

@@ -160,7 +160,7 @@ export function Navbar() {
                             rel="noopener noreferrer"
                             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                           >
-                            GitHub Repository
+                            <span className="underline">GitHub Repository</span>
                           </Link>
                           <span className="text-[10px] text-muted-foreground/60">
                             v1.0.0

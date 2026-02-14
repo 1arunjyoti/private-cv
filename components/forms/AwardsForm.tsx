@@ -20,7 +20,9 @@ interface AwardsFormProps {
 
 export function AwardsForm({ data, onChange }: AwardsFormProps) {
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
+  const [generatedSummaries, setGeneratedSummaries] = useState<
+    Record<string, string>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const addAward = useCallback(() => {
@@ -176,40 +178,52 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`summary-${item.id}`}>Description</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateSummary(item)}
-                  disabled={isGenerating[item.id]}
-                >
-                  {isGenerating[item.id] ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Generate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImproveSummary(item)}
-                  disabled={isGenerating[item.id]}
-                >
-                  Improve
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGrammarSummary(item)}
-                  disabled={isGenerating[item.id]}
-                >
-                  Grammar
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`summary-${item.id}`}>Description</Label>
+                  <span className="text-xs text-muted-foreground sm:hidden">
+                    {(item.summary || "").length} characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                    {(item.summary || "").length} characters
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateSummary(item)}
+                      disabled={isGenerating[item.id]}
+                    >
+                      {isGenerating[item.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImproveSummary(item)}
+                      disabled={isGenerating[item.id]}
+                    >
+                      Improve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGrammarSummary(item)}
+                      disabled={isGenerating[item.id]}
+                    >
+                      Grammar
+                    </Button>
+                  </div>
+                </div>
               </div>
               <RichTextEditor
                 id={`summary-${item.id}`}
@@ -229,12 +243,16 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
                   <p className="text-sm whitespace-pre-wrap">
                     {generatedSummaries[item.id]}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateAward(item.id, "summary", generatedSummaries[item.id]);
+                        updateAward(
+                          item.id,
+                          "summary",
+                          generatedSummaries[item.id],
+                        );
                         clearGenerated(item.id);
                       }}
                     >
@@ -253,9 +271,7 @@ export function AwardsForm({ data, onChange }: AwardsFormProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        clearGenerated(item.id)
-                      }
+                      onClick={() => clearGenerated(item.id)}
                     >
                       Discard
                     </Button>

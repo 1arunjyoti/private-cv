@@ -179,7 +179,7 @@ export function ImportDialog({
         </div>
 
         {/* Supported formats */}
-        <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
             <div className="flex items-center gap-2">
@@ -217,8 +217,8 @@ export function ImportDialog({
           <p className="flex items-start gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-500" />
             <span>
-              <strong>PDF/DOCX:</strong> We&apos;ll automatically extract
-              and organize your resume sections. Results may vary based on
+              <strong>PDF/DOCX:</strong> We&apos;ll automatically extract and
+              organize your resume sections. Results may vary based on
               formatting.
             </span>
           </p>

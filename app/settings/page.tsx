@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,8 +81,12 @@ export default function SettingsPage() {
   const setTone = useLLMSettingsStore((state) => state.setTone);
   const setGoogleModel = useLLMSettingsStore((state) => state.setGoogleModel);
   const setOpenAIModel = useLLMSettingsStore((state) => state.setOpenAIModel);
-  const setAnthropicModel = useLLMSettingsStore((state) => state.setAnthropicModel);
-  const setLocalEndpoint = useLLMSettingsStore((state) => state.setLocalEndpoint);
+  const setAnthropicModel = useLLMSettingsStore(
+    (state) => state.setAnthropicModel,
+  );
+  const setLocalEndpoint = useLLMSettingsStore(
+    (state) => state.setLocalEndpoint,
+  );
   const setLocalModel = useLLMSettingsStore((state) => state.setLocalModel);
   const setLocalApiType = useLLMSettingsStore((state) => state.setLocalApiType);
 
@@ -93,7 +103,9 @@ export default function SettingsPage() {
   const openaiModelSelectValue = OPENAI_MODEL_VALUES.includes(openaiModel)
     ? openaiModel
     : CUSTOM_MODEL_VALUE;
-  const anthropicModelSelectValue = ANTHROPIC_MODEL_VALUES.includes(anthropicModel)
+  const anthropicModelSelectValue = ANTHROPIC_MODEL_VALUES.includes(
+    anthropicModel,
+  )
     ? anthropicModel
     : CUSTOM_MODEL_VALUE;
   const currentKey = apiKeys[providerId] || "";
@@ -107,10 +119,14 @@ export default function SettingsPage() {
   const syncError = useSyncStore((state) => state.error);
   const syncAuth = useSyncStore((state) => state.auth);
   const syncLastSyncAt = useSyncStore((state) => state.lastSyncAt);
-  const syncEncryptionEnabled = useSyncStore((state) => state.encryptionEnabled);
+  const syncEncryptionEnabled = useSyncStore(
+    (state) => state.encryptionEnabled,
+  );
   const syncPassphrase = useSyncStore((state) => state.passphrase);
   const setSyncProvider = useSyncStore((state) => state.setProvider);
-  const setSyncEncryptionEnabled = useSyncStore((state) => state.setEncryptionEnabled);
+  const setSyncEncryptionEnabled = useSyncStore(
+    (state) => state.setEncryptionEnabled,
+  );
   const setSyncPassphrase = useSyncStore((state) => state.setPassphrase);
   const connectSync = useSyncStore((state) => state.connect);
   const disconnectSync = useSyncStore((state) => state.disconnect);
@@ -159,17 +175,17 @@ export default function SettingsPage() {
     try {
       const isValid = await result.provider.validateKey(result.apiKey);
       setValidationStatus(isValid ? "valid" : "invalid");
-        if (isValid) {
-          setValidationMessage(
-            providerId === "local"
-              ? `Connected to ${localApiType} at ${localEndpoint} (${localModel})`
-              : `${result.provider.label} connected successfully (${selectedCloudModel}).`
-          );
-        } else {
+      if (isValid) {
+        setValidationMessage(
+          providerId === "local"
+            ? `Connected to ${localApiType} at ${localEndpoint} (${localModel})`
+            : `${result.provider.label} connected successfully (${selectedCloudModel}).`,
+        );
+      } else {
         setValidationMessage(
           providerId === "local"
             ? `Connection failed. Check: endpoint=${localEndpoint}, model=${localModel}, type=${localApiType}`
-            : "API key validation failed."
+            : "API key validation failed.",
         );
       }
     } catch (err) {
@@ -213,7 +229,12 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
         <div className="landing-container mx-auto px-4 h-16 flex items-center justify-between relative">
-          <Button variant="ghost" size="sm" className="gap-2 pl-2 pr-2 sm:pr-4" onClick={() => router.back()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 pl-2 pr-2 sm:pr-4"
+            onClick={() => router.back()}
+          >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back</span>
           </Button>
@@ -221,7 +242,6 @@ export default function SettingsPage() {
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-semibold text-lg flex items-center gap-2 whitespace-nowrap">
             <Settings className="h-5 w-5" />
             <span className="">Settings</span>
-            <Badge variant="outline" className="ml-1">Beta</Badge>
           </div>
 
           <div className="w-25 flex justify-end">
@@ -234,7 +254,9 @@ export default function SettingsPage() {
         <Card className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-amber-900 dark:text-amber-100">Privacy Notice</CardTitle>
+              <CardTitle className="text-amber-900 dark:text-amber-100">
+                Privacy Notice
+              </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -252,16 +274,33 @@ export default function SettingsPage() {
           {privacyNoticeOpen && (
             <CardContent className="space-y-3">
               <p className="text-sm text-amber-900 dark:text-amber-100">
-                When you use LLM features like text generation, grammar checking, and content improvement, your resume data is sent to your selected AI provider (Google, OpenAI, Anthropic, or your local model).
+                When you use LLM features like text generation, grammar
+                checking, and content improvement, your resume data is sent to
+                your selected AI provider (Google, OpenAI, Anthropic, or your
+                local model).
               </p>
               <ul className="text-sm text-amber-900 dark:text-amber-100 space-y-2 pl-4">
-                <li>• <strong>Local models:</strong> Data stays on your machine. No external requests.</li>
-                <li>• <strong>Cloud providers:</strong> Data is sent to their servers and subject to their privacy policies.</li>
-                <li>• <strong>No local storage:</strong> PrivateCV never stores your data. Your resume stays with you.</li>
-                <li>• <strong>Redaction option:</strong> Enable contact info stripping below to remove sensitive data before sending.</li>
+                <li>
+                  • <strong>Local models:</strong> Data stays on your machine.
+                  No external requests.
+                </li>
+                <li>
+                  • <strong>Cloud providers:</strong> Data is sent to their
+                  servers and subject to their privacy policies.
+                </li>
+                <li>
+                  • <strong>No local storage:</strong> PrivateCV never stores
+                  your data. Your resume stays with you.
+                </li>
+                <li>
+                  • <strong>Redaction option:</strong> Enable contact info
+                  stripping below to remove sensitive data before sending.
+                </li>
               </ul>
               <p className="text-xs text-amber-800 dark:text-amber-200 pt-2">
-                Review each provider&apos;s privacy policy before enabling AI features. By using these features, you consent to data being sent to your chosen provider.
+                Review each provider&apos;s privacy policy before enabling AI
+                features. By using these features, you consent to data being
+                sent to your chosen provider.
               </p>
             </CardContent>
           )}
@@ -416,7 +455,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Provider & Keys</CardTitle>
+            <CardTitle>AI Provider & Keys</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
@@ -451,22 +490,29 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Input
                     id="apiKey"
+                    className="flex-1"
                     type={showApiKey ? "text" : "password"}
                     value={currentKey}
-                    onChange={(event) => setApiKey(providerId, event.target.value)}
+                    onChange={(event) =>
+                      setApiKey(providerId, event.target.value)
+                    }
                     placeholder={
                       providerId === "local" && localApiType !== "huggingface"
                         ? "Not required for local models"
                         : "Paste your API key"
                     }
-                    disabled={providerId === "local" && localApiType !== "huggingface"}
+                    disabled={
+                      providerId === "local" && localApiType !== "huggingface"
+                    }
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => setShowApiKey((value) => !value)}
-                    disabled={providerId === "local" && localApiType !== "huggingface"}
+                    disabled={
+                      providerId === "local" && localApiType !== "huggingface"
+                    }
                     aria-label={showApiKey ? "Hide API key" : "Show API key"}
                   >
                     {showApiKey ? (
@@ -563,9 +609,10 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <strong>LM Studio:</strong> /v1/chat/completions (OpenAI-compatible, also supports /api/v1/chat, /v1/messages). 
-                  <strong>OpenAI-compatible:</strong> /v1/chat/completions. 
-                  <strong>Ollama:</strong> /api/generate. 
+                  <strong>LM Studio:</strong> /v1/chat/completions
+                  (OpenAI-compatible, also supports /api/v1/chat, /v1/messages).
+                  <strong>OpenAI-compatible:</strong> /v1/chat/completions.
+                  <strong>Ollama:</strong> /api/generate.
                   <strong>Hugging Face:</strong> /models/{"{model}"}.
                 </p>
               </div>
@@ -681,7 +728,9 @@ export default function SettingsPage() {
                     {anthropicModelSelectValue === CUSTOM_MODEL_VALUE ? (
                       <Input
                         value={anthropicModel}
-                        onChange={(event) => setAnthropicModel(event.target.value)}
+                        onChange={(event) =>
+                          setAnthropicModel(event.target.value)
+                        }
                         placeholder="Enter custom Anthropic model ID"
                       />
                     ) : null}
@@ -693,28 +742,25 @@ export default function SettingsPage() {
             <Separator />
 
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex-1">
                 <Label>Session-only key storage</Label>
                 <p className="text-xs text-muted-foreground">
                   If enabled, API keys are not persisted after you close the
                   browser.
                 </p>
               </div>
-              <Switch
-                checked={sessionOnly}
-                onCheckedChange={setSessionOnly}
-              />
+              <Switch checked={sessionOnly} onCheckedChange={setSessionOnly} />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Consent & Redaction</CardTitle>
+            <CardTitle>AI Consent & Redaction</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex-1">
                 <Label>Content generation</Label>
                 <p className="text-xs text-muted-foreground">
                   Allow the LLM to generate or expand resume sections.
@@ -727,7 +773,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex-1">
                 <Label>Analysis & matching</Label>
                 <p className="text-xs text-muted-foreground">
                   Allow job description analysis and keyword suggestions.
@@ -740,7 +786,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex-1">
                 <Label>Rewriting</Label>
                 <p className="text-xs text-muted-foreground">
                   Allow style and tone rewrites of existing text.
@@ -756,7 +802,10 @@ export default function SettingsPage() {
 
             <div className="space-y-2">
               <Label>Tone for Rewrites</Label>
-              <Select value={tone} onValueChange={(value) => setTone(value as typeof tone)}>
+              <Select
+                value={tone}
+                onValueChange={(value) => setTone(value as typeof tone)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select tone" />
                 </SelectTrigger>
@@ -774,7 +823,7 @@ export default function SettingsPage() {
             <Separator />
 
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex-1">
                 <Label>Redact contact info by default</Label>
                 <p className="text-xs text-muted-foreground">
                   Email, phone, and links are removed unless you explicitly
@@ -793,7 +842,7 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Test: Generate Summary</CardTitle>
+            <CardTitle>AI Test: Generate Summary</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -809,7 +858,9 @@ export default function SettingsPage() {
               disabled={
                 isTesting ||
                 (providerId !== "local" && !currentKey) ||
-                (providerId === "local" && localApiType === "huggingface" && !currentKey) ||
+                (providerId === "local" &&
+                  localApiType === "huggingface" &&
+                  !currentKey) ||
                 provider?.status !== "ready"
               }
             >

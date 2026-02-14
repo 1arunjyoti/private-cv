@@ -186,7 +186,7 @@ export function TemplatesGallery() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -200,30 +200,32 @@ export function TemplatesGallery() {
                 }}
               />
             </div>
-            <Select
-              value={sortOption}
-              onValueChange={(value: SortOption) => setSortOption(value)}
-            >
-              <SelectTrigger className="w-full md:w-40">
-                <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recommended">Recommended</SelectItem>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="alphabetical">Alphabetical</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant={isFiltersOpen ? "secondary" : "outline"}
-              size="icon"
-              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-              className="shrink-0"
-              title="Filter by attributes"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-3 w-full md:w-auto">
+              <Select
+                value={sortOption}
+                onValueChange={(value: SortOption) => setSortOption(value)}
+              >
+                <SelectTrigger className="flex-1 md:w-40 md:flex-none">
+                  <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recommended">Recommended</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant={isFiltersOpen ? "secondary" : "outline"}
+                size="icon"
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                className="shrink-0"
+                title="Filter by attributes"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 

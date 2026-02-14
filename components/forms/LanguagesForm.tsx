@@ -65,7 +65,7 @@ export function LanguagesForm({ data, onChange }: LanguagesFormProps) {
           {data.map((lang) => (
             <div
               key={lang.id}
-              className="p-4 flex items-end gap-4 border rounded-lg bg-background"
+              className="p-4 flex flex-col sm:flex-row sm:items-end gap-4 border rounded-lg bg-background"
             >
               <div className="flex-1 space-y-2">
                 <Label htmlFor={`language-${lang.id}`}>Language</Label>
@@ -104,7 +104,7 @@ export function LanguagesForm({ data, onChange }: LanguagesFormProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-destructive hover:text-destructive shrink-0 mb-0.5"
+                className="text-destructive hover:text-destructive shrink-0 sm:mb-0.5 self-end sm:self-auto"
                 onClick={() => removeLanguage(lang.id)}
                 aria-label="Remove language"
               >

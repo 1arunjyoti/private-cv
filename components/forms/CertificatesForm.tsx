@@ -20,7 +20,9 @@ interface CertificatesFormProps {
 
 export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
+  const [generatedSummaries, setGeneratedSummaries] = useState<
+    Record<string, string>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const addCertificate = useCallback(() => {
@@ -74,7 +76,9 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
         cert.issuer ? `Issuer: ${cert.issuer}` : "",
         cert.date ? `Date: ${cert.date}` : "",
         cert.summary ? `Current Summary: ${cert.summary}` : "",
-        peerContext.length ? `Other Certificates:\n${peerContext.join("\n")}` : "",
+        peerContext.length
+          ? `Other Certificates:\n${peerContext.join("\n")}`
+          : "",
       ].filter(Boolean);
       const raw = parts.join("\n");
       return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
@@ -206,40 +210,52 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`summary-${cert.id}`}>Description</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateSummary(cert)}
-                  disabled={isGenerating[cert.id]}
-                >
-                  {isGenerating[cert.id] ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Generate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImproveSummary(cert)}
-                  disabled={isGenerating[cert.id]}
-                >
-                  Improve
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGrammarSummary(cert)}
-                  disabled={isGenerating[cert.id]}
-                >
-                  Grammar
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`summary-${cert.id}`}>Description</Label>
+                  <span className="text-xs text-muted-foreground sm:hidden">
+                    {(cert.summary || "").length} characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                    {(cert.summary || "").length} characters
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateSummary(cert)}
+                      disabled={isGenerating[cert.id]}
+                    >
+                      {isGenerating[cert.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImproveSummary(cert)}
+                      disabled={isGenerating[cert.id]}
+                    >
+                      Improve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGrammarSummary(cert)}
+                      disabled={isGenerating[cert.id]}
+                    >
+                      Grammar
+                    </Button>
+                  </div>
+                </div>
               </div>
               <RichTextEditor
                 id={`summary-${cert.id}`}
@@ -261,12 +277,16 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
                   <p className="text-sm whitespace-pre-wrap">
                     {generatedSummaries[cert.id]}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateCertificate(cert.id, "summary", generatedSummaries[cert.id]);
+                        updateCertificate(
+                          cert.id,
+                          "summary",
+                          generatedSummaries[cert.id],
+                        );
                         clearGenerated(cert.id);
                       }}
                     >
@@ -285,9 +305,7 @@ export function CertificatesForm({ data, onChange }: CertificatesFormProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        clearGenerated(cert.id)
-                      }
+                      onClick={() => clearGenerated(cert.id)}
                     >
                       Discard
                     </Button>

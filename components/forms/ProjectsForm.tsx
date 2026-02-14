@@ -4,15 +4,21 @@ import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FolderGit2, Plus, Sparkles, Trash2, X, Loader2, BarChart3 } from "lucide-react";
+import {
+  FolderGit2,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+  Loader2,
+  BarChart3,
+} from "lucide-react";
 import type { Project } from "@/db";
 import { v4 as uuidv4 } from "uuid";
 import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
-import {
-  generatePromptTextAction,
-} from "@/lib/llm/form-actions";
+import { generatePromptTextAction } from "@/lib/llm/form-actions";
 import {
   buildHighlightsPrompt,
   buildBulletQuantifierPrompt,
@@ -31,12 +37,20 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedDescriptions, setGeneratedDescriptions] = useState<Record<string, string>>({});
-  const [generatedHighlights, setGeneratedHighlights] = useState<Record<string, string[]>>({});
+  const [generatedDescriptions, setGeneratedDescriptions] = useState<
+    Record<string, string>
+  >({});
+  const [generatedHighlights, setGeneratedHighlights] = useState<
+    Record<string, string[]>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
-  const [quantifiedBullets, setQuantifiedBullets] = useState<Record<string, string>>({});
-  const [isQuantifying, setIsQuantifying] = useState<Record<string, boolean>>({});
+  const [quantifiedBullets, setQuantifiedBullets] = useState<
+    Record<string, string>
+  >({});
+  const [isQuantifying, setIsQuantifying] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const addProject = useCallback(() => {
     const newProject: Project = {
@@ -249,7 +263,10 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
       if (!result.ok) {
         setLlmErrors((prev) => ({ ...prev, [proj.id]: result.error }));
       } else {
-        setQuantifiedBullets((prev) => ({ ...prev, [key]: result.text.trim() }));
+        setQuantifiedBullets((prev) => ({
+          ...prev,
+          [key]: result.text.trim(),
+        }));
       }
       setIsQuantifying((prev) => ({ ...prev, [key]: false }));
     },
@@ -359,40 +376,52 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`description-${proj.id}`}>Description</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateDescription(proj)}
-                  disabled={isGenerating[proj.id]}
-                >
-                  {isGenerating[proj.id] ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Generate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImproveDescription(proj)}
-                  disabled={isGenerating[proj.id]}
-                >
-                  Improve
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGrammarDescription(proj)}
-                  disabled={isGenerating[proj.id]}
-                >
-                  Grammar
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`description-${proj.id}`}>Description</Label>
+                  <span className="text-xs text-muted-foreground sm:hidden">
+                    {(proj.description || "").length} characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                    {(proj.description || "").length} characters
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateDescription(proj)}
+                      disabled={isGenerating[proj.id]}
+                    >
+                      {isGenerating[proj.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImproveDescription(proj)}
+                      disabled={isGenerating[proj.id]}
+                    >
+                      Improve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGrammarDescription(proj)}
+                      disabled={isGenerating[proj.id]}
+                    >
+                      Grammar
+                    </Button>
+                  </div>
+                </div>
               </div>
               <RichTextEditor
                 id={`description-${proj.id}`}
@@ -419,7 +448,11 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateProject(proj.id, "description", generatedDescriptions[proj.id]);
+                        updateProject(
+                          proj.id,
+                          "description",
+                          generatedDescriptions[proj.id],
+                        );
                         clearGenerated(proj.id);
                       }}
                     >
@@ -438,9 +471,7 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        clearGenerated(proj.id)
-                      }
+                      onClick={() => clearGenerated(proj.id)}
                     >
                       Discard
                     </Button>
@@ -498,32 +529,34 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <Label>Key Features / Highlights</Label>
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleGenerateHighlights(proj)}
-                    disabled={isGenerating[proj.id]}
-                  >
-                    {isGenerating[proj.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    Generate
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addHighlight(proj.id)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateHighlights(proj)}
+                      disabled={isGenerating[proj.id]}
+                    >
+                      {isGenerating[proj.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addHighlight(proj.id)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
                 </div>
               </div>
               {generatedHighlights[proj.id]?.length ? (
@@ -541,8 +574,15 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updateProject(proj.id, "highlights", generatedHighlights[proj.id]);
-                        setGeneratedHighlights((prev) => ({ ...prev, [proj.id]: [] }));
+                        updateProject(
+                          proj.id,
+                          "highlights",
+                          generatedHighlights[proj.id],
+                        );
+                        setGeneratedHighlights((prev) => ({
+                          ...prev,
+                          [proj.id]: [],
+                        }));
                       }}
                     >
                       Apply
@@ -561,7 +601,10 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        setGeneratedHighlights((prev) => ({ ...prev, [proj.id]: [] }))
+                        setGeneratedHighlights((prev) => ({
+                          ...prev,
+                          [proj.id]: [],
+                        }))
                       }
                     >
                       Discard
@@ -592,7 +635,9 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                           className="shrink-0"
                           title="Quantify with AI"
                           onClick={() => handleQuantifyBullet(proj, hIndex)}
-                          disabled={isQuantifying[bulletKey] || !highlight.trim()}
+                          disabled={
+                            isQuantifying[bulletKey] || !highlight.trim()
+                          }
                         >
                           {isQuantifying[bulletKey] ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -613,17 +658,28 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                       </div>
                       {quantifiedBullets[bulletKey] && (
                         <div className="ml-5 rounded-md border bg-muted/30 p-2 space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground">Quantified Version</p>
-                          <p className="text-sm">{quantifiedBullets[bulletKey]}</p>
-                          <div className="flex gap-2">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Quantified Version
+                          </p>
+                          <p className="text-sm">
+                            {quantifiedBullets[bulletKey]}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
                               size="sm"
                               variant="default"
                               className="h-6 text-xs"
                               onClick={() => {
-                                updateHighlight(proj.id, hIndex, quantifiedBullets[bulletKey]);
-                                setQuantifiedBullets((prev) => ({ ...prev, [bulletKey]: "" }));
+                                updateHighlight(
+                                  proj.id,
+                                  hIndex,
+                                  quantifiedBullets[bulletKey],
+                                );
+                                setQuantifiedBullets((prev) => ({
+                                  ...prev,
+                                  [bulletKey]: "",
+                                }));
                               }}
                             >
                               Apply
@@ -634,7 +690,10 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
                               variant="ghost"
                               className="h-6 text-xs"
                               onClick={() =>
-                                setQuantifiedBullets((prev) => ({ ...prev, [bulletKey]: "" }))
+                                setQuantifiedBullets((prev) => ({
+                                  ...prev,
+                                  [bulletKey]: "",
+                                }))
                               }
                             >
                               Discard

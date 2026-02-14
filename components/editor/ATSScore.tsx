@@ -117,13 +117,19 @@ function CheckItem({ check }: { check: ATSCheck }) {
   );
 }
 
-export function ATSScore({ resume, className, trigger, open: controlledOpen, onOpenChange }: ATSScoreProps) {
+export function ATSScore({
+  resume,
+  className,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+}: ATSScoreProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  
+
   // Use controlled state if provided, otherwise use internal state
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
-  
+
   const [jobDescription, setJobDescription] = useState("");
   const [aiAnalysis, setAiAnalysis] = useState<AIATSAnalysis | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -146,27 +152,41 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
     if (resume.basics.label) parts.push(`Title: ${resume.basics.label}`);
     if (resume.basics.summary) parts.push(`Summary: ${resume.basics.summary}`);
     if (resume.skills.length) {
-      parts.push(`Skills: ${resume.skills.map((s) => [s.name, ...s.keywords].filter(Boolean).join(": ")).join(" | ")}`);
+      parts.push(
+        `Skills: ${resume.skills.map((s) => [s.name, ...s.keywords].filter(Boolean).join(": ")).join(" | ")}`,
+      );
     }
     if (resume.work.length) {
       resume.work.forEach((w) => {
-        const line = [`${w.position} at ${w.company}`, w.summary, ...(w.highlights || [])].filter(Boolean).join(" | ");
+        const line = [
+          `${w.position} at ${w.company}`,
+          w.summary,
+          ...(w.highlights || []),
+        ]
+          .filter(Boolean)
+          .join(" | ");
         parts.push(`Work: ${line}`);
       });
     }
     if (resume.education.length) {
       resume.education.forEach((e) => {
-        parts.push(`Education: ${[e.studyType, e.area, e.institution].filter(Boolean).join(" | ")}`);
+        parts.push(
+          `Education: ${[e.studyType, e.area, e.institution].filter(Boolean).join(" | ")}`,
+        );
       });
     }
     if (resume.projects.length) {
       resume.projects.forEach((p) => {
-        const line = [p.name, p.description, ...(p.highlights || [])].filter(Boolean).join(" | ");
+        const line = [p.name, p.description, ...(p.highlights || [])]
+          .filter(Boolean)
+          .join(" | ");
         parts.push(`Project: ${line}`);
       });
     }
     if (resume.certificates.length) {
-      parts.push(`Certificates: ${resume.certificates.map((c) => [c.name, c.issuer].filter(Boolean).join(" from ")).join(", ")}`);
+      parts.push(
+        `Certificates: ${resume.certificates.map((c) => [c.name, c.issuer].filter(Boolean).join(" from ")).join(", ")}`,
+      );
     }
     const raw = parts.join("\n");
     return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
@@ -191,11 +211,17 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
     try {
       const resumeText = buildResumeText();
       const jd = jobDescription.trim()
-        ? (redaction.stripContactInfo ? redactContactInfo(jobDescription) : jobDescription)
+        ? redaction.stripContactInfo
+          ? redactContactInfo(jobDescription)
+          : jobDescription
         : undefined;
       const structured = await generateStructuredOutput({
         generateText: (prompt, temperature, maxTokens) =>
-          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
+          result.provider.generateText(result.apiKey, {
+            prompt,
+            temperature,
+            maxTokens,
+          }),
         prompt: buildATSAnalysisPrompt(resumeText, jd),
         temperature: 0.2,
         maxTokens: 1024,
@@ -223,7 +249,14 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
     } finally {
       setIsAiAnalyzing(false);
     }
-  }, [apiKeys, buildResumeText, consent, jobDescription, providerId, redaction.stripContactInfo]);
+  }, [
+    apiKeys,
+    buildResumeText,
+    consent,
+    jobDescription,
+    providerId,
+    redaction.stripContactInfo,
+  ]);
 
   const scoreStartColor = (score: number) => {
     if (score >= 80) return "text-green-600";
@@ -264,7 +297,10 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="w-full sm:max-w-6xl max-h-[90vh] overflow-y-auto rounded-lg">
+      <DialogContent
+        className="w-full sm:max-w-6xl max-h-[90vh] overflow-y-auto rounded-lg"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="size-5 text-yellow-500" />
@@ -344,7 +380,7 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                         ? "text-green-600 border-green-300"
                         : aiAnalysis.score >= 60
                           ? "text-yellow-600 border-yellow-300"
-                          : "text-red-600 border-red-300"
+                          : "text-red-600 border-red-300",
                     )}
                   >
                     AI Score: {aiAnalysis.score}/100
@@ -352,17 +388,19 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                 )}
               </h4>
 
-              {aiError && (
-                <p className="text-sm text-destructive">{aiError}</p>
-              )}
+              {aiError && <p className="text-sm text-destructive">{aiError}</p>}
 
               {aiAnalysis && (
                 <>
                   {/* Summary Feedback */}
                   {aiAnalysis.summaryFeedback && (
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Summary Feedback</p>
-                      <p className="text-sm text-muted-foreground">{aiAnalysis.summaryFeedback}</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Summary Feedback
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {aiAnalysis.summaryFeedback}
+                      </p>
                     </div>
                   )}
 
@@ -375,7 +413,10 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                       </p>
                       <ul className="space-y-1">
                         {aiAnalysis.criticalIssues.map((issue, i) => (
-                          <li key={i} className="text-xs text-red-700 dark:text-red-300 flex gap-1.5">
+                          <li
+                            key={i}
+                            className="text-xs text-red-700 dark:text-red-300 flex gap-1.5"
+                          >
                             <span className="text-red-500 shrink-0">•</span>
                             {issue}
                           </li>
@@ -393,7 +434,10 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                       </p>
                       <ul className="space-y-1">
                         {aiAnalysis.strengths.map((s, i) => (
-                          <li key={i} className="text-xs text-green-700 dark:text-green-300 flex gap-1.5">
+                          <li
+                            key={i}
+                            className="text-xs text-green-700 dark:text-green-300 flex gap-1.5"
+                          >
                             <span className="text-green-500 shrink-0">•</span>
                             {s}
                           </li>
@@ -405,10 +449,14 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                   {/* Improvements */}
                   {aiAnalysis.improvements.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ranked Improvements</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Ranked Improvements
+                      </p>
                       <ol className="space-y-1 list-decimal list-inside">
                         {aiAnalysis.improvements.map((imp, i) => (
-                          <li key={i} className="text-xs text-muted-foreground">{imp}</li>
+                          <li key={i} className="text-xs text-muted-foreground">
+                            {imp}
+                          </li>
                         ))}
                       </ol>
                     </div>
@@ -417,10 +465,18 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                   {/* Keyword Suggestions */}
                   {aiAnalysis.keywordSuggestions.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Suggested Keywords</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Suggested Keywords
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {aiAnalysis.keywordSuggestions.map((kw, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {kw}
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -429,10 +485,15 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                   {/* Format Issues */}
                   {aiAnalysis.formatIssues.length > 0 && (
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Format Issues</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Format Issues
+                      </p>
                       <ul className="space-y-1">
                         {aiAnalysis.formatIssues.map((fi, i) => (
-                          <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
+                          <li
+                            key={i}
+                            className="text-xs text-muted-foreground flex gap-1.5"
+                          >
                             <Info className="size-3 shrink-0 mt-0.5" />
                             {fi}
                           </li>
@@ -444,12 +505,23 @@ export function ATSScore({ resume, className, trigger, open: controlledOpen, onO
                   {/* Bullet Rewrites */}
                   {aiAnalysis.bulletFeedback.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bullet Rewrites</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Bullet Rewrites
+                      </p>
                       {aiAnalysis.bulletFeedback.map((bf, i) => (
-                        <div key={i} className="rounded border p-2 space-y-1 text-xs">
-                          <div className="text-red-600 dark:text-red-400 line-through">{bf.original}</div>
-                          <div className="text-green-600 dark:text-green-400">{bf.improved}</div>
-                          <div className="text-muted-foreground italic">{bf.reason}</div>
+                        <div
+                          key={i}
+                          className="rounded border p-2 space-y-1 text-xs"
+                        >
+                          <div className="text-red-600 dark:text-red-400 line-through">
+                            {bf.original}
+                          </div>
+                          <div className="text-green-600 dark:text-green-400">
+                            {bf.improved}
+                          </div>
+                          <div className="text-muted-foreground italic">
+                            {bf.reason}
+                          </div>
                         </div>
                       ))}
                     </div>

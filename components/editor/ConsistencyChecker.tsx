@@ -43,11 +43,30 @@ interface ConsistencyCheckerProps {
 type ConsistencyIssue = ConsistencyIssueData;
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  tense: { label: "Tense", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" },
-  punctuation: { label: "Punctuation", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-  passive: { label: "Passive Voice", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
-  formatting: { label: "Formatting", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" },
-  style: { label: "Style", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+  tense: {
+    label: "Tense",
+    color:
+      "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+  },
+  punctuation: {
+    label: "Punctuation",
+    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  },
+  passive: {
+    label: "Passive Voice",
+    color:
+      "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  },
+  formatting: {
+    label: "Formatting",
+    color:
+      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+  },
+  style: {
+    label: "Style",
+    color:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  },
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -56,13 +75,19 @@ const SEVERITY_COLORS: Record<string, string> = {
   low: "text-muted-foreground",
 };
 
-export function ConsistencyChecker({ resume, className, trigger, open: controlledOpen, onOpenChange }: ConsistencyCheckerProps) {
+export function ConsistencyChecker({
+  resume,
+  className,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+}: ConsistencyCheckerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  
+
   // Use controlled state if provided, otherwise use internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
-  
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [issues, setIssues] = useState<ConsistencyIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +97,9 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
   const apiKeys = useLLMSettingsStore((state) => state.apiKeys);
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const updateCurrentResume = useResumeStore((state) => state.updateCurrentResume);
+  const updateCurrentResume = useResumeStore(
+    (state) => state.updateCurrentResume,
+  );
 
   const buildResumeText = useCallback(() => {
     const sections: string[] = [];
@@ -100,7 +127,9 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
     });
 
     resume.certificates.forEach((c) => {
-      sections.push(`CERTIFICATE: ${c.name} by ${c.issuer}\n${c.summary || ""}`);
+      sections.push(
+        `CERTIFICATE: ${c.name} by ${c.issuer}\n${c.summary || ""}`,
+      );
     });
 
     resume.awards.forEach((a) => {
@@ -108,7 +137,9 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
     });
 
     resume.publications.forEach((p) => {
-      sections.push(`PUBLICATION: ${p.name} in ${p.publisher}\n${p.summary || ""}`);
+      sections.push(
+        `PUBLICATION: ${p.name} in ${p.publisher}\n${p.summary || ""}`,
+      );
     });
 
     const text = sections.join("\n\n");
@@ -137,7 +168,11 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
       const resumeText = buildResumeText();
       const structured = await generateStructuredOutput({
         generateText: (prompt, temperature, maxTokens) =>
-          result.provider.generateText(result.apiKey, { prompt, temperature, maxTokens }),
+          result.provider.generateText(result.apiKey, {
+            prompt,
+            temperature,
+            maxTokens,
+          }),
         prompt: buildConsistencyCheckPrompt(resumeText),
         temperature: 0.2,
         maxTokens: 2048,
@@ -165,7 +200,8 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
       // Search through the resume and replace the original text with fix
       const updates: Partial<Resume> = {};
       // Strip bullet markers (•, -, *) from both sides to avoid doubling
-      const stripBullet = (text: string) => text.trim().replace(/^[•\-\*]\s*/, "");
+      const stripBullet = (text: string) =>
+        text.trim().replace(/^[•\-\*]\s*/, "");
       const original = stripBullet(issue.original);
       const fix = stripBullet(issue.fix);
 
@@ -244,12 +280,12 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
         let changed = false;
         let summary = e.summary || "";
         let courses = [...(e.courses || [])];
-        
+
         if (e.summary && e.summary.includes(original)) {
           summary = e.summary.replace(original, fix);
           changed = true;
         }
-        
+
         courses = courses.map((c) => {
           if (c.includes(original)) {
             changed = true;
@@ -257,7 +293,7 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
           }
           return c;
         });
-        
+
         return changed ? { ...e, summary, courses } : e;
       });
       if (updatedEducation.some((e, i) => e !== resume.education[i])) {
@@ -335,7 +371,10 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
             <Button
               variant="outline"
               size="sm"
-              className={cn("text-primary border-primary/20 hover:bg-primary/10", className)}
+              className={cn(
+                "text-primary border-primary/20 hover:bg-primary/10",
+                className,
+              )}
             >
               <ShieldCheck className="h-4 w-4" />
               Consistency
@@ -350,16 +389,20 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
             Consistency Checker
           </DialogTitle>
           <DialogDescription>
-            Scan your resume for tense, punctuation, formatting, and style inconsistencies.
+            Scan your resume for tense, punctuation, formatting, and style
+            inconsistencies.
           </DialogDescription>
           <div className="flex items-start gap-2 p-2.5 mt-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
             <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-700 dark:text-blue-300"><span className="font-medium">Requires AI:</span> This feature needs an AI provider configured in Settings.</p>
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <span className="font-medium">Requires AI:</span> This feature
+              needs an AI provider configured in Settings.
+            </p>
           </div>
         </DialogHeader>
 
         {/* Action bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleAnalyze} disabled={isAnalyzing} size="sm">
             {isAnalyzing ? (
               <>
@@ -381,12 +424,18 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
           {issues.length > 0 && (
             <div className="ml-auto flex items-center gap-2 text-xs">
               {highCount > 0 && (
-                <Badge variant="outline" className="text-red-600 border-red-200">
+                <Badge
+                  variant="outline"
+                  className="text-red-600 border-red-200"
+                >
                   {highCount} High
                 </Badge>
               )}
               {medCount > 0 && (
-                <Badge variant="outline" className="text-yellow-600 border-yellow-200">
+                <Badge
+                  variant="outline"
+                  className="text-yellow-600 border-yellow-200"
+                >
                   {medCount} Medium
                 </Badge>
               )}
@@ -411,15 +460,21 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
           {issues.length === 0 && !isAnalyzing && !error && (
             <div className="text-center py-12 text-muted-foreground">
               <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Click &quot;Scan Resume&quot; to check for consistency issues.</p>
+              <p className="text-sm">
+                Click &quot;Scan Resume&quot; to check for consistency issues.
+              </p>
             </div>
           )}
 
           {issues.length > 0 && issues.every((_, i) => appliedFixes.has(i)) && (
             <div className="text-center py-8">
               <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-green-500" />
-              <p className="font-medium text-green-700 dark:text-green-400">All fixes applied!</p>
-              <p className="text-sm text-muted-foreground mt-1">Your resume is now consistent.</p>
+              <p className="font-medium text-green-700 dark:text-green-400">
+                All fixes applied!
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your resume is now consistent.
+              </p>
             </div>
           )}
 
@@ -438,7 +493,12 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
                 >
                   {TYPE_LABELS[issue.type]?.label || issue.type}
                 </Badge>
-                <span className={cn("text-xs font-medium", SEVERITY_COLORS[issue.severity])}>
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    SEVERITY_COLORS[issue.severity],
+                  )}
+                >
                   {issue.severity}
                 </span>
                 <span className="text-xs text-muted-foreground ml-auto">
@@ -450,9 +510,13 @@ export function ConsistencyChecker({ resume, className, trigger, open: controlle
 
               {issue.original && issue.fix && (
                 <div className="flex items-center gap-2 text-xs bg-muted/50 rounded p-2">
-                  <span className="line-through text-muted-foreground">{issue.original}</span>
+                  <span className="line-through text-muted-foreground">
+                    {issue.original}
+                  </span>
                   <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                  <span className="font-medium text-green-700 dark:text-green-400">{issue.fix}</span>
+                  <span className="font-medium text-green-700 dark:text-green-400">
+                    {issue.fix}
+                  </span>
                 </div>
               )}
 

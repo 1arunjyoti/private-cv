@@ -20,7 +20,9 @@ interface PublicationsFormProps {
 
 export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
   const redaction = useLLMSettingsStore((state) => state.redaction);
-  const [generatedSummaries, setGeneratedSummaries] = useState<Record<string, string>>({});
+  const [generatedSummaries, setGeneratedSummaries] = useState<
+    Record<string, string>
+  >({});
   const [llmErrors, setLlmErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const addPublication = useCallback(() => {
@@ -72,7 +74,9 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
         pub.publisher ? `Publisher: ${pub.publisher}` : "",
         pub.releaseDate ? `Date: ${pub.releaseDate}` : "",
         pub.summary ? `Current Summary: ${pub.summary}` : "",
-        peerContext.length ? `Other Publications:\n${peerContext.join("\n")}` : "",
+        peerContext.length
+          ? `Other Publications:\n${peerContext.join("\n")}`
+          : "",
       ].filter(Boolean);
       const raw = parts.join("\n");
       return redaction.stripContactInfo ? redactContactInfo(raw) : raw;
@@ -196,40 +200,52 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`summary-${pub.id}`}>Description</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateSummary(pub)}
-                  disabled={isGenerating[pub.id]}
-                >
-                  {isGenerating[pub.id] ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Generate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleImproveSummary(pub)}
-                  disabled={isGenerating[pub.id]}
-                >
-                  Improve
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGrammarSummary(pub)}
-                  disabled={isGenerating[pub.id]}
-                >
-                  Grammar
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`summary-${pub.id}`}>Description</Label>
+                  <span className="text-xs text-muted-foreground sm:hidden">
+                    {(pub.summary || "").length} characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-2 hidden sm:inline">
+                    {(pub.summary || "").length} characters
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateSummary(pub)}
+                      disabled={isGenerating[pub.id]}
+                    >
+                      {isGenerating[pub.id] ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleImproveSummary(pub)}
+                      disabled={isGenerating[pub.id]}
+                    >
+                      Improve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGrammarSummary(pub)}
+                      disabled={isGenerating[pub.id]}
+                    >
+                      Grammar
+                    </Button>
+                  </div>
+                </div>
               </div>
               <RichTextEditor
                 id={`summary-${pub.id}`}
@@ -251,12 +267,16 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                   <p className="text-sm whitespace-pre-wrap">
                     {generatedSummaries[pub.id]}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => {
-                        updatePublication(pub.id, "summary", generatedSummaries[pub.id]);
+                        updatePublication(
+                          pub.id,
+                          "summary",
+                          generatedSummaries[pub.id],
+                        );
                         clearGenerated(pub.id);
                       }}
                     >
@@ -275,9 +295,7 @@ export function PublicationsForm({ data, onChange }: PublicationsFormProps) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        clearGenerated(pub.id)
-                      }
+                      onClick={() => clearGenerated(pub.id)}
                     >
                       Discard
                     </Button>

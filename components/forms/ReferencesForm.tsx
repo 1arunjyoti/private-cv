@@ -120,7 +120,12 @@ export function ReferencesForm({ data, onChange }: ReferencesFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={`reference-${item.id}`}>Reference</Label>
+              <div className="flex justify-between items-center mb-1">
+                <Label htmlFor={`reference-${item.id}`}>Reference</Label>
+                <span className="text-xs text-muted-foreground">
+                  {(item.reference || "").length} characters
+                </span>
+              </div>
               <RichTextEditor
                 id={`reference-${item.id}`}
                 placeholder="The reference text..."

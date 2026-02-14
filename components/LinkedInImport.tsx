@@ -207,16 +207,16 @@ export function LinkedInImport({
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col min-h-0"
           >
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="csv" className="gap-2">
+            <TabsList className="flex flex-wrap h-auto w-full mb-4 bg-muted p-1 gap-1">
+              <TabsTrigger value="csv" className="flex-1 min-w-[140px] gap-2">
                 <FileSpreadsheet className="h-4 w-4" />
                 Data Export (CSV)
               </TabsTrigger>
-              <TabsTrigger value="pdf" className="gap-2">
+              <TabsTrigger value="pdf" className="flex-1 min-w-[140px] gap-2">
                 <FileText className="h-4 w-4" />
                 Profile PDF
               </TabsTrigger>
-              <TabsTrigger value="ai" className="gap-2">
+              <TabsTrigger value="ai" className="flex-1 min-w-[140px] gap-2">
                 <Linkedin className="h-4 w-4" />
                 Paste Text (AI)
               </TabsTrigger>
@@ -255,9 +255,13 @@ export function LinkedInImport({
                 </p>
                 <ol className="list-decimal list-inside space-y-0.5 ml-1">
                   <li>Go to LinkedIn Settings & Privacy</li>
-                  <li>Select &quot;Data Privacy&quot; &gt; &quot;Get a copy of your data&quot;</li>
                   <li>
-                    Select &quot;Download larger data archive&quot; (or specific files)
+                    Select &quot;Data Privacy&quot; &gt; &quot;Get a copy of
+                    your data&quot;
+                  </li>
+                  <li>
+                    Select &quot;Download larger data archive&quot; (or specific
+                    files)
                   </li>
                   <li>Wait for email (10-20 mins) and download the ZIP</li>
                 </ol>
@@ -275,7 +279,8 @@ export function LinkedInImport({
                 <div>
                   <p className="font-medium">Upload Profile PDF</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Upload the &quot;Save to PDF&quot; file from your LinkedIn profile.
+                    Upload the &quot;Save to PDF&quot; file from your LinkedIn
+                    profile.
                   </p>
                 </div>
                 <Button variant="secondary" size="sm" className="mt-2 relative">
@@ -296,8 +301,8 @@ export function LinkedInImport({
                 </p>
                 <p>
                   PDF parsing relies on text extraction and may not be perfect
-                  due to LinkedIn&apos;s variable formatting. Review imported data
-                  carefully.
+                  due to LinkedIn&apos;s variable formatting. Review imported
+                  data carefully.
                 </p>
               </div>
             </TabsContent>

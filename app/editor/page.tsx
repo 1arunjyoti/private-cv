@@ -47,6 +47,8 @@ import {
   FileDown,
   Loader2,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Target,
   Menu,
   RotateCcw,
@@ -151,6 +153,37 @@ function EditorContent() {
   const templateAppliedRef = useRef(false);
   const initializedRef = useRef(false);
 
+  // Scroll indicators for mobile tabs
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftIndicator, setShowLeftIndicator] = useState(false);
+  const [showRightIndicator, setShowRightIndicator] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftIndicator(scrollLeft > 0);
+      setShowRightIndicator(
+        Math.abs(scrollWidth - clientWidth - scrollLeft) > 1,
+      );
+    }
+  }, []);
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 200;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [checkScroll]);
+
   // Load or create resume on mount — runs once per editor session
   useEffect(() => {
     if (initializedRef.current) return;
@@ -163,7 +196,6 @@ function EditorContent() {
       templateAppliedRef.current = true;
       createNewResume(undefined, templateParam || undefined);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, loadResume, createNewResume, currentResume, templateParam]);
 
   // Apply template from URL when it differs from current resume's template (one-time only)
@@ -584,16 +616,23 @@ function EditorContent() {
             {/* Mobile Actions */}
             <div className="flex lg:hidden items-center gap-1">
               <Button
-                variant="ghost"
-                size="icon"
+                variant="outline"
+                size="sm"
+                className="gap-2 border-primary/20 bg-background hover:bg-muted"
                 onClick={() =>
                   setView(view === "content" ? "customize" : "content")
                 }
               >
                 {view === "content" ? (
-                  <Paintbrush className="h-5 w-5" />
+                  <>
+                    <Paintbrush className="h-4 w-4" />
+                    Customize
+                  </>
                 ) : (
-                  <PenLine className="h-5 w-5" />
+                  <>
+                    <PenLine className="h-4 w-4" />
+                    Edit Content
+                  </>
                 )}
               </Button>
               <Sheet>
@@ -638,7 +677,7 @@ function EditorContent() {
                     <div className="space-y-3">
                       <Button
                         variant="outline"
-                        className="justify-start w-full h-10"
+                        className="justify-start w-full h-auto py-2 whitespace-normal text-left"
                         onClick={handleSave}
                         disabled={isSaving}
                       >
@@ -656,7 +695,7 @@ function EditorContent() {
                       <div className="space-y-3">
                         <Button
                           variant="outline"
-                          className="justify-start w-full h-10"
+                          className="justify-start w-full h-auto py-2 whitespace-normal text-left"
                           onClick={syncNow}
                           disabled={!syncAuth || syncStatus === "syncing"}
                         >
@@ -683,19 +722,19 @@ function EditorContent() {
                       <div className="grid gap-2">
                         <Button
                           variant="outline"
-                          className="justify-start text-foreground h-10 bg-background"
+                          className="justify-start text-foreground h-auto py-2 bg-background whitespace-normal text-left"
                           onClick={handleImportResume}
                         >
-                          <FileUp className="h-4 w-4" />
-                          Import Resume (PDF/DOCX/JSON)
+                          <FileUp className="h-4 w-4 shrink-0" />
+                          <span>Import Resume (PDF/DOCX/JSON)</span>
                         </Button>
                         <Button
                           variant="outline"
-                          className="justify-start text-foreground h-10 bg-background"
+                          className="justify-start text-foreground h-auto py-2 bg-background whitespace-normal text-left"
                           onClick={handleExportJSON}
                         >
-                          <FileDown className="h-4 w-4" />
-                          Export JSON
+                          <FileDown className="h-4 w-4 shrink-0" />
+                          <span>Export JSON</span>
                         </Button>
                       </div>
                     </div>
@@ -766,11 +805,11 @@ function EditorContent() {
                         {/* Priority 0: Quick utilities */}
                         <Button
                           variant="outline"
-                          className="justify-start w-full h-10 border-dashed"
+                          className="justify-start w-full h-auto py-2 border-dashed whitespace-normal text-left"
                           onClick={handleFillSampleData}
                         >
-                          <Wand2 className="h-4 w-4" />
-                          Fill Sample Data
+                          <Wand2 className="h-4 w-4 shrink-0" />
+                          <span>Fill Sample Data</span>
                         </Button>
 
                         {/* Priority 1: Configuration */}
@@ -793,10 +832,10 @@ function EditorContent() {
                             trigger={
                               <Button
                                 variant="outline"
-                                className="justify-start text-foreground h-10 bg-background w-full "
+                                className="justify-start text-foreground h-auto py-2 bg-background w-full whitespace-normal text-left"
                               >
-                                <Linkedin className="h-4 w-4" />
-                                LinkedIn / Portfolio Import
+                                <Linkedin className="h-4 w-4 shrink-0" />
+                                <span>LinkedIn / Portfolio Import</span>
                               </Button>
                             }
                           />
@@ -855,7 +894,7 @@ function EditorContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 max-w-8xl grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-hidden">
+      <main className="flex-1 container mx-auto px-4 max-w-8xl grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8 overflow-hidden">
         {/* Left Side - Editor Controls */}
         <div className="min-h-0 overflow-hidden flex flex-col lg:border-r bg-background/50">
           {view === "customize" ? (
@@ -868,19 +907,41 @@ function EditorContent() {
               className="flex flex-col md:flex-row h-full"
             >
               {/* Mobile Horizontal Tab Bar */}
-              <div className="md:hidden w-full border-b bg-muted/10 shrink-0 overflow-x-auto scrollbar-hide">
-                <TabsList className="bg-transparent flex items-center justify-start p-2 gap-2 h-auto w-max rounded-none">
-                  {EDITOR_TABS.map((tab) => (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="flex-col gap-1 px-3 py-2 h-auto text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all rounded-md min-w-17.5"
-                    >
-                      <tab.icon className="h-4 w-4 shrink-0 mb-1" />
-                      <span className="truncate max-w-20">{tab.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+              <div className="md:hidden w-full border-b bg-muted/10 shrink-0 relative">
+                {showLeftIndicator && (
+                  <div
+                    className="absolute left-0 top-0 bottom-0 flex items-center justify-start pl-1 bg-linear-to-r from-background via-background/90 to-transparent w-8 z-10 cursor-pointer"
+                    onClick={() => scrollTabs("left")}
+                  >
+                    <ChevronLeft className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+                <div
+                  ref={scrollRef}
+                  onScroll={checkScroll}
+                  className="w-full overflow-x-auto scrollbar-hide"
+                >
+                  <TabsList className="bg-transparent flex items-center justify-start p-2 gap-2 h-auto w-max rounded-none">
+                    {EDITOR_TABS.map((tab) => (
+                      <TabsTrigger
+                        key={tab.id}
+                        value={tab.id}
+                        className="flex-col gap-1 px-3 py-2 h-auto text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all rounded-md min-w-17.5"
+                      >
+                        <tab.icon className="h-4 w-4 shrink-0 mb-1" />
+                        <span className="truncate max-w-20">{tab.label}</span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
+                {showRightIndicator && (
+                  <div
+                    className="absolute right-0 top-0 bottom-0 flex items-center justify-end pr-1 bg-linear-to-l from-background via-background/90 to-transparent w-8 z-10 cursor-pointer"
+                    onClick={() => scrollTabs("right")}
+                  >
+                    <ChevronRight className="h-4 w-4 text-primary" />
+                  </div>
+                )}
               </div>
 
               {/* Desktop Vertical Sidebar */}
@@ -1049,7 +1110,9 @@ function EditorContent() {
         {/* Right Side - Live Preview */}
         <div
           className={`lg:block ${
-            view === "customize" ? "block" : "hidden"
+            view === "customize"
+              ? "block border-t-8 border-muted lg:border-t-0"
+              : "hidden"
           } overflow-y-auto py-6 md:py-8 pl-1`}
         >
           <div className="min-h-full">
