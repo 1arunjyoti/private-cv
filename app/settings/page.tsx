@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,10 @@ import { buildSummaryPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
+import { useResumeStore } from "@/store/useResumeStore";
+import { ImportDialog } from "@/components/ImportDialog";
+import { ImportReview } from "@/components/ImportReview";
+import { importService, type ParsedResumeData, type ImportResult } from "@/lib/import";
 import {
   ArrowLeft,
   Settings,
@@ -31,6 +35,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  FileUp,
+  FileDown,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +154,51 @@ export default function SettingsPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Resume Import/Export
+  const currentResume = useResumeStore((state) => state.currentResume);
+  const updateCurrentResume = useResumeStore((state) => state.updateCurrentResume);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importReviewOpen, setImportReviewOpen] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
+  const handleExportJSON = useCallback(() => {
+    if (!currentResume) return;
+    const dataStr = JSON.stringify(currentResume, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentResume.meta.title || "resume"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [currentResume]);
+
+  const handleImportResume = useCallback(() => {
+    setImportDialogOpen(true);
+  }, []);
+
+  const handleImportComplete = useCallback((result: ImportResult) => {
+    setImportResult(result);
+    setImportDialogOpen(false);
+    setImportReviewOpen(true);
+  }, []);
+
+  const handleImportConfirm = useCallback(
+    (data: ParsedResumeData) => {
+      if (!currentResume) return;
+      const merged = importService.mergeWithResume(currentResume, data);
+      updateCurrentResume(merged);
+      setImportReviewOpen(false);
+      setImportResult(null);
+    },
+    [currentResume, updateCurrentResume],
+  );
+
+  const handleImportCancel = useCallback(() => {
+    setImportReviewOpen(false);
+    setImportResult(null);
+  }, []);
 
   useEffect(() => {
     if (!isCloudSyncEnabled) return;
@@ -449,6 +500,45 @@ export default function SettingsPage() {
                   </div>
                 ) : null}
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileDown className="h-5 w-5" />
+              Local Data Backup (Import/Export)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Import a resume from PDF, DOCX, or JSON format, or export your current resume as a JSON backup file to save your progress locally.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={handleImportResume}
+                disabled={!currentResume}
+                className="gap-2"
+              >
+                <FileUp className="h-4 w-4" />
+                Import Resume (PDF/DOCX/JSON)
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportJSON}
+                disabled={!currentResume}
+                className="gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export JSON Backup
+              </Button>
+            </div>
+            {!currentResume && (
+              <p className="text-xs text-destructive">
+                No active resume loaded. Please open a resume in the editor first to import/export.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -901,6 +991,22 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </main>
+
+      <ImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={handleImportComplete}
+      />
+
+      {importResult && (
+        <ImportReview
+          open={importReviewOpen}
+          onOpenChange={setImportReviewOpen}
+          importResult={importResult}
+          onConfirm={handleImportConfirm}
+          onCancel={handleImportCancel}
+        />
+      )}
     </div>
   );
 }
