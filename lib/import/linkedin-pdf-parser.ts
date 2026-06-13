@@ -7,6 +7,16 @@ import {
   extractContactInfo, 
   extractLocation,
   extractDates,
+  parseWorkExperience,
+  parseEducation,
+  parseSkills,
+  parseProjects,
+  parseCertificates,
+  parseLanguages,
+  parseAwards,
+  parsePublications,
+  parseReferences,
+  calculateConfidence
 } from './parse-utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -89,39 +99,54 @@ export class LinkedInPDFParser implements ResumeParser {
         
         switch (section.name) {
           case 'summary':
-            data.basics.summary = content.trim();
+            data.basics!.summary = content.trim().substring(0, 1000);
             break;
 
           case 'work':
-            data.work = this.parseWorkSection(content);
+            data.work = parseWorkExperience(content);
             break;
 
           case 'education':
-            data.education = this.parseEducationSection(content);
+            data.education = parseEducation(content);
             break;
             
           case 'skills':
-            data.skills = this.parseSkillsSection(content);
+            data.skills = parseSkills(content);
             break;
 
           case 'certificates':
-              data.certificates = this.parseCertificatesSection(content);
-              break;
-              
-           case 'languages':
-               data.languages = this.parseLanguagesSection(content);
-               break;
-               
-            case 'projects':
-                data.projects = this.parseProjectsSection(content);
-                break;
+            data.certificates = parseCertificates(content);
+            break;
+            
+          case 'languages':
+            data.languages = parseLanguages(content);
+            break;
+            
+          case 'projects':
+            data.projects = parseProjects(content);
+            break;
+            
+          case 'awards':
+            data.awards = parseAwards(content);
+            break;
+            
+          case 'publications':
+            data.publications = parsePublications(content);
+            break;
+            
+          case 'references':
+            data.references = parseReferences(content);
+            break;
         }
       }
+
+      // Calculate confidence scores
+      const confidence = calculateConfidence(data);
 
       return {
         success: true,
         data,
-        confidence: { overall: 85, sections: {} }, // Good confidence but parsing is heuristic
+        confidence,
         warnings,
         errors: [],
         rawText

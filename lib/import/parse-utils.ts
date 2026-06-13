@@ -6,6 +6,9 @@ import type {
   Project,
   Certificate,
   Language,
+  Award,
+  Publication,
+  Reference,
 } from '@/db';
 import type {
   ParsedResumeData,
@@ -1060,32 +1063,53 @@ export function parseSkills(content: string): Partial<Skill>[] {
 }
 
 function addSkillItems(text: string, category: string, skills: Partial<Skill>[]) {
+  const proficiencyPatterns = [
+    /\b(beginner|intermediate|advanced|expert|proficient|native|fluent|professional|working|elementary|conversational|basic)\b/i,
+    /\((\d+(?:\.\d+)?(?:\s*(?:years?|months?|yrs?|mos?))?)\)/i,
+    /\[(\d+(?:\/\d+)?)\]/,
+    /- (\d+(?:\.\d+)?(?:\s*years?)?)$/i,
+    /: (beginner|intermediate|advanced|expert|proficient|native|fluent|professional|working)/i,
+  ];
+
   const items = text.split(/[,;•|/]/).map((s) => s.trim()).filter((s) => s && s.length < 50);
   if (items.length === 0) return;
 
-  if (category) {
-    // Group under category
-    const existing = skills.find((s) => s.name?.toLowerCase() === category.toLowerCase());
-    if (existing) {
-      for (const item of items) {
-        if (!existing.keywords?.includes(item)) {
-          existing.keywords?.push(item);
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    let level = '';
+    let skillName = item;
+
+    for (const pattern of proficiencyPatterns) {
+      const match = item.match(pattern);
+      if (match) {
+        level = match[1];
+        skillName = item.replace(pattern, '').replace(/[()\[\]-]+$/, '').trim();
+        break;
+      }
+    }
+
+    if (category) {
+      const existing = skills.find((s) => s.name?.toLowerCase() === category.toLowerCase());
+      if (existing) {
+        if (!existing.keywords?.includes(skillName)) {
+          existing.keywords?.push(skillName);
         }
+        if (level && !existing.level) {
+          existing.level = level;
+        }
+      } else {
+        skills.push({
+          id: uuidv4(),
+          name: category,
+          level: level,
+          keywords: [skillName],
+        });
       }
     } else {
       skills.push({
         id: uuidv4(),
-        name: category,
-        level: '',
-        keywords: items,
-      });
-    }
-  } else {
-    for (const item of items) {
-      skills.push({
-        id: uuidv4(),
-        name: item,
-        level: '',
+        name: skillName,
+        level: level,
         keywords: [],
       });
     }
@@ -1240,6 +1264,156 @@ export function parseLanguages(content: string): Partial<Language>[] {
   }
 
   return languages;
+}
+
+// ===================================================================
+// Awards parsing
+// ===================================================================
+
+export function parseAwards(content: string): Partial<Award>[] {
+  const awards: Partial<Award>[] = [];
+  const blocks = splitByEntryBoundaries(content);
+
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+
+    const lines = block.split('\n').map((l) => l.trim()).filter((l) => l);
+    if (lines.length === 0) continue;
+
+    const award: Partial<Award> = { id: uuidv4() };
+
+    const firstLine = lines[0].replace(/^[•\-\*\u2022\u2023\u25E6]\s*/, '').trim();
+    
+    if (firstLine.includes(' - ')) {
+      const parts = firstLine.split(' - ');
+      award.title = parts[0].trim();
+      award.awarder = parts.slice(1).join(' - ').trim();
+    } else if (firstLine.includes(' | ')) {
+      const parts = firstLine.split(' | ');
+      award.title = parts[0].trim();
+      award.awarder = parts.slice(1).join(' | ').trim();
+    } else if (firstLine.includes(': ')) {
+      const parts = firstLine.split(': ');
+      award.title = parts[0].trim();
+      award.awarder = parts.slice(1).join(': ').trim();
+    } else {
+      award.title = firstLine;
+    }
+
+    const dates = extractDates(block);
+    if (dates.startDate) award.date = dates.startDate;
+
+    if (lines.length > 1) {
+      const summaryLines = lines.slice(1).filter(l => !isBulletLine(l) && !isDateLine(l));
+      if (summaryLines.length > 0) {
+        award.summary = summaryLines.join(' ').substring(0, 500);
+      }
+    }
+
+    if (award.title) {
+      awards.push(award);
+    }
+  }
+
+  return awards;
+}
+
+// ===================================================================
+// Publications parsing
+// ===================================================================
+
+export function parsePublications(content: string): Partial<Publication>[] {
+  const publications: Partial<Publication>[] = [];
+  const blocks = splitByEntryBoundaries(content);
+
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+
+    const lines = block.split('\n').map((l) => l.trim()).filter((l) => l);
+    if (lines.length === 0) continue;
+
+    const publication: Partial<Publication> = { id: uuidv4() };
+
+    const firstLine = lines[0].replace(/^[•\-\*\u2022\u2023\u25E6]\s*/, '').trim();
+    publication.name = firstLine;
+
+    const urlPattern = /(?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
+    urlPattern.lastIndex = 0;
+    const urlMatch = block.match(urlPattern);
+    if (urlMatch) {
+      publication.url = urlMatch[0].startsWith('http') ? urlMatch[0] : `https://${urlMatch[0]}`;
+    }
+
+    const dates = extractDates(block);
+    if (dates.startDate) publication.releaseDate = dates.startDate;
+
+    if (lines.length > 1) {
+      const summaryLines = lines.slice(1).filter(l => !isBulletLine(l) && !isDateLine(l));
+      if (summaryLines.length > 0) {
+        publication.summary = summaryLines.join(' ').substring(0, 500);
+      }
+    }
+
+    if (publication.name) {
+      publications.push(publication);
+    }
+  }
+
+  return publications;
+}
+
+// ===================================================================
+// References parsing
+// ===================================================================
+
+export function parseReferences(content: string): Partial<Reference>[] {
+  const references: Partial<Reference>[] = [];
+  const blocks = splitByEntryBoundaries(content);
+
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+
+    const lines = block.split('\n').map((l) => l.trim()).filter((l) => l);
+    if (lines.length === 0) continue;
+
+    const reference: Partial<Reference> = { id: uuidv4() };
+
+    reference.name = lines[0].replace(/^[•\-\*\u2022\u2023\u25E6]\s*/, '').trim();
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (isBulletLine(line) || isDateLine(line)) continue;
+
+      const contactPatterns = [
+        CONTACT_PATTERNS.email,
+        CONTACT_PATTERNS.phone,
+        /linkedin\.com\/in\/[a-zA-Z0-9_-]+/i,
+      ];
+      
+      let hasContact = false;
+      for (const pattern of contactPatterns) {
+        pattern.lastIndex = 0;
+        if (pattern.test(line)) {
+          hasContact = true;
+          break;
+        }
+      }
+
+      if (!reference.position && line.length < 80 && !hasContact) {
+        reference.position = line;
+      } else if (hasContact) {
+        reference.reference = line;
+      } else if (line.length < 100) {
+        reference.reference = line;
+      }
+    }
+
+    if (reference.name) {
+      references.push(reference);
+    }
+  }
+
+  return references;
 }
 
 // ===================================================================
@@ -1475,6 +1649,60 @@ export function calculateConfidence(data: ParsedResumeData): {
     }
     sections.languages = Math.min(100, Math.round(s / data.languages.length));
     total += sections.languages;
+    count++;
+  }
+
+  // ---- Awards ----
+  if (data.awards && data.awards.length > 0) {
+    let s = 0;
+    for (const a of data.awards) {
+      if (a.title) s += 40;
+      if (a.awarder) s += 30;
+      if (a.date) s += 20;
+      if (a.summary) s += 10;
+    }
+    sections.awards = Math.min(100, Math.round(s / data.awards.length));
+    total += sections.awards;
+    count++;
+  }
+
+  // ---- Publications ----
+  if (data.publications && data.publications.length > 0) {
+    let s = 0;
+    for (const p of data.publications) {
+      if (p.name) s += 40;
+      if (p.publisher) s += 20;
+      if (p.releaseDate) s += 20;
+      if (p.url) s += 10;
+      if (p.summary) s += 10;
+    }
+    sections.publications = Math.min(100, Math.round(s / data.publications.length));
+    total += sections.publications;
+    count++;
+  }
+
+  // ---- References ----
+  if (data.references && data.references.length > 0) {
+    let s = 0;
+    for (const r of data.references) {
+      if (r.name) s += 50;
+      if (r.position) s += 25;
+      if (r.reference) s += 25;
+    }
+    sections.references = Math.min(100, Math.round(s / data.references.length));
+    total += sections.references;
+    count++;
+  }
+
+  // ---- Custom Sections ----
+  if (data.custom && data.custom.length > 0) {
+    let s = 0;
+    for (const c of data.custom) {
+      if (c.name) s += 50;
+      if (c.items && c.items.length > 0) s += 50;
+    }
+    sections.custom = Math.min(100, Math.round(s / data.custom.length));
+    total += sections.custom;
     count++;
   }
 

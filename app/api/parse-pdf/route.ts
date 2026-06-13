@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentProxy } from 'unpdf';
+import { getDocumentProxy, renderPageAsImage } from 'unpdf';
+import Tesseract from 'tesseract.js';
 import { checkPdfParseRateLimit } from './rate-limit';
 
 const DEFAULT_MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
@@ -185,6 +186,45 @@ function isLikelyScannedPDF(text: string, numPages: number): boolean {
   return false;
 }
 
+/**
+ * Perform OCR on PDF pages using Tesseract.js
+ */
+async function performOCR(arrayBuffer: ArrayBuffer): Promise<{ text: string; totalPages: number; ocrPerformed: boolean }> {
+  const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer));
+  const numPages = pdf.numPages;
+  const pages: string[] = [];
+
+  for (let i = 1; i <= numPages; i++) {
+    try {
+      // Render page as image using unpdf
+      const imageBuffer = await renderPageAsImage(pdf, i, { scale: 2.0 });
+      
+      if (!imageBuffer || imageBuffer.byteLength === 0) {
+        pages.push(`[Page ${i} - Could not render]`);
+        continue;
+      }
+      
+      // Convert to blob
+      const blob = new Blob([imageBuffer], { type: 'image/png' });
+      
+      // Perform OCR
+      const result = await Tesseract.recognize(blob, 'eng', {
+        logger: () => {},
+      });
+      
+      pages.push(result.data.text);
+    } catch (err) {
+      pages.push(`[Page ${i} - OCR failed: ${err instanceof Error ? err.message : 'Unknown error'}]`);
+    }
+  }
+
+  return {
+    text: pages.join('\n\n'),
+    totalPages: numPages,
+    ocrPerformed: true,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rateLimit = checkPdfParseRateLimit(request);
@@ -268,12 +308,24 @@ export async function POST(request: NextRequest) {
     
     // Check if PDF might be scanned/image-based
     if (isLikelyScannedPDF(normalizedText, numPages)) {
-      return NextResponse.json({
-        success: true,
-        text: normalizedText,
-        numPages,
-        warning: 'This PDF appears to be image-based or scanned. Text extraction may be incomplete. For better results, please use a text-based PDF or convert to DOCX format.'
-      });
+      // Try OCR as fallback
+      try {
+        const ocrResult = await performOCR(arrayBuffer);
+        return NextResponse.json({
+          success: true,
+          text: normalizeText(ocrResult.text),
+          numPages: ocrResult.totalPages,
+          warning: 'OCR was performed on this PDF. Results may vary. Please verify the extracted information.'
+        });
+      } catch (ocrError) {
+        console.error('OCR error:', ocrError);
+        return NextResponse.json({
+          success: true,
+          text: normalizedText,
+          numPages,
+          warning: 'This PDF appears to be image-based or scanned. Text extraction may be incomplete. For better results, please use a text-based PDF or convert to DOCX format.'
+        });
+      }
     }
     
     return NextResponse.json({

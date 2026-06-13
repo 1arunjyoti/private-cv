@@ -14,6 +14,9 @@ import {
   parseProjects,
   parseCertificates,
   parseLanguages,
+  parseAwards,
+  parsePublications,
+  parseReferences,
   calculateConfidence
 } from './parse-utils';
 
@@ -324,9 +327,32 @@ export class PDFParser implements ResumeParser {
           data.languages = parseLanguages(section.content);
           break;
           
-        // For other sections, add as custom sections
+        case 'awards':
+          data.awards = parseAwards(section.content);
+          break;
+          
+        case 'publications':
+          data.publications = parsePublications(section.content);
+          break;
+          
+        case 'references':
+          data.references = parseReferences(section.content);
+          break;
+          
         default:
-          // Could add support for awards, publications, etc.
+          // Store unrecognized sections as custom sections
+          if (!data.custom) {
+            data.custom = [];
+          }
+          const customItem = {
+            id: crypto.randomUUID(),
+            name: section.name,
+            description: section.content.substring(0, 500),
+            date: '',
+            url: '',
+            summary: ''
+          };
+          data.custom.push({ id: crypto.randomUUID(), items: [customItem] });
           break;
       }
     }

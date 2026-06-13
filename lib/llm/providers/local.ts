@@ -105,9 +105,15 @@ function buildLMStudioUrl(endpoint: string) {
 /**
  * Build Ollama API URL
  * Uses Ollama's native endpoint: /api/generate
+ * Handles both local (http://localhost:11434) and cloud (https://ollama.com/api)
  */
 function buildOllamaUrl(endpoint: string) {
-  return `${endpoint.replace(/\/$/, "")}/api/generate`;
+  const normalized = endpoint.replace(/\/$/, "");
+  // If endpoint already ends with /api, don't add /api/generate
+  if (normalized.endsWith("/api")) {
+    return `${normalized}/generate`;
+  }
+  return `${normalized}/api/generate`;
 }
 
 function buildHuggingFaceUrl(endpoint: string, model: string) {
@@ -131,6 +137,40 @@ async function requestLocalGenerate(
   }
   const endpoint = normalizeEndpoint(localEndpoint);
 
+  if (localApiType === "ollama-cloud") {
+    // Use server-side proxy to avoid CORS
+    const url = "/api/ollama";
+    const prompt = input.system
+      ? `${input.system}\n\n${input.prompt}`
+      : input.prompt;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        endpoint: localEndpoint,
+        model: localModel,
+        prompt,
+        temperature: input.temperature ?? 0.5,
+        maxTokens: input.maxTokens ?? 512,
+        apiKey,
+      }),
+    });
+    const responseBody = await readResponseBody(response);
+    if (!response.ok) {
+      const message = extractErrorMessage(responseBody, "Ollama Cloud request failed.");
+      throw new Error(`Ollama Cloud error (${response.status}): ${message}`);
+    }
+    if (!responseBody || typeof responseBody !== "object") {
+      throw new Error("Ollama Cloud returned an invalid response format.");
+    }
+    const data = responseBody as OllamaResponse;
+    const text = data.response?.trim();
+    if (!text) {
+      throw new Error("Ollama Cloud returned an empty response.");
+    }
+    return text;
+  }
+
   if (localApiType === "ollama") {
     const url = buildOllamaUrl(endpoint);
     const prompt = input.system
@@ -145,12 +185,20 @@ async function requestLocalGenerate(
         num_predict: input.maxTokens ?? 512,
       },
     };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+    console.log("[Ollama] Request:", { url, model: localModel, hasApiKey: !!apiKey });
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
     const responseBody = await readResponseBody(response);
+    console.log("[Ollama] Response:", response.status, responseBody);
     if (!response.ok) {
       const message = extractErrorMessage(responseBody, "Ollama request failed.");
       throw new Error(`Local model error (${response.status}): ${message}`);
@@ -273,9 +321,9 @@ export const localProvider: LLMProvider = {
   label: "Local Model",
   status: "ready",
   requiresApiKey: false,
-  async validateKey() {
+  async validateKey(apiKey: string) {
     try {
-      await requestLocalGenerate("", {
+      await requestLocalGenerate(apiKey, {
         prompt: "Respond with the word OK.",
         temperature: 0,
         maxTokens: 4,

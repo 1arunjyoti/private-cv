@@ -11,6 +11,9 @@ import {
   parseProjects,
   parseCertificates,
   parseLanguages,
+  parseAwards,
+  parsePublications,
+  parseReferences,
   calculateConfidence,
   normalizeDate,
   extractDates,
@@ -1182,6 +1185,92 @@ React, Angular, Vue
       };
       const result = calculateConfidence(data);
       expect(result.sections.languages).toBe(100);
+    });
+
+    it('should calculate awards confidence', () => {
+      const data = {
+        awards: [{ title: 'Best Employee', awarder: 'Company', date: '2023-01', summary: 'Great work' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.awards).toBe(100);
+    });
+
+    it('should calculate publications confidence', () => {
+      const data = {
+        publications: [{ name: 'Research Paper', publisher: 'IEEE', releaseDate: '2023-01', url: 'https://example.com', summary: 'Abstract' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.publications).toBe(100);
+    });
+
+    it('should calculate references confidence', () => {
+      const data = {
+        references: [{ name: 'John Doe', position: 'Manager', reference: 'Great employee' }],
+      };
+      const result = calculateConfidence(data);
+      expect(result.sections.references).toBe(100);
+    });
+  });
+
+  describe('parseAwards', () => {
+    it('should parse awards with separator', () => {
+      const content = `Best Employee - Company Inc.`;
+      const result = parseAwards(content);
+      expect(result.length).toBe(1);
+      expect(result[0].title).toBe('Best Employee');
+      expect(result[0].awarder).toBe('Company Inc.');
+    });
+
+    it('should parse awards with pipe separator', () => {
+      const content = `Innovation Award | Tech Corp`;
+      const result = parseAwards(content);
+      expect(result.length).toBe(1);
+      expect(result[0].title).toBe('Innovation Award');
+    });
+  });
+
+  describe('parsePublications', () => {
+    it('should parse publications with URL', () => {
+      const content = `Machine Learning Research\nhttps://arxiv.org/paper/123`;
+      const result = parsePublications(content);
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe('Machine Learning Research');
+      expect(result[0].url).toContain('arxiv.org');
+    });
+
+    it('should parse multiple publications', () => {
+      const content = `Paper One\n2023 - 2024\n\nPaper Two\n2022`;
+      const result = parsePublications(content);
+      expect(result.length).toBe(2);
+    });
+  });
+
+  describe('parseReferences', () => {
+    it('should parse references with contact info', () => {
+      const content = `John Smith\nSenior Manager\njohn@company.com\n(555) 123-4567`;
+      const result = parseReferences(content);
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe('John Smith');
+      expect(result[0].position).toBe('Senior Manager');
+    });
+
+    it('should parse multiple references when properly separated', () => {
+      const content = `John Smith\nManager\n\nJane Doe\nDirector`;
+      const result = parseReferences(content);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('parseSkills', () => {
+    it('should extract proficiency levels', () => {
+      const content = `
+JavaScript (5 years)
+Python - 3 years
+React: expert
+      `;
+      const result = parseSkills(content);
+      const jsSkill = result.find(s => s.name === 'Languages' || s.keywords?.includes('JavaScript'));
+      expect(result.some(s => s.level && s.level.length > 0)).toBe(true);
     });
   });
 });

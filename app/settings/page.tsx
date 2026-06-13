@@ -573,16 +573,20 @@ export default function SettingsPage() {
                   <Label htmlFor="localApiType">Local API Type</Label>
                   <Select
                     value={localApiType}
-                    onValueChange={(value) =>
-                      setLocalApiType(value as typeof localApiType)
-                    }
+                    onValueChange={(value) => {
+                      setLocalApiType(value as typeof localApiType);
+                      if (value === "ollama-cloud") {
+                        setLocalEndpoint("https://ollama.com/api");
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full" id="localApiType">
                       <SelectValue placeholder="Select API type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="openai">OpenAI-Compatible</SelectItem>
-                      <SelectItem value="ollama">Ollama</SelectItem>
+                      <SelectItem value="ollama">Ollama (Local)</SelectItem>
+                      <SelectItem value="ollama-cloud">Ollama Cloud</SelectItem>
                       <SelectItem value="lmstudio">LM Studio</SelectItem>
                       <SelectItem value="huggingface">
                         Hugging Face Inference
@@ -608,6 +612,26 @@ export default function SettingsPage() {
                     placeholder="google/gemma-3-4b"
                   />
                 </div>
+                {(localApiType === "ollama" || localApiType === "ollama-cloud" || localApiType === "openai") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="localApiKey">API Key {localApiType === "ollama-cloud" ? "(required)" : "(optional)"}</Label>
+                    <Input
+                      id="localApiKey"
+                      type="password"
+                      value={apiKeys.local || ""}
+                      onChange={(event) =>
+                        setApiKey("local", event.target.value)
+                      }
+                      placeholder={
+                        localApiType === "ollama-cloud"
+                          ? "Your Ollama Cloud API key"
+                          : localApiType === "ollama"
+                            ? "Optional for local Ollama"
+                            : "Optional for OpenAI-compatible"
+                      }
+                    />
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   <strong>LM Studio:</strong> /v1/chat/completions
                   (OpenAI-compatible, also supports /api/v1/chat, /v1/messages).

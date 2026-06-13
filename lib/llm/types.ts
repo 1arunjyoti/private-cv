@@ -17,10 +17,13 @@ export type LLMTone = "neutral" | "formal" | "concise";
  * - **ollama**: Ollama server (default: http://localhost:11434)
  *   - Uses native endpoint: /api/generate
  *   
+ * - **ollama-cloud**: Ollama Cloud (https://ollama.com/cloud)
+ *   - Uses native endpoint: /api/generate with authentication
+ *   
  * - **huggingface**: Hugging Face Inference API
  *   - Uses endpoint: /models/{model_id}
  */
-export type LocalApiType = "openai" | "ollama" | "lmstudio" | "huggingface";
+export type LocalApiType = "openai" | "ollama" | "ollama-cloud" | "lmstudio" | "huggingface";
 
 export interface LLMGenerateInput {
   prompt: string;
