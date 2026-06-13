@@ -44,7 +44,6 @@ import {
   Users,
   Layers,
   Save,
-  FileDown,
   Loader2,
   ArrowLeft,
   ChevronLeft,
@@ -55,7 +54,6 @@ import {
   Wand2,
   ChevronDown,
   PenLine,
-  FileUp,
   Info,
   FileJson,
   LayoutTemplate,
@@ -86,14 +84,7 @@ import { DisclaimerDialog } from "@/components/DisclaimerDialog";
 import { Separator } from "@/components/ui/separator";
 import { ConflictDialog } from "@/components/sync/ConflictDialog";
 import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
-import { ImportDialog } from "@/components/ImportDialog";
-import { ImportReview } from "@/components/ImportReview";
 import { LinkedInImport } from "@/components/LinkedInImport";
-import {
-  importService,
-  type ImportResult,
-  type ParsedResumeData,
-} from "@/lib/import";
 
 // Moved outside component to prevent recreation on every render
 const EDITOR_TABS = [
@@ -116,7 +107,7 @@ function EditorContent() {
   const searchParams = useSearchParams();
   const resumeId = searchParams.get("id");
   const templateParam = searchParams.get("template");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Use individual selectors to optimize re-renders
   const currentResume = useResumeStore((state) => state.currentResume);
@@ -140,9 +131,7 @@ function EditorContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("basics");
   const [view, setView] = useState<"content" | "customize">("content");
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importReviewOpen, setImportReviewOpen] = useState(false);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
 
   // Dialog states for dropdown menu items
   const [atsScoreOpen, setAtsScoreOpen] = useState(false);
@@ -181,7 +170,11 @@ function EditorContent() {
   useEffect(() => {
     checkScroll();
     window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
+    document.body.classList.add("overflow-hidden");
+    return () => {
+      window.removeEventListener("resize", checkScroll);
+      document.body.classList.remove("overflow-hidden");
+    };
   }, [checkScroll]);
 
   // Load or create resume on mount — runs once per editor session
@@ -228,77 +221,7 @@ function EditorContent() {
     resetResume();
   }, [resetResume]);
 
-  const handleExportJSON = useCallback(() => {
-    if (!currentResume) return;
-    const dataStr = JSON.stringify(currentResume, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${currentResume.meta.title || "resume"}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [currentResume]);
 
-  const handleImportResume = useCallback(() => {
-    setImportDialogOpen(true);
-  }, []);
-
-  const handleImportComplete = useCallback((result: ImportResult) => {
-    setImportResult(result);
-    setImportDialogOpen(false);
-    setImportReviewOpen(true);
-  }, []);
-
-  const handleImportConfirm = useCallback(
-    (data: ParsedResumeData) => {
-      if (!currentResume) return;
-      const merged = importService.mergeWithResume(currentResume, data);
-      updateCurrentResume(merged);
-      setImportReviewOpen(false);
-      setImportResult(null);
-    },
-    [currentResume, updateCurrentResume],
-  );
-
-  const handleImportCancel = useCallback(() => {
-    setImportReviewOpen(false);
-    setImportResult(null);
-  }, []);
-
-  const handleFileChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result as string;
-          const parsed = JSON.parse(content);
-
-          // Basic validation
-          if (!parsed.basics) {
-            alert("Invalid resume JSON file");
-            return;
-          }
-
-          // Ensure we keep the current ID and just update content
-          updateCurrentResume({
-            ...parsed,
-            id: currentResume?.id || parsed.id,
-          });
-        } catch (err) {
-          console.error("Failed to import JSON", err);
-          alert("Failed to parse JSON file");
-        }
-      };
-      reader.readAsText(file);
-      // Reset input value to allow selecting same file again
-      event.target.value = "";
-    },
-    [currentResume, updateCurrentResume],
-  );
 
   const handleFillSampleData = useCallback(() => {
     if (!currentResume) return;
@@ -356,31 +279,8 @@ function EditorContent() {
   // Use EDITOR_TABS constant defined outside component
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex flex-col">
-      <input
-        type="file"
-        accept=".json"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    <div className="h-dvh overflow-hidden bg-background flex flex-col">
 
-      {/* Import Dialogs */}
-      <ImportDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImportComplete={handleImportComplete}
-      />
-
-      {importResult && (
-        <ImportReview
-          open={importReviewOpen}
-          onOpenChange={setImportReviewOpen}
-          importResult={importResult}
-          onConfirm={handleImportConfirm}
-          onCancel={handleImportCancel}
-        />
-      )}
 
       <ConflictDialog />
       {/* Header */}
@@ -534,29 +434,7 @@ function EditorContent() {
                 <Wand2 className="h-4 w-4" />
                 Fill Sample
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-primary border-primary/20 hover:bg-primary/10 gap-2"
-                  >
-                    <FileJson className="h-4 w-4" />
-                    Import / Export
-                    <ChevronDown className="h-3 w-3 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleImportResume}>
-                    <FileUp className="h-4 w-4" />
-                    Import Resume (PDF/DOCX/JSON)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportJSON}>
-                    <FileDown className="h-4 w-4" />
-                    Export JSON
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
 
               <Link href="/settings">
                 <Button
@@ -711,35 +589,7 @@ function EditorContent() {
 
                     {isCloudSyncEnabled ? <Separator /> : null}
 
-                    {/* Section: Resume Actions */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 px-1">
-                        <Settings className="w-4 h-4 text-muted-foreground" />
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Resume Actions
-                        </h4>
-                      </div>
-                      <div className="grid gap-2">
-                        <Button
-                          variant="outline"
-                          className="justify-start text-foreground h-auto py-2 bg-background whitespace-normal text-left"
-                          onClick={handleImportResume}
-                        >
-                          <FileUp className="h-4 w-4 shrink-0" />
-                          <span>Import Resume (PDF/DOCX/JSON)</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="justify-start text-foreground h-auto py-2 bg-background whitespace-normal text-left"
-                          onClick={handleExportJSON}
-                        >
-                          <FileDown className="h-4 w-4 shrink-0" />
-                          <span>Export JSON</span>
-                        </Button>
-                      </div>
-                    </div>
 
-                    <Separator />
 
                     {/* Section: View & Design */}
                     <div className="space-y-3">
@@ -894,7 +744,7 @@ function EditorContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 max-w-8xl grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8 overflow-hidden">
+      <main className="flex-1 h-[calc(100dvh-4rem)] container mx-auto px-4 max-w-8xl grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8 overflow-hidden">
         {/* Left Side - Editor Controls */}
         <div className="min-h-0 overflow-hidden flex flex-col lg:border-r bg-background/50">
           {view === "customize" ? (
@@ -961,7 +811,7 @@ function EditorContent() {
               </div>
 
               {/* Content Area */}
-              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide bg-background">
+              <div className="flex-1 min-h-0 overflow-y-auto bg-background">
                 <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6 min-h-125 pb-20">
                   <TabsContent
                     value="basics"
@@ -1113,7 +963,7 @@ function EditorContent() {
             view === "customize"
               ? "block border-t-8 border-muted lg:border-t-0"
               : "hidden"
-          } overflow-y-auto py-6 md:py-8 pl-1`}
+          } overflow-y-auto py-6 md:py-8 pl-1 min-h-0`}
         >
           <div className="min-h-full">
             <div className="mb-4 pl-4 flex items-center justify-between lg:hidden">

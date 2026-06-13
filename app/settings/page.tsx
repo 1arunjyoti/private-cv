@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,10 @@ import { buildSummaryPrompt } from "@/lib/llm/prompts";
 import { redactContactInfo } from "@/lib/llm/redaction";
 import { useLLMSettingsStore } from "@/store/useLLMSettingsStore";
 import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
+import { useResumeStore } from "@/store/useResumeStore";
+import { ImportDialog } from "@/components/ImportDialog";
+import { ImportReview } from "@/components/ImportReview";
+import { importService, type ParsedResumeData, type ImportResult } from "@/lib/import";
 import {
   ArrowLeft,
   Settings,
@@ -31,6 +35,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  FileUp,
+  FileDown,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +154,51 @@ export default function SettingsPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Resume Import/Export
+  const currentResume = useResumeStore((state) => state.currentResume);
+  const updateCurrentResume = useResumeStore((state) => state.updateCurrentResume);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importReviewOpen, setImportReviewOpen] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
+  const handleExportJSON = useCallback(() => {
+    if (!currentResume) return;
+    const dataStr = JSON.stringify(currentResume, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentResume.meta.title || "resume"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [currentResume]);
+
+  const handleImportResume = useCallback(() => {
+    setImportDialogOpen(true);
+  }, []);
+
+  const handleImportComplete = useCallback((result: ImportResult) => {
+    setImportResult(result);
+    setImportDialogOpen(false);
+    setImportReviewOpen(true);
+  }, []);
+
+  const handleImportConfirm = useCallback(
+    (data: ParsedResumeData) => {
+      if (!currentResume) return;
+      const merged = importService.mergeWithResume(currentResume, data);
+      updateCurrentResume(merged);
+      setImportReviewOpen(false);
+      setImportResult(null);
+    },
+    [currentResume, updateCurrentResume],
+  );
+
+  const handleImportCancel = useCallback(() => {
+    setImportReviewOpen(false);
+    setImportResult(null);
+  }, []);
 
   useEffect(() => {
     if (!isCloudSyncEnabled) return;
@@ -455,6 +506,45 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileDown className="h-5 w-5" />
+              Local Data Backup (Import/Export)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Import a resume from PDF, DOCX, or JSON format, or export your current resume as a JSON backup file to save your progress locally.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={handleImportResume}
+                disabled={!currentResume}
+                className="gap-2"
+              >
+                <FileUp className="h-4 w-4" />
+                Import Resume (PDF/DOCX/JSON)
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportJSON}
+                disabled={!currentResume}
+                className="gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                Export JSON Backup
+              </Button>
+            </div>
+            {!currentResume && (
+              <p className="text-xs text-destructive">
+                No active resume loaded. Please open a resume in the editor first to import/export.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>AI Provider & Keys</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -573,16 +663,20 @@ export default function SettingsPage() {
                   <Label htmlFor="localApiType">Local API Type</Label>
                   <Select
                     value={localApiType}
-                    onValueChange={(value) =>
-                      setLocalApiType(value as typeof localApiType)
-                    }
+                    onValueChange={(value) => {
+                      setLocalApiType(value as typeof localApiType);
+                      if (value === "ollama-cloud") {
+                        setLocalEndpoint("https://ollama.com/api");
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full" id="localApiType">
                       <SelectValue placeholder="Select API type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="openai">OpenAI-Compatible</SelectItem>
-                      <SelectItem value="ollama">Ollama</SelectItem>
+                      <SelectItem value="ollama">Ollama (Local)</SelectItem>
+                      <SelectItem value="ollama-cloud">Ollama Cloud</SelectItem>
                       <SelectItem value="lmstudio">LM Studio</SelectItem>
                       <SelectItem value="huggingface">
                         Hugging Face Inference
@@ -608,6 +702,26 @@ export default function SettingsPage() {
                     placeholder="google/gemma-3-4b"
                   />
                 </div>
+                {(localApiType === "ollama" || localApiType === "ollama-cloud" || localApiType === "openai") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="localApiKey">API Key {localApiType === "ollama-cloud" ? "(required)" : "(optional)"}</Label>
+                    <Input
+                      id="localApiKey"
+                      type="password"
+                      value={apiKeys.local || ""}
+                      onChange={(event) =>
+                        setApiKey("local", event.target.value)
+                      }
+                      placeholder={
+                        localApiType === "ollama-cloud"
+                          ? "Your Ollama Cloud API key"
+                          : localApiType === "ollama"
+                            ? "Optional for local Ollama"
+                            : "Optional for OpenAI-compatible"
+                      }
+                    />
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   <strong>LM Studio:</strong> /v1/chat/completions
                   (OpenAI-compatible, also supports /api/v1/chat, /v1/messages).
@@ -877,6 +991,22 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </main>
+
+      <ImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={handleImportComplete}
+      />
+
+      {importResult && (
+        <ImportReview
+          open={importReviewOpen}
+          onOpenChange={setImportReviewOpen}
+          importResult={importResult}
+          onConfirm={handleImportConfirm}
+          onCancel={handleImportCancel}
+        />
+      )}
     </div>
   );
 }

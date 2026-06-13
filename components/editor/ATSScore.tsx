@@ -160,6 +160,10 @@ export function ATSScore({
       resume.work.forEach((w) => {
         const line = [
           `${w.position} at ${w.company}`,
+          w.startDate || w.endDate
+            ? `${w.startDate || "?"} - ${w.endDate || "Present"}`
+            : "",
+          w.location ? w.location : "",
           w.summary,
           ...(w.highlights || []),
         ]

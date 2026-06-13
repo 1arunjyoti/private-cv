@@ -50,7 +50,8 @@ export function ensureLLMProvider(opts: {
   const localApiType = useLLMSettingsStore.getState().localApiType;
   const requiresApiKey =
     provider.requiresApiKey ||
-    (providerId === "local" && localApiType === "huggingface");
+    (providerId === "local" && localApiType === "huggingface") ||
+    (providerId === "local" && localApiType === "ollama-cloud");
 
   // Only require an API key if the provider needs one
   if (requiresApiKey && !apiKey) {

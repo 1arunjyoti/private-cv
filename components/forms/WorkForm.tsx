@@ -145,7 +145,13 @@ export function WorkForm({ data, onChange }: WorkFormProps) {
         exp.position ? `Role: ${exp.position}` : "",
         exp.company ? `Company: ${exp.company}` : "",
         exp.location ? `Location: ${exp.location}` : "",
+        exp.startDate ? `Start Date: ${exp.startDate}` : "",
+        exp.endDate ? `End Date: ${exp.endDate}` : exp.startDate ? "Present" : "",
+        exp.url ? `URL: ${exp.url}` : "",
         exp.summary ? `Current Summary: ${exp.summary}` : "",
+        exp.highlights.length
+          ? `Current Highlights:\n${exp.highlights.map((h) => `  - ${h}`).join("\n")}`
+          : "",
         peerContext.length
           ? `Other Experience:\n${peerContext.join("\n")}`
           : "",

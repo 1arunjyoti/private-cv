@@ -148,6 +148,8 @@ export function EducationForm({ data, onChange }: EducationFormProps) {
         edu.studyType || edu.area
           ? `Program: ${[edu.studyType, edu.area].filter(Boolean).join(" in ")}`
           : "",
+        edu.startDate ? `Start Date: ${edu.startDate}` : "",
+        edu.endDate ? `End Date: ${edu.endDate}` : edu.startDate ? "Current" : "",
         edu.score ? `Score: ${edu.score}` : "",
         edu.summary ? `Current Summary: ${edu.summary}` : "",
         peerContext.length ? `Other Education:\n${peerContext.join("\n")}` : "",

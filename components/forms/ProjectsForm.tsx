@@ -193,6 +193,8 @@ export function ProjectsForm({ data, onChange }: ProjectsFormProps) {
       const parts = [
         proj.name ? `Project: ${proj.name}` : "",
         proj.url ? `URL: ${proj.url}` : "",
+        proj.startDate ? `Start Date: ${proj.startDate}` : "",
+        proj.endDate ? `End Date: ${proj.endDate}` : proj.startDate ? "Ongoing" : "",
         proj.description ? `Current Description: ${proj.description}` : "",
         proj.keywords.length ? `Tech: ${proj.keywords.join(", ")}` : "",
         peerContext.length ? `Other Projects:\n${peerContext.join("\n")}` : "",
