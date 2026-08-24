@@ -1,133 +1,112 @@
-import { type PDFDocumentProxy } from "pdfjs-dist";
+import { loadPdfJs } from "@/lib/pdfjs-loader";
 
-// Define a local interface for the window object with pdfjsLib
-interface WindowWithPdfJs {
-  pdfjsLib?: {
-    GlobalWorkerOptions: { workerSrc: string };
-    getDocument: (url: string) => {
-      promise: Promise<PDFDocumentProxy>;
-    };
-  };
+export interface ExportJpgOptions {
+  /** Render scale; 2.0 ≈ 144 DPI. */
+  scale?: number;
+  /** JPEG quality (0-1). */
+  quality?: number;
+  /** Called after each rendered page. */
+  onProgress?: (done: number, total: number) => void;
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function withExtension(filename: string, ext: string): string {
+  return filename.toLowerCase().endsWith(ext) ? filename : `${filename}${ext}`;
 }
 
 /**
- * Loads the PDF.js library from CDN if not already loaded.
- * This matches the implementation in PDFImageViewer to ensure compatibility.
+ * Convert a PDF blob URL to per-page JPG downloads.
+ *
+ * Single-page PDFs download directly as `<filename>.jpg`. Multi-page PDFs are
+ * zipped as `<filename>.zip`. Pages are streamed into the zip one at a time
+ * and each canvas backing store is released immediately, so peak memory stays
+ * at roughly one page bitmap instead of every page's base64 payload combined.
+ *
+ * @returns The number of pages exported.
  */
-const loadPdfJs = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const win = window as unknown as WindowWithPdfJs;
-    if (win.pdfjsLib) {
-      resolve();
-      return;
-    }
+export async function exportPdfAsJpgs(
+  pdfUrl: string,
+  filename: string,
+  options: ExportJpgOptions = {},
+): Promise<number> {
+  const { scale = 2.0, quality = 0.95, onProgress } = options;
+  const pdfjsLib = await loadPdfJs();
 
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs";
-    script.type = "module";
-    script.async = true;
-
-    // Create a module script that sets up pdfjsLib on window
-    const moduleScript = document.createElement("script");
-    moduleScript.type = "module";
-    moduleScript.textContent = `
-      import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
-      window.pdfjsLib = pdfjsLib;
-      window.dispatchEvent(new Event('pdfjsReady'));
-    `;
-
-    const handleReady = () => {
-      resolve();
-      window.removeEventListener("pdfjsReady", handleReady);
-    };
-
-    const handleError = (e: ErrorEvent) => {
-      reject(e);
-      window.removeEventListener("error", handleError);
-    };
-
-    window.addEventListener("pdfjsReady", handleReady);
-    window.addEventListener("error", handleError);
-
-    document.head.appendChild(script);
-    document.head.appendChild(moduleScript);
-  });
-};
-
-/**
- * Converts a PDF blob URL to JPG data URLs (one per page).
- */
-export const convertPdfToJpg = async (pdfUrl: string, scale = 2.0): Promise<string[]> => {
-  await loadPdfJs();
-  const win = window as unknown as WindowWithPdfJs;
-
-  if (!win.pdfjsLib) {
-    throw new Error("PDF.js library failed to load");
-  }
-
-  const pdf = await win.pdfjsLib.getDocument(pdfUrl).promise;
+  const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
+  const pdf = await loadingTask.promise;
   const numPages = pdf.numPages;
-  const imageUrls: string[] = [];
 
-  for (let i = 1; i <= numPages; i++) {
-    const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale });
+  try {
+    let zip: import("jszip") | null = null;
+    let singlePageBlob: Blob | null = null;
 
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-
-    if (!context) {
-      throw new Error("Failed to get canvas context");
+    if (numPages > 1) {
+      const JSZip = (await import("jszip")).default;
+      zip = new JSZip();
     }
 
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale });
 
-    const renderContext = {
-      canvasContext: context,
-      viewport: viewport,
-      canvas: canvas,
-    };
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
 
-    await page.render(renderContext).promise;
-    imageUrls.push(canvas.toDataURL("image/jpeg", 0.95));
+      if (!context) {
+        throw new Error("Failed to get canvas context");
+      }
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas,
+      }).promise;
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", quality),
+      );
+
+      if (!blob) {
+        throw new Error(`Failed to encode page ${i} as JPEG`);
+      }
+
+      if (zip) {
+        const base = withExtension(filename, ".zip").slice(0, -4);
+        zip.file(`${base}_page_${i}.jpg`, blob);
+      } else {
+        singlePageBlob = blob;
+      }
+
+      // Release the backing bitmap promptly before rendering the next page.
+      canvas.width = 0;
+      canvas.height = 0;
+
+      onProgress?.(i, numPages);
+    }
+
+    if (zip) {
+      const content = await zip.generateAsync({ type: "blob" });
+      downloadBlob(content, withExtension(filename, ".zip"));
+    } else if (singlePageBlob) {
+      downloadBlob(singlePageBlob, withExtension(filename, ".jpg"));
+    }
+
+    return numPages;
+  } finally {
+    // Free the parsed document and its worker resources.
+    void loadingTask.destroy();
   }
-
-  return imageUrls;
-};
-
-export const downloadJpgs = async (dataUrls: string[], filename: string) => {
-  if (dataUrls.length === 0) return;
-
-  if (dataUrls.length === 1) {
-    // Single page - download as JPG
-    const link = document.createElement("a");
-    link.href = dataUrls[0];
-    link.download = filename.endsWith(".jpg") ? filename : `${filename}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else {
-    // Multiple pages - zip them
-    const JSZip = (await import("jszip")).default;
-    const zip = new JSZip();
-    
-    dataUrls.forEach((url, index) => {
-      // Remove data:image/jpeg;base64, prefix
-      const data = url.split(",")[1];
-      zip.file(`${filename}_page_${index + 1}.jpg`, data, { base64: true });
-    });
-
-    const content = await zip.generateAsync({ type: "blob" });
-    const zipUrl = URL.createObjectURL(content);
-    
-    const link = document.createElement("a");
-    link.href = zipUrl;
-    link.download = filename.endsWith(".zip") ? filename : `${filename}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(zipUrl);
-  }
-};
+}

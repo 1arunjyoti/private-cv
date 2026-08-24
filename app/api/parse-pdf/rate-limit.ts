@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 20;
+const MAX_TRACKED_CLIENTS = 10_000; // cap memory; oldest entries are evicted
 
 type RateLimitEntry = {
   count: number;
@@ -37,11 +38,34 @@ function getClientIp(request: NextRequest): string {
   return candidate || 'unknown';
 }
 
+/**
+ * Drop expired entries and, if still over the size cap, evict the
+ * soonest-to-expire entries. Keeps the store bounded under IP-spoofing DoS.
+ */
+function pruneStore(now: number): void {
+  for (const [key, entry] of rateLimitStore) {
+    if (now >= entry.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+
+  if (rateLimitStore.size <= MAX_TRACKED_CLIENTS) return;
+
+  const sorted = [...rateLimitStore.entries()].sort(
+    (a, b) => a[1].resetAt - b[1].resetAt,
+  );
+  const toEvict = rateLimitStore.size - MAX_TRACKED_CLIENTS;
+  for (let i = 0; i < toEvict; i++) {
+    rateLimitStore.delete(sorted[i][0]);
+  }
+}
+
 export function checkPdfParseRateLimit(request: NextRequest): {
   limited: boolean;
   retryAfterSeconds?: number;
 } {
   const now = Date.now();
+  pruneStore(now);
   const windowMs = getRateLimitWindowMs();
   const maxRequests = getRateLimitMaxRequests();
   const clientIp = getClientIp(request);

@@ -89,7 +89,9 @@ describe("PDFImageViewer", () => {
       render(<PDFImageViewer url="https://example.com/resume.pdf" />);
 
       await waitFor(() => {
-        expect(mockGetDocument).toHaveBeenCalledWith("https://example.com/resume.pdf");
+        expect(mockGetDocument).toHaveBeenCalledWith({
+          url: "https://example.com/resume.pdf",
+        });
       });
     });
 
@@ -313,9 +315,11 @@ describe("PDFImageViewer", () => {
 
   describe("error states", () => {
     it("should display error when PDF fails to load", async () => {
-      mockGetDocument.mockReturnValue({
-        promise: Promise.reject(new Error("Failed to load PDF")),
-      });
+      const failingPromise = Promise.reject(new Error("Failed to load PDF"));
+      // Attach a no-op catch so the eager rejection is not reported as
+      // unhandled while the component is still mounting its async chain.
+      failingPromise.catch(() => {});
+      mockGetDocument.mockReturnValue({ promise: failingPromise });
 
       render(<PDFImageViewer url="invalid.pdf" />);
 

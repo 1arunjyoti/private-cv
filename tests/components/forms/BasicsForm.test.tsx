@@ -443,7 +443,7 @@ describe('BasicsForm', () => {
         <BasicsForm data={data} onChange={mockOnChange} />
       );
 
-      expect(screen.getByText(/12 characters/i)).toBeDefined();
+      expect(screen.getAllByText(/12 characters/i).length).toBeGreaterThan(0);
     });
 
     it('should show 0 characters when empty', () => {
@@ -451,7 +451,7 @@ describe('BasicsForm', () => {
         <BasicsForm data={createEmptyBasics()} onChange={mockOnChange} />
       );
 
-      expect(screen.getByText(/0 characters/i)).toBeDefined();
+      expect(screen.getAllByText(/0 characters/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -521,7 +521,7 @@ describe('BasicsForm', () => {
         <BasicsForm data={data} onChange={mockOnChange} />
       );
 
-      expect(screen.getByText(/5000 characters/i)).toBeDefined();
+      expect(screen.getAllByText(/5000 characters/i).length).toBeGreaterThan(0);
     });
 
     it('should handle multiple profiles with same network', () => {

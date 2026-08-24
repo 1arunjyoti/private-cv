@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -138,6 +138,25 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
   const pdfUrlRef = useRef<string | null>(null);
   const generationRequestRef = useRef(0);
 
+  // Static data: grouping never changes, so compute it once.
+  const groupedTemplates = useMemo(
+    () =>
+      Object.entries(
+        templates.reduce(
+          (acc, template) => {
+            const category = Array.isArray(template.category)
+              ? template.category[0]
+              : template.category;
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(template);
+            return acc;
+          },
+          {} as Record<string, typeof templates>,
+        ),
+      ),
+    [],
+  );
+
   // Initialize from resume meta, defaulting to 'ats'
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(
     (resume.meta.templateId as TemplateType) || "ats",
@@ -272,9 +291,8 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
   const handleDownloadJpg = useCallback(async () => {
     try {
       if (!pdfUrl) return;
-      const { convertPdfToJpg, downloadJpgs } = await import("@/lib/pdf-utils");
-      const jpgUrls = await convertPdfToJpg(pdfUrl);
-      downloadJpgs(jpgUrls, resume.meta.title || "resume");
+      const { exportPdfAsJpgs } = await import("@/lib/pdf-utils");
+      await exportPdfAsJpgs(pdfUrl, resume.meta.title || "resume");
     } catch (err) {
       console.error("Failed to download JPG", err);
     }
@@ -357,19 +375,7 @@ export function PDFPreview({ resume }: PDFPreviewProps) {
               <SelectValue placeholder="Select a template" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(
-                templates.reduce(
-                  (acc, template) => {
-                    const category = Array.isArray(template.category)
-                      ? template.category[0]
-                      : template.category;
-                    if (!acc[category]) acc[category] = [];
-                    acc[category].push(template);
-                    return acc;
-                  },
-                  {} as Record<string, typeof templates>,
-                ),
-              ).map(([category, categoryTemplates]) => (
+              {groupedTemplates.map(([category, categoryTemplates]) => (
                 <SelectGroup key={category}>
                   <SelectLabel>{category}</SelectLabel>
                   {categoryTemplates.map((template) => (

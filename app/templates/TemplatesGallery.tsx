@@ -387,7 +387,7 @@ export function TemplatesGallery() {
                     width={800}
                     height={1132}
                     className="w-auto h-auto max-h-[85vh] max-w-full object-contain"
-                    quality={100}
+                    quality={80}
                   />
                 </div>
               )}

@@ -18,8 +18,7 @@ vi.mock("@/lib/docx-generator", () => ({
 }));
 
 vi.mock("@/lib/pdf-utils", () => ({
-  convertPdfToJpg: vi.fn().mockResolvedValue(["data:image/jpeg;base64,test"]),
-  downloadJpgs: vi.fn(),
+  exportPdfAsJpgs: vi.fn().mockResolvedValue(1),
 }));
 
 // Mock dynamic imports for templates
@@ -358,9 +357,8 @@ describe("PDFPreview", () => {
     });
 
     it("should have PDF utils functions available", async () => {
-      const { convertPdfToJpg, downloadJpgs } = await import("@/lib/pdf-utils");
-      expect(convertPdfToJpg).toBeDefined();
-      expect(downloadJpgs).toBeDefined();
+      const { exportPdfAsJpgs } = await import("@/lib/pdf-utils");
+      expect(exportPdfAsJpgs).toBeDefined();
     });
   });
 

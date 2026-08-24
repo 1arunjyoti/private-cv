@@ -1,7 +1,21 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense, memo } from "react";
 import { useSearchParams } from "next/navigation";
+import type {
+  Award as AwardSection,
+  Certificate,
+  CustomSection,
+  Education,
+  Interest,
+  Language as LanguageSection,
+  Project,
+  Publication,
+  Reference,
+  ResumeBasics,
+  Skill,
+  WorkExperience,
+} from "@/db";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +99,7 @@ import { Separator } from "@/components/ui/separator";
 import { ConflictDialog } from "@/components/sync/ConflictDialog";
 import { isCloudSyncEnabled, useSyncStore } from "@/store/useSyncStore";
 import { LinkedInImport } from "@/components/LinkedInImport";
+import { useAutosaveResume } from "@/hooks/useAutosaveResume";
 
 // Moved outside component to prevent recreation on every render
 const EDITOR_TABS = [
@@ -102,6 +117,21 @@ const EDITOR_TABS = [
   { id: "custom", label: "Custom", icon: Layers },
   { id: "match", label: "Job Match", icon: Target },
 ];
+
+// Memoized form wrappers: with stable onChange handlers (below), a keystroke
+// in one section only re-renders that section's form instead of all twelve.
+const MemoizedBasicsForm = memo(BasicsForm);
+const MemoizedWorkForm = memo(WorkForm);
+const MemoizedEducationForm = memo(EducationForm);
+const MemoizedSkillsForm = memo(SkillsForm);
+const MemoizedProjectsForm = memo(ProjectsForm);
+const MemoizedCertificatesForm = memo(CertificatesForm);
+const MemoizedLanguagesForm = memo(LanguagesForm);
+const MemoizedInterestsForm = memo(InterestsForm);
+const MemoizedPublicationsForm = memo(PublicationsForm);
+const MemoizedAwardsForm = memo(AwardsForm);
+const MemoizedReferencesForm = memo(ReferencesForm);
+const MemoizedCustomForm = memo(CustomForm);
 
 function EditorContent() {
   const searchParams = useSearchParams();
@@ -125,12 +155,27 @@ function EditorContent() {
   const syncNow = useSyncStore((state) => state.syncNow);
   const syncAuth = useSyncStore((state) => state.auth);
 
+  // Background autosave to IndexedDB (debounced; flushed on tab hide/close).
+  useAutosaveResume();
+
   // DisclaimerDialog is now imported from components/DisclaimerDialog
   // but we need to add the import at the top first.
 
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("basics");
   const [view, setView] = useState<"content" | "customize">("content");
+  const [now, setNow] = useState<number | null>(null);
+
+  // Ticking clock for relative timestamps; kept out of render to stay pure.
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timeout = setTimeout(tick);
+    const interval = setInterval(tick, 60_000);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, []);
 
 
   // Dialog states for dropdown menu items
@@ -221,6 +266,58 @@ function EditorContent() {
     resetResume();
   }, [resetResume]);
 
+  // Stable section handlers: updateCurrentResume is a Zustand action with a
+  // fixed identity, so these never change and keep memoized forms skipped
+  // when their section slice did not change.
+  const handleBasicsChange = useCallback(
+    (basics: ResumeBasics) => updateCurrentResume({ basics }),
+    [updateCurrentResume],
+  );
+  const handleWorkChange = useCallback(
+    (work: WorkExperience[]) => updateCurrentResume({ work }),
+    [updateCurrentResume],
+  );
+  const handleEducationChange = useCallback(
+    (education: Education[]) => updateCurrentResume({ education }),
+    [updateCurrentResume],
+  );
+  const handleSkillsChange = useCallback(
+    (skills: Skill[]) => updateCurrentResume({ skills }),
+    [updateCurrentResume],
+  );
+  const handleProjectsChange = useCallback(
+    (projects: Project[]) => updateCurrentResume({ projects }),
+    [updateCurrentResume],
+  );
+  const handleCertificatesChange = useCallback(
+    (certificates: Certificate[]) => updateCurrentResume({ certificates }),
+    [updateCurrentResume],
+  );
+  const handleLanguagesChange = useCallback(
+    (languages: LanguageSection[]) => updateCurrentResume({ languages }),
+    [updateCurrentResume],
+  );
+  const handleInterestsChange = useCallback(
+    (interests: Interest[]) => updateCurrentResume({ interests }),
+    [updateCurrentResume],
+  );
+  const handlePublicationsChange = useCallback(
+    (publications: Publication[]) => updateCurrentResume({ publications }),
+    [updateCurrentResume],
+  );
+  const handleAwardsChange = useCallback(
+    (awards: AwardSection[]) => updateCurrentResume({ awards }),
+    [updateCurrentResume],
+  );
+  const handleReferencesChange = useCallback(
+    (references: Reference[]) => updateCurrentResume({ references }),
+    [updateCurrentResume],
+  );
+  const handleCustomChange = useCallback(
+    (custom: CustomSection[]) => updateCurrentResume({ custom }),
+    [updateCurrentResume],
+  );
+
 
 
   const handleFillSampleData = useCallback(() => {
@@ -270,8 +367,8 @@ function EditorContent() {
   }
 
   const cloudSyncMinutesAgo = (() => {
-    if (!lastSyncAt) return "--";
-    const diffMs = Date.now() - new Date(lastSyncAt).getTime();
+    if (!lastSyncAt || now === null) return "--";
+    const diffMs = now - new Date(lastSyncAt).getTime();
     if (!Number.isFinite(diffMs) || diffMs < 0) return "--";
     return Math.floor(diffMs / 60000).toString();
   })();
@@ -402,23 +499,31 @@ function EditorContent() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Render dialogs outside dropdown with controlled state */}
-              <ATSScore
-                resume={currentResume}
-                open={atsScoreOpen}
-                onOpenChange={setAtsScoreOpen}
-              />
-              <ConsistencyChecker
-                resume={currentResume}
-                open={consistencyCheckerOpen}
-                onOpenChange={setConsistencyCheckerOpen}
-              />
-              <CareerGapAnalysis
-                resume={currentResume}
-                open={careerGapAnalysisOpen}
-                onOpenChange={setCareerGapAnalysisOpen}
-              />
-              {currentResume && (
+              {/* Render dialogs outside dropdown with controlled state.
+                  Mounted only while open so closed AI dialogs cost nothing
+                  on keystroke re-renders; triggers live in the menu above. */}
+              {atsScoreOpen && currentResume && (
+                <ATSScore
+                  resume={currentResume}
+                  open={atsScoreOpen}
+                  onOpenChange={setAtsScoreOpen}
+                />
+              )}
+              {consistencyCheckerOpen && currentResume && (
+                <ConsistencyChecker
+                  resume={currentResume}
+                  open={consistencyCheckerOpen}
+                  onOpenChange={setConsistencyCheckerOpen}
+                />
+              )}
+              {careerGapAnalysisOpen && currentResume && (
+                <CareerGapAnalysis
+                  resume={currentResume}
+                  open={careerGapAnalysisOpen}
+                  onOpenChange={setCareerGapAnalysisOpen}
+                />
+              )}
+              {linkedInImportOpen && currentResume && (
                 <LinkedInImport
                   resume={currentResume}
                   open={linkedInImportOpen}
@@ -817,9 +922,9 @@ function EditorContent() {
                     value="basics"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <BasicsForm
+                    <MemoizedBasicsForm
                       data={currentResume.basics}
-                      onChange={(basics) => updateCurrentResume({ basics })}
+                      onChange={handleBasicsChange}
                     />
                   </TabsContent>
 
@@ -827,9 +932,9 @@ function EditorContent() {
                     value="work"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <WorkForm
+                    <MemoizedWorkForm
                       data={currentResume.work}
-                      onChange={(work) => updateCurrentResume({ work })}
+                      onChange={handleWorkChange}
                     />
                   </TabsContent>
 
@@ -837,11 +942,9 @@ function EditorContent() {
                     value="education"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <EducationForm
+                    <MemoizedEducationForm
                       data={currentResume.education}
-                      onChange={(education) =>
-                        updateCurrentResume({ education })
-                      }
+                      onChange={handleEducationChange}
                     />
                   </TabsContent>
 
@@ -849,9 +952,9 @@ function EditorContent() {
                     value="skills"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <SkillsForm
+                    <MemoizedSkillsForm
                       data={currentResume.skills}
-                      onChange={(skills) => updateCurrentResume({ skills })}
+                      onChange={handleSkillsChange}
                     />
                   </TabsContent>
 
@@ -859,9 +962,9 @@ function EditorContent() {
                     value="projects"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <ProjectsForm
+                    <MemoizedProjectsForm
                       data={currentResume.projects}
-                      onChange={(projects) => updateCurrentResume({ projects })}
+                      onChange={handleProjectsChange}
                     />
                   </TabsContent>
 
@@ -876,11 +979,9 @@ function EditorContent() {
                     value="certificates"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <CertificatesForm
+                    <MemoizedCertificatesForm
                       data={currentResume.certificates}
-                      onChange={(certificates) =>
-                        updateCurrentResume({ certificates })
-                      }
+                      onChange={handleCertificatesChange}
                     />
                   </TabsContent>
 
@@ -888,11 +989,9 @@ function EditorContent() {
                     value="languages"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <LanguagesForm
+                    <MemoizedLanguagesForm
                       data={currentResume.languages}
-                      onChange={(languages) =>
-                        updateCurrentResume({ languages })
-                      }
+                      onChange={handleLanguagesChange}
                     />
                   </TabsContent>
 
@@ -900,11 +999,9 @@ function EditorContent() {
                     value="interests"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <InterestsForm
+                    <MemoizedInterestsForm
                       data={currentResume.interests}
-                      onChange={(interests) =>
-                        updateCurrentResume({ interests })
-                      }
+                      onChange={handleInterestsChange}
                     />
                   </TabsContent>
 
@@ -912,11 +1009,9 @@ function EditorContent() {
                     value="publications"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <PublicationsForm
+                    <MemoizedPublicationsForm
                       data={currentResume.publications}
-                      onChange={(publications) =>
-                        updateCurrentResume({ publications })
-                      }
+                      onChange={handlePublicationsChange}
                     />
                   </TabsContent>
 
@@ -924,9 +1019,9 @@ function EditorContent() {
                     value="awards"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <AwardsForm
+                    <MemoizedAwardsForm
                       data={currentResume.awards}
-                      onChange={(awards) => updateCurrentResume({ awards })}
+                      onChange={handleAwardsChange}
                     />
                   </TabsContent>
 
@@ -934,11 +1029,9 @@ function EditorContent() {
                     value="references"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <ReferencesForm
+                    <MemoizedReferencesForm
                       data={currentResume.references}
-                      onChange={(references) =>
-                        updateCurrentResume({ references })
-                      }
+                      onChange={handleReferencesChange}
                     />
                   </TabsContent>
 
@@ -946,9 +1039,9 @@ function EditorContent() {
                     value="custom"
                     className="mt-0 focus-visible:outline-none animate-in fade-in-50 duration-300"
                   >
-                    <CustomForm
+                    <MemoizedCustomForm
                       data={currentResume.custom}
-                      onChange={(custom) => updateCurrentResume({ custom })}
+                      onChange={handleCustomChange}
                     />
                   </TabsContent>
                 </div>
