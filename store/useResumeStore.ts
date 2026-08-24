@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { db, type Resume, type LayoutSettings } from '@/db';
 import { v4 as uuidv4 } from 'uuid';
 import { getTemplateDefaults, getTemplateThemeColor } from '@/lib/template-defaults';
@@ -66,6 +66,41 @@ const createEmptyResume = (title: string = 'Untitled Resume', templateId: string
     custom: [],
   };
 };
+
+const PERSIST_DEBOUNCE_MS = 800;
+
+/**
+ * localStorage adapter with trailing-edge debounce.
+ *
+ * The resume can include a multi-hundred-KB base64 photo; persisting it
+ * synchronously on every keystroke (Zustand's default) serializes the whole
+ * object and blocks the main thread. Writes are coalesced to at most one per
+ * PERSIST_DEBOUNCE_MS after the last change. A page reload within the window
+ * may lose the final characters, which is acceptable vs. a janky editor.
+ */
+const debouncedLocalStorage = createJSONStorage(() => {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return {
+    getItem: (name: string) => localStorage.getItem(name),
+    setItem: (name: string, value: string) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        try {
+          localStorage.setItem(name, value);
+        } finally {
+          timer = null;
+        }
+      }, PERSIST_DEBOUNCE_MS);
+    },
+    removeItem: (name: string) => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      localStorage.removeItem(name);
+    },
+  };
+});
 
 export const useResumeStore = create<ResumeState>()(
   persist(
@@ -228,6 +263,7 @@ export const useResumeStore = create<ResumeState>()(
     }),
     {
       name: 'resume-storage', // unique name
+      storage: debouncedLocalStorage,
       partialize: (state) => ({ currentResume: state.currentResume }), // only persist currentResume
     }
   )

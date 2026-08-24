@@ -140,10 +140,13 @@ export function ATSScore({
   const consent = useLLMSettingsStore((state) => state.consent);
   const redaction = useLLMSettingsStore((state) => state.redaction);
 
+  // Only run the (non-trivial) scoring pass while the dialog is open; this
+  // component stays mounted in the editor header, so computing unconditionally
+  // would recalculate on every keystroke even when hidden.
   const scoreResult = useMemo(() => {
-    if (!resume) return null;
+    if (!isOpen || !resume) return null;
     return calculateATSScore(resume, jobDescription);
-  }, [resume, jobDescription]);
+  }, [isOpen, resume, jobDescription]);
 
   const buildResumeText = useCallback(() => {
     if (!resume) return "";

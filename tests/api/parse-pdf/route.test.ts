@@ -7,6 +7,10 @@ import { NextRequest } from 'next/server';
 const mockGetDocumentProxy = vi.fn();
 vi.mock('unpdf', () => ({
   getDocumentProxy: (...args: unknown[]) => mockGetDocumentProxy(...args),
+  // OCR is never exercised in these tests; fail fast and deterministically.
+  renderPageAsImage: async () => {
+    throw new Error('render unavailable in tests');
+  },
 }));
 
 /**
@@ -81,7 +85,11 @@ function createInvalidPDFFile(name: string = 'fake.pdf'): File {
 
 describe('POST /api/parse-pdf', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks (not clearAllMocks): clears implementations too, so a
+    // permanent mockResolvedValue from an earlier describe (e.g. Rate
+    // Limiting) cannot leak into later tests via the OCR fallback's second
+    // getDocumentProxy call.
+    vi.resetAllMocks();
     resetPdfParseRateLimitForTests();
   });
 

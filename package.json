@@ -44,7 +44,7 @@
     "next-pwa": "^5.6.0",
     "next-themes": "^0.4.6",
     "openai": "^6.21.0",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "^6.2.108",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.4.0",
@@ -80,6 +80,7 @@
   },
   "overrides": {
     "postcss": "^8.5.15",
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "nanoid": "^5.1.16"
   }
 }

@@ -10,31 +10,7 @@ import {
   ZoomOut,
   Loader2,
 } from "lucide-react";
-
-interface PdfjsLib {
-  GlobalWorkerOptions: { workerSrc: string };
-  getDocument: (url: string) => {
-    promise: Promise<{
-      numPages: number;
-      getPage: (pageNum: number) => Promise<{
-        getViewport: (options: { scale: number }) => {
-          width: number;
-          height: number;
-        };
-        render: (options: {
-          canvasContext: CanvasRenderingContext2D;
-          viewport: { width: number; height: number };
-        }) => { promise: Promise<void> };
-      }>;
-    }>;
-  };
-}
-
-declare global {
-  interface Window {
-    pdfjsLib?: PdfjsLib;
-  }
-}
+import { loadPdfJs } from "@/lib/pdfjs-loader";
 
 interface PDFImageViewerProps {
   url: string;
@@ -47,44 +23,26 @@ export function PDFImageViewer({ url }: PDFImageViewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageImage, setPageImage] = useState<string | null>(null);
-  const [pdfjsLib, setPdfjsLib] = useState<PdfjsLib | null>(null);
+  const [pdfjsLib, setPdfjsLib] = useState<Awaited<ReturnType<typeof loadPdfJs>> | null>(null);
 
   const pdfDocRef = useRef<unknown>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Load PDF.js client-side and configure local worker once.
+  // Load PDF.js client-side (bundled build, cached on window by the loader).
   useEffect(() => {
     let isMounted = true;
 
-    const loadPdfJs = async () => {
-      try {
-        if (window.pdfjsLib) {
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-            "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.worker.min.mjs";
-          if (!isMounted) return;
-          setPdfjsLib(window.pdfjsLib);
-          return;
-        }
-
-        const pdfJsUrl =
-          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.min.mjs";
-        const loaded = (await import(
-          /* webpackIgnore: true */ pdfJsUrl
-        )) as unknown as PdfjsLib;
-        loaded.GlobalWorkerOptions.workerSrc =
-          "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.worker.min.mjs";
+    loadPdfJs()
+      .then((mod) => {
         if (!isMounted) return;
-        window.pdfjsLib = loaded;
-        setPdfjsLib(loaded);
-      } catch (err) {
+        setPdfjsLib(mod);
+      })
+      .catch((err: unknown) => {
         console.error("Failed to initialize PDF.js:", err);
         if (!isMounted) return;
         setError("Failed to initialize PDF preview.");
         setIsLoading(false);
-      }
-    };
-
-    loadPdfJs();
+      });
 
     return () => {
       isMounted = false;
@@ -105,7 +63,7 @@ export function PDFImageViewer({ url }: PDFImageViewerProps) {
         setNumPages(0); // Reset pages
         setPageNumber(1); // Reset to page 1
 
-        const pdf = await pdfjsLib.getDocument(url).promise;
+        const pdf = await pdfjsLib.getDocument({ url }).promise;
 
         if (!isMounted) return;
 

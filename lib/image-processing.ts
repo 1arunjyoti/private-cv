@@ -1,5 +1,3 @@
-import { removeBackground as imglyRemoveBackground } from "@imgly/background-removal";
-
 /**
  * Removes the background from an image using a client-side AI model.
  *
@@ -15,12 +13,12 @@ export async function removeBackground(
     // We can configure it to use local assets if needed, but for now,
     // we'll rely on the default behavior which fits the "Zero-Knowledge"
     // requirement as processing happens locally.
-    const blob = await imglyRemoveBackground(imageSource, {
-      progress: (key, current, total) => {
-        // Optional: We could expose this progress if we want more granular UI updates
-        // console.log(`Downloading ${key}: ${current} of ${total}`);
-      },
-    });
+    //
+    // Dynamic import keeps @imgly/background-removal (multi-MB) out of the
+    // editor's initial bundle; it is only fetched when this feature is used.
+    const { removeBackground: imglyRemoveBackground } =
+      await import("@imgly/background-removal");
+    const blob = await imglyRemoveBackground(imageSource);
     return blob;
   } catch (error) {
     console.error("Error removing background:", error);

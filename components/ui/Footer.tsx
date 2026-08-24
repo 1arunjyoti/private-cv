@@ -12,6 +12,7 @@ export function Footer() {
             href="https://github.com/1arunjyoti/private-cv"
             className="hover:text-foreground transition-colors"
             target="_blank"
+            rel="noopener noreferrer"
           >
             GitHub
           </Link>
